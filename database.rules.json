@@ -1,0 +1,21 @@
+{
+  "rules": {
+    "draws": {
+      ".read": true,
+      "$id": {
+        ".write": "auth != null && (!data.exists() || data.child('owner').val() === auth.uid)",
+        ".validate": "newData.child('owner').val() === (data.exists() ? data.child('owner').val() : auth.uid)",
+        "name": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "n": { ".validate": "newData.isNumber() && newData.val() >= 6 && newData.val() <= 14" },
+        "owner": { ".validate": true },
+        "names": { ".validate": true },
+        "freePos": { ".validate": true },
+        "freeTeams": { ".validate": true },
+        "result": { ".validate": true },
+        "last": { ".validate": true },
+        "created": { ".validate": true },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
