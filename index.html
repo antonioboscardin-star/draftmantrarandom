@@ -2,219 +2,55 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sorteggio prima chiamata – Asta Fantacalcio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asta Fantacalcio – Sorteggio prima chiamata</title>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
-<style>
-:root{--grass:#1d6b3b;--grass2:#195f34;--night:#0d2417;--chalk:#f3f6ee;--yellow:#f6d11a;--red:#d62839;--ink:#10231a;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--grass:#1d6b3b}}
-:root[data-theme="dark"]{--grass:#1d6b3b}
-*{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;font-family:Barlow,system-ui,sans-serif;color:var(--chalk);background:var(--night);
-background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass2) 60px 120px);min-height:100vh}
-.wrap{max-width:980px;margin:0 auto;padding:20px 16px 40px}
-h1{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:900;font-size:clamp(34px,7vw,64px);line-height:.95;margin:0 0 6px;letter-spacing:.5px}
-.sub{margin:0 0 20px;opacity:.9;max-width:60ch}
-.panel{background:rgba(13,36,23,.86);border:2px solid var(--chalk);border-radius:6px;padding:16px;margin-bottom:16px}
-.panel h2{font-family:'Big Shoulders Display',Impact,sans-serif;font-size:24px;margin:0 0 10px}
-.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.stepper{display:flex;align-items:center;border:2px solid var(--chalk);border-radius:4px;overflow:hidden}
-.stepper button{width:44px;height:44px;border:0;background:var(--chalk);color:var(--ink);font-size:24px;font-weight:700;cursor:pointer}
-.stepper output{min-width:56px;text-align:center;font-family:'Big Shoulders Display',Impact,sans-serif;font-size:32px;font-weight:900}
-.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:12px}
-.teams input{width:100%;padding:9px 10px;border:2px solid var(--chalk);border-radius:4px;background:transparent;color:var(--chalk);font:inherit}
-.teams input:disabled{opacity:.6}
-button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
-.stage{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 16px}
-.stage::before{content:"";position:absolute;left:50%;top:-40px;bottom:-40px;border-left:2px solid rgba(243,246,238,.35)}
-.stage::after{content:"";position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px;border:2px solid rgba(243,246,238,.35);border-radius:50%}
-.slot{position:relative;z-index:1;text-align:center}
-.slot small{display:block;font-weight:600;margin-bottom:6px;opacity:.85}
-.shirt{height:130px;display:flex;align-items:center;justify-content:center;background:var(--chalk);color:var(--ink);border-radius:10px 10px 30px 30px;
-font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:900;font-size:84px;clip-path:polygon(0 18%,22% 0,38% 8%,62% 8%,78% 0,100% 18%,92% 42%,82% 36%,82% 100%,18% 100%,18% 36%,8% 42%)}
-.name{height:130px;display:flex;align-items:center;justify-content:center;border:3px solid var(--chalk);border-radius:6px;background:var(--night);
-font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:900;font-size:clamp(26px,5vw,44px);padding:6px;word-break:break-word;line-height:1}
-.spin{color:var(--yellow)} .done{box-shadow:0 0 0 4px var(--yellow)}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;position:relative;z-index:1}
-.btn{border:0;border-radius:4px;padding:13px 20px;font:700 17px Barlow,sans-serif;cursor:pointer;color:var(--ink);background:var(--chalk)}
-.btn.go{background:var(--yellow)} .btn.red{background:var(--red);color:#fff}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.msg{position:relative;z-index:1;margin:12px 0 0;min-height:1.4em;font-weight:600}
-ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
-li{display:flex;align-items:center;gap:12px;padding:8px 12px;border:2px dashed rgba(243,246,238,.45);border-radius:6px;min-height:56px}
-li b{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(243,246,238,.18);font-family:'Big Shoulders Display',Impact,sans-serif;font-size:26px}
-li span{font-weight:600;font-size:18px;word-break:break-word}
-li.on{border-style:solid;border-color:var(--yellow);background:rgba(246,209,26,.12)}
-li.on b{background:var(--yellow);color:var(--ink)}
-li.wait{border-style:solid;border-color:var(--chalk)}
-li.wait b{background:var(--chalk);color:var(--ink)}
-.viewer #cfgPanel,.viewer #draw,.viewer #auto,.viewer #reset{display:none}
-#mode{font-weight:600;color:var(--yellow)}
-@media (max-width:560px){.shirt{font-size:64px;height:110px}.name{height:110px}.stage::after{display:none}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-v="home">
 <div class="wrap">
-<h1>⚽ Chiamata d'asta</h1>
-<p class="sub">Sorteggio dell'ordine di prima chiamata. Si estrae una posizione alla volta, poi la squadra che la occupa, fino al completamento della lista.</p>
-<p class="sub" id="mode" role="status"></p>
+<h1>⚽ Asta Fantacalcio</h1>
+<p class="sub" id="banner"></p>
+<button class="btn" id="home" hidden>← Home</button>
 
-<section class="panel" id="cfgPanel" aria-labelledby="cfg">
-<h2 id="cfg">Formazione iniziale</h2>
-<div class="row">
-<span>Numero di squadre</span>
-<div class="stepper"><button id="minus" aria-label="Diminuisci">−</button><output id="n" aria-live="polite">10</output><button id="plus" aria-label="Aumenta">+</button></div>
-<span style="opacity:.8">da 6 a 14</span>
-</div>
-<div class="teams" id="teams"></div>
+<section id="vHome" class="panel">
+  <div class="cards">
+    <div class="card"><h2>Nuova estrazione</h2>
+      <input id="newName" placeholder="Nome (es. Asta 2026/27)" maxlength="40" aria-label="Nome estrazione">
+      <button class="btn go" id="create">Crea e gestisci</button></div>
+    <div class="card"><h2>Guarda un'estrazione</h2><p>Segui in diretta un sorteggio già creato.</p>
+      <button class="btn go" id="watch">Vedi estrazioni</button></div>
+  </div>
+  <div id="mine"></div>
 </section>
 
-<section class="panel stage" aria-label="Estrazione">
-<div class="slot"><small>Posizione estratta</small><div class="shirt" id="pos">?</div></div>
-<div class="slot"><small>Squadra assegnata</small><div class="name" id="team">?</div></div>
-<div class="actions" style="grid-column:1/-1">
-<button class="btn go" id="draw">Estrai posizione</button>
-<button class="btn" id="auto">Estrai tutto</button>
-<button class="btn" id="copy" disabled>Copia ordine</button>
-<button class="btn red" id="reset">Ricomincia</button>
+<section id="vList" class="panel"><h2>Estrazioni</h2><div id="pickList"></div></section>
+
+<div id="vDraw">
+  <h2 id="curName"></h2>
+  <section class="panel o" aria-labelledby="cfg">
+    <h2 id="cfg">Formazione iniziale</h2>
+    <div class="row"><span>Numero di squadre</span>
+      <div class="stepper"><button id="minus" aria-label="Diminuisci">−</button><output id="n">10</output><button id="plus" aria-label="Aumenta">+</button></div>
+      <span style="opacity:.8">da 6 a 14</span></div>
+    <div class="teams" id="teams"></div>
+  </section>
+  <section class="panel stage" aria-label="Estrazione">
+    <div class="slot"><small>Posizione estratta</small><div class="shirt" id="pos">?</div></div>
+    <div class="slot"><small>Squadra assegnata</small><div class="name" id="team">?</div></div>
+    <div class="actions" style="grid-column:1/-1">
+      <button class="btn go o" id="draw">Estrai posizione</button>
+      <button class="btn o" id="auto">Estrai tutto</button>
+      <button class="btn" id="copy" disabled>Copia ordine finale</button>
+      <button class="btn o" id="link">Copia link spettatori</button>
+      <button class="btn red o" id="reset">Ricomincia</button>
+      <button class="btn red o" id="del">Elimina estrazione</button>
+    </div>
+    <p class="msg" id="msg" style="grid-column:1/-1" role="status"></p>
+  </section>
+  <section class="panel" aria-labelledby="ord"><h2 id="ord">Ordine di chiamata</h2><ol id="list"></ol></section>
 </div>
-<p class="msg" id="msg" style="grid-column:1/-1" role="status"></p>
-</section>
-
-<section class="panel" aria-labelledby="ord">
-<h2 id="ord">Ordine di chiamata</h2>
-<ol id="list"></ol>
-</section>
 </div>
-
-<script>
-const $=id=>document.getElementById(id);
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const rnd=m=>crypto.getRandomValues(new Uint32Array(1))[0]%m;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const seq=k=>Array.from({length:k},(_,i)=>i);
-const fresh=(n,names)=>({n,names:names.slice(),freePos:seq(n).map(i=>i+1),freeTeams:seq(n),result:{},last:null});
-let S=fresh(10,Array(14).fill('')),mode='local',ref=null,pending=null,busy=false,playing=false,incoming=null,lastId=null,waiter=null,saveT=null,booted=true;
-const cnt=s=>Object.keys(s.result).length;
-const started=()=>cnt(S)>0||pending!==null;
-const tname=i=>(S.names[i]&&S.names[i].trim())||('Squadra '+(i+1));
-const clone=o=>JSON.parse(JSON.stringify(o));
-const MODES={owner:'Estrazione condivisa: chi apre il link vede il sorteggio in diretta. Solo tu puoi avviarlo.',viewer:'Stai seguendo il sorteggio in diretta. Solo chi ha creato la pagina può avviare le estrazioni.',local:'Modalità locale: questa estrazione non è visibile ad altri.'};
-function setMode(m){mode=m;document.body.classList.toggle('viewer',m==='viewer');$('mode').textContent=MODES[m]}
-function save(){if(mode==='owner'&&ref)ref.set(clone(S)).catch(()=>{$('msg').textContent='Salvataggio condiviso non riuscito.'})}
-function queueSave(){clearTimeout(saveT);saveT=setTimeout(save,600)}
-function resetStage(){['pos','team'].forEach(k=>{$(k).textContent='?';$(k).classList.remove('done','spin')});$('msg').textContent=''}
-
-function render(){
-  const n=S.n;$('n').textContent=n;
-  const box=$('teams');box.innerHTML='';
-  for(let i=0;i<n;i++){
-    const inp=document.createElement('input');
-    inp.placeholder='Squadra '+(i+1);inp.value=S.names[i]||'';inp.maxLength=24;
-    inp.setAttribute('aria-label','Nome squadra '+(i+1));
-    inp.disabled=started()||busy;
-    inp.oninput=()=>{S.names[i]=inp.value;queueSave()};
-    box.appendChild(inp);
-  }
-  const l=$('list');l.innerHTML='';
-  for(let p=1;p<=n;p++){
-    const li=document.createElement('li');
-    const b=document.createElement('b');b.textContent=p;
-    const s=document.createElement('span');
-    if(S.result[p]!==undefined){li.className='on';s.textContent=tname(S.result[p])}
-    else if(pending===p){li.className='wait';s.textContent='Estrazione in corso…'}
-    else{s.textContent='—';s.style.opacity='.5'}
-    li.append(b,s);l.appendChild(li);
-  }
-  const fin=S.freePos.length===0&&!pending;
-  $('draw').disabled=busy||fin;$('auto').disabled=busy||fin;
-  $('minus').disabled=busy||started()||n<=6;$('plus').disabled=busy||started()||n>=14;
-  $('reset').disabled=busy;$('copy').disabled=!fin;
-  $('draw').textContent=fin?'Sorteggio completo':(started()?'Estrai prossima posizione':'Estrai posizione');
-}
-async function cycle(el,pool,fmt){
-  el.classList.remove('done');el.classList.add('spin');
-  const t=reduce?150:1100,step=70;
-  for(let e=0;e<t;e+=step){el.textContent=fmt(pool[rnd(pool.length)]);await sleep(step)}
-  el.classList.remove('spin');
-}
-async function show(d){
-  if(!booted){booted=true;lastId=d.last?d.last.id:null;S=d;render();
-    if(mode==='viewer'&&!cnt(d))$('msg').textContent='Il sorteggio non è ancora iniziato.';return}
-  const grows=d.last&&d.last.id!==lastId&&cnt(d)>cnt(S);
-  if(!grows){
-    if(mode==='owner')return;
-    S=d;lastId=d.last?d.last.id:lastId;if(!cnt(d))resetStage();render();return}
-  lastId=d.last.id;
-  const p=d.last.pos,t=d.last.team;
-  S=Object.assign({},S,{names:d.names,n:d.n});
-  busy=true;resetStage();render();
-  $('msg').textContent='Estrazione della posizione…';
-  await cycle($('pos'),S.freePos,x=>x);
-  $('pos').textContent=p;$('pos').classList.add('done');
-  pending=p;render();
-  $('msg').textContent='Posizione '+p+': quale squadra?';
-  await sleep(reduce?100:500);
-  await cycle($('team'),S.freeTeams,tname);
-  S=d;pending=null;busy=false;
-  $('team').textContent=tname(t);$('team').classList.add('done');
-  $('msg').textContent=tname(t)+' chiama in posizione '+p+'.'+(d.freePos.length?'':' Sorteggio completo, buon mercato!');
-  render();
-  if(waiter){waiter();waiter=null}
-}
-async function pump(){
-  if(playing)return;playing=true;
-  while(incoming){const d=incoming;incoming=null;await show(d)}
-  playing=false;
-}
-function receive(d){incoming=d;pump()}
-
-async function drawOne(){
-  if(busy||!S.freePos.length||mode==='viewer')return;
-  busy=true;render();
-  const pi=rnd(S.freePos.length),ti=rnd(S.freeTeams.length);
-  const p=S.freePos[pi],t=S.freeTeams[ti];
-  const nx=clone(S);
-  nx.freePos.splice(pi,1);nx.freeTeams.splice(ti,1);nx.result[p]=t;
-  nx.last={id:Date.now()+'-'+rnd(1e6),pos:p,team:t};
-  const done=new Promise(r=>{waiter=r});
-  if(ref&&mode==='owner'){
-    try{await ref.set(nx)}catch(e){busy=false;waiter=null;$('msg').textContent='Scrittura condivisa non riuscita: riprova.';render();return}
-  }else receive(nx);
-  await done;
-}
-async function drawAll(){while(S.freePos.length&&mode!=='viewer'){await drawOne();await sleep(reduce?50:600)}}
-function setN(k){if(started()||busy)return;const n=S.n+k;if(n<6||n>14)return;S=fresh(n,S.names);render();queueSave()}
-$('draw').onclick=drawOne;
-$('auto').onclick=drawAll;
-$('reset').onclick=()=>{if(busy)return;S=fresh(S.n,S.names);lastId=null;resetStage();render();save()};
-$('minus').onclick=()=>setN(-1);
-$('plus').onclick=()=>setN(1);
-$('copy').onclick=async()=>{
-  const txt=Object.keys(S.result).map(Number).sort((a,b)=>a-b).map(p=>p+'. '+tname(S.result[p])).join('\n');
-  try{await navigator.clipboard.writeText(txt);$('msg').textContent='Ordine copiato negli appunti.'}
-  catch(e){$('msg').textContent='Copia non disponibile: seleziona la lista a mano.'}
-};
-render();
-(async()=>{
-  setMode('local');
-  if(!window.claude||!claude.use)return;
-  try{
-    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
-    if(!db)return;
-    const own=user?await user.isOwner():false;
-    ref=db.doc('draw/state');
-    setMode(own?'owner':'viewer');
-    booted=false;
-    ref.onSnapshot(snap=>{
-      if(snap.exists){receive(clone(snap.data()))}
-      else{booted=true;if(mode==='viewer')$('msg').textContent='Il sorteggio non è ancora iniziato.'}
-    },()=>{$('msg').textContent='Condivisione non disponibile.'});
-  }catch(e){}
-})();
-</script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

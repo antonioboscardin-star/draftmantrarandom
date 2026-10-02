@@ -1,0 +1,47 @@
+:root{--grass:#1d6b3b;--grass2:#195f34;--night:#0d2417;--chalk:#f3f6ee;--yellow:#f6d11a;--red:#d62839;--ink:#10231a}
+*{box-sizing:border-box}
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:var(--chalk);background:var(--night);
+background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass2) 60px 120px);min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 40px}
+h1{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:900;font-size:clamp(34px,7vw,64px);line-height:.95;margin:0 0 6px}
+h2{font-family:'Big Shoulders Display',Impact,sans-serif;font-size:26px;margin:0 0 10px}
+.sub{margin:0 0 14px;color:var(--yellow);font-weight:600}
+.panel{background:rgba(13,36,23,.86);border:2px solid var(--chalk);border-radius:6px;padding:16px;margin-bottom:16px}
+[hidden]{display:none!important}
+#vHome,#vList,#vDraw{display:none}
+[data-v=home] #vHome,[data-v=list] #vList,[data-v=draw] #vDraw{display:block}
+body:not(.org) .o{display:none!important}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.card{border:2px dashed rgba(243,246,238,.5);border-radius:6px;padding:14px}
+.card input,.teams input{width:100%;padding:10px;margin-bottom:10px;border:2px solid var(--chalk);border-radius:4px;background:transparent;color:var(--chalk);font:inherit}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:12px}.teams input{margin:0}
+.btn{border:0;border-radius:4px;padding:12px 18px;font:700 16px Barlow,sans-serif;cursor:pointer;color:var(--ink);background:var(--chalk)}
+.btn.go{background:var(--yellow)}.btn.red{background:var(--red);color:#fff}.btn:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+#home{margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.stepper{display:flex;align-items:center;border:2px solid var(--chalk);border-radius:4px;overflow:hidden}
+.stepper button{width:44px;height:44px;border:0;background:var(--chalk);color:var(--ink);font-size:24px;font-weight:700;cursor:pointer}
+.stepper output{min-width:56px;text-align:center;font:900 32px 'Big Shoulders Display',Impact,sans-serif}
+.pick{display:block;width:100%;text-align:left;margin-bottom:8px;padding:12px 14px;border:2px solid var(--chalk);border-radius:6px;background:var(--night);color:var(--chalk);cursor:pointer;font:inherit}
+.pick:hover{border-color:var(--yellow)}.pick b{display:block;font:900 28px 'Big Shoulders Display',Impact,sans-serif}.pick span{opacity:.8}
+#mine h2{margin-top:18px}
+.stage{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 16px}
+.stage::before{content:"";position:absolute;left:50%;top:-40px;bottom:-40px;border-left:2px solid rgba(243,246,238,.35)}
+.stage::after{content:"";position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px;border:2px solid rgba(243,246,238,.35);border-radius:50%}
+.slot{position:relative;z-index:1;text-align:center}.slot small{display:block;font-weight:600;margin-bottom:6px;opacity:.85}
+.shirt{height:130px;display:flex;align-items:center;justify-content:center;background:var(--chalk);color:var(--ink);font:900 84px 'Big Shoulders Display',Impact,sans-serif;
+clip-path:polygon(0 18%,22% 0,38% 8%,62% 8%,78% 0,100% 18%,92% 42%,82% 36%,82% 100%,18% 100%,18% 36%,8% 42%)}
+.name{height:130px;display:flex;align-items:center;justify-content:center;border:3px solid var(--chalk);border-radius:6px;background:var(--night);
+font:900 clamp(26px,5vw,44px) 'Big Shoulders Display',Impact,sans-serif;padding:6px;word-break:break-word;line-height:1}
+.spin{color:var(--yellow)}.done{box-shadow:0 0 0 4px var(--yellow)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;position:relative;z-index:1}
+.msg{position:relative;z-index:1;margin:12px 0 0;min-height:1.4em;font-weight:600}
+ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+li{display:flex;align-items:center;gap:12px;padding:8px 12px;border:2px dashed rgba(243,246,238,.45);border-radius:6px;min-height:56px}
+li b{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(243,246,238,.18);font:700 26px 'Big Shoulders Display',Impact,sans-serif}
+li span{font-weight:600;font-size:18px;word-break:break-word}
+li.on{border-style:solid;border-color:var(--yellow);background:rgba(246,209,26,.12)}li.on b{background:var(--yellow);color:var(--ink)}
+li.wait{border-style:solid;border-color:var(--chalk)}li.wait b{background:var(--chalk);color:var(--ink)}
+@media (max-width:560px){.shirt{font-size:64px;height:110px}.name{height:110px}.stage::after{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
