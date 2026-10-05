@@ -89,7 +89,7 @@ function render(){
 function queueSave(){clearTimeout(saveT);saveT=setTimeout(()=>{if(org)store.set(curId,S).catch(()=>say('Salvataggio non riuscito.'))},600)}
 async function cycle(el,pool,fmt){
   el.classList.remove('done');el.classList.add('spin');
-  const t=reduce?150:1100,step=70;
+  const t=reduce?150:1500,step=80;
   for(let e=0;e<t;e+=step){el.textContent=fmt(pool[rnd(pool.length)]);await sleep(step)}
   el.classList.remove('spin');
 }
@@ -104,7 +104,7 @@ async function show(d){
   await cycle($('pos'),S.freePos,x=>x);
   $('pos').textContent=p;$('pos').classList.add('done');pending=p;render();
   say('Posizione '+p+': quale squadra?');
-  await sleep(reduce?100:500);
+  await sleep(reduce?100:1000);
   await cycle($('team'),S.freeTeams,tname);
   S=d;pending=null;busy=false;
   $('team').textContent=tname(t);$('team').classList.add('done');
@@ -133,7 +133,7 @@ async function drawOne(){
   try{await store.set(curId,nx)}catch(e){busy=false;waiter=null;say('Scrittura non riuscita: riprova.');render();return}
   await done;
 }
-async function drawAll(){while(org&&S.freePos.length){await drawOne();await sleep(reduce?50:600)}}
+async function drawAll(){while(org&&S.freePos.length){await drawOne();await sleep(reduce?50:1200)}}
 const copyText=async(txt,ok)=>{try{await navigator.clipboard.writeText(txt);say(ok)}catch(e){say('Copia non disponibile: '+txt)}};
 
 /* ---------- Eventi ---------- */
