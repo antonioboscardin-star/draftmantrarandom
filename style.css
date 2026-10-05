@@ -1,4 +1,4 @@
-:root{--grass:#4a1582;--grass2:#320369;--night:#151046;--chalk:#f3f6ee;--yellow:#f5b800;--red:#e8454b;--ink:#0e082d;--P:#f5b800;--D:#2ecc71;--C:#2d9cdb;--A:#e8454b}
+:root{--grass:#4a1582;--grass2:#320369;--night:#151046;--chalk:#f3f6ee;--yellow:#d08617;--red:#a12d25;--ink:#0e082d;--P:#d08617;--D:#158e4f;--C:#2b90e8;--A:#a12d25}
 *{box-sizing:border-box}
 body{margin:0;font-family:Barlow,system-ui,sans-serif;color:var(--chalk);background:var(--night);
 background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass2) 60px 120px);min-height:100vh}
@@ -6,7 +6,7 @@ background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass
 h1{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:900;font-size:clamp(34px,7vw,64px);line-height:.95;margin:0 0 6px}
 h2{font-family:'Big Shoulders Display',Impact,sans-serif;font-size:26px;margin:0 0 10px}
 .sub{margin:0 0 14px;color:var(--yellow);font-weight:600}
-.panel{background:rgba(21,16,70,.92);border:2px solid var(--chalk);border-radius:6px;padding:16px;margin-bottom:16px}
+.panel{background:linear-gradient(180deg,#1a0833,#44052e 55%,#5c072f);border:2px solid #e53935;box-shadow:0 0 14px rgba(229,57,53,.35);border-radius:8px;padding:16px}
 [hidden]{display:none!important}
 #vHome,#vList,#vDraw{display:none}
 [data-v=home] #vHome,[data-v=list] #vList,[data-v=draw] #vDraw{display:block}
@@ -41,13 +41,15 @@ ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(
 li{display:flex;align-items:center;gap:12px;padding:8px 12px;border:2px dashed rgba(243,246,238,.45);border-radius:6px;min-height:56px}
 li b{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(243,246,238,.18);font:700 26px 'Big Shoulders Display',Impact,sans-serif}
 li span{font-weight:600;font-size:18px;word-break:break-word}
-li.on{border-style:solid;border-color:var(--yellow);background:rgba(245,184,0,.14)}li.on b{background:var(--yellow);color:var(--ink)}
+li.on{border-style:solid;border-color:var(--yellow);background:rgba(208,134,23,.18)}li.on b{background:var(--yellow);color:var(--ink)}
 li.wait{border-style:solid;border-color:var(--chalk)}li.wait b{background:var(--chalk);color:var(--ink)}
 @media (max-width:560px){.shirt{font-size:64px;height:110px}.name{height:110px}.stage::after{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-/* Colori ruoli (P D C A): pulsanti, estrazione e maglia */
-.btn.go,#draw{background:var(--D);color:var(--ink)}
-#auto{background:var(--C);color:var(--ink)}
-#copy,#link{background:var(--P);color:var(--ink)}
+/* Stile FantaLab: pulsanti e riquadri con sfumatura magenta/prugna */
+.btn{background:linear-gradient(90deg,#84144d,#410d3d);color:#fff;border:2px solid #ac1656;text-transform:uppercase;letter-spacing:.3px;font-weight:800;font-size:15px}
+.btn.go,#draw{background:linear-gradient(180deg,#a42879,#b7155d);border-color:rgba(255,255,255,.55)}
+.btn.red{border-color:#e53935}
+.stepper button{background:linear-gradient(90deg,#84144d,#410d3d);color:#fff}
 .shirt{background:var(--A);color:#fff}
-.name{border-color:var(--C)}
+.name{background:linear-gradient(180deg,#0e052a,#44052e 45%,#6b0930);border-color:#e53935}
+li{background:#2d0415;border-color:rgba(214,92,152,.5)}
