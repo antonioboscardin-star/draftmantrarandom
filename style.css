@@ -1,4 +1,4 @@
-:root{--grass:#4a1582;--grass2:#320369;--night:#151046;--chalk:#f3f6ee;--yellow:#d08617;--red:#a12d25;--ink:#0e082d;--P:#d08617;--D:#158e4f;--C:#2b90e8;--A:#a12d25}
+:root{--grass:#4a1582;--grass2:#320369;--night:#120e2e;--chalk:#ffffff;--yellow:#00f5d4;--red:#a12d25;--ink:#120e2e;--bg:#120e2e;--card:#1a1640;--accent:#00f5d4;--muted:#94a3b8;--P:#d08617;--D:#158e4f;--C:#2b90e8;--A:#a12d25}
 *{box-sizing:border-box}
 body{margin:0;font-family:Barlow,system-ui,sans-serif;color:var(--chalk);background:var(--night);
 background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass2) 60px 120px);min-height:100vh}
@@ -45,12 +45,23 @@ li.on{border-style:solid;border-color:var(--yellow);background:rgba(208,134,23,.
 li.wait{border-style:solid;border-color:var(--chalk)}li.wait b{background:var(--chalk);color:var(--ink)}
 @media (max-width:560px){.shirt{font-size:64px;height:110px}.name{height:110px}.stage::after{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-/* Stile FantaLab: pulsanti magenta/prugna, riquadri azzurri */
-.btn{background:linear-gradient(90deg,#84144d,#410d3d);color:#fff;border:2px solid #ac1656;text-transform:uppercase;letter-spacing:.3px;font-weight:800;font-size:15px}
-.btn.go,#draw{background:linear-gradient(180deg,#2b8be6,#145db3);border-color:rgba(255,255,255,.6)}
-.btn.red{border-color:#e53935}
-.stepper button{background:linear-gradient(90deg,#84144d,#410d3d);color:#fff}
+/* Tema viola notte + accento ciano */
+body{background:var(--bg);background-image:repeating-linear-gradient(90deg,#120e2e 0 60px,#0d0925 60px 120px)}
+.panel{background:var(--card);border:0;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#vHome{background:none;box-shadow:none;padding:0}
+.card,.pick{background:var(--card);border:0;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.pick{border:2px solid transparent}
+.card p,.pick span,.slot small{color:var(--muted);opacity:1}
+.btn{background:transparent;color:var(--accent);border:2px solid var(--accent);text-transform:uppercase;letter-spacing:.3px;font-weight:800;font-size:15px}
+.btn.go,#draw{background:var(--accent);color:var(--bg)}
+.btn.red{background:var(--red);color:#fff;border-color:#e53935}
+.stepper{border-color:var(--accent)}
+.stepper button{background:var(--accent);color:var(--bg)}
+input{background:var(--bg);border-color:var(--muted)}
+input::placeholder{color:var(--muted);opacity:1}
+.name{background:var(--bg);border-color:var(--accent)}
+li{background:var(--bg);border:2px solid transparent}
+li.on{background:rgba(0,245,212,.12)}
+li.wait{border-color:var(--chalk)}
 .shirt{background:var(--chalk);color:var(--ink)}
-.name{background:linear-gradient(180deg,#0e2a5a,#1a5ba8);border-color:var(--C)}
-li{background:#0b2150;border-color:rgba(43,144,232,.55)}
-.card,.pick{border-color:var(--C)}
+
