@@ -1,4 +1,4 @@
-:root{--grass:#1d6b3b;--grass2:#195f34;--night:#0d2417;--chalk:#f3f6ee;--yellow:#f6d11a;--red:#d62839;--ink:#10231a}
+:root{--grass:#1f5fa8;--grass2:#1a548f;--night:#0b1f3a;--chalk:#f3f6ee;--yellow:#5cc8ff;--red:#d62839;--ink:#0c1c33}
 *{box-sizing:border-box}
 body{margin:0;font-family:Barlow,system-ui,sans-serif;color:var(--chalk);background:var(--night);
 background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass2) 60px 120px);min-height:100vh}
@@ -6,7 +6,7 @@ background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass
 h1{font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:900;font-size:clamp(34px,7vw,64px);line-height:.95;margin:0 0 6px}
 h2{font-family:'Big Shoulders Display',Impact,sans-serif;font-size:26px;margin:0 0 10px}
 .sub{margin:0 0 14px;color:var(--yellow);font-weight:600}
-.panel{background:rgba(13,36,23,.86);border:2px solid var(--chalk);border-radius:6px;padding:16px;margin-bottom:16px}
+.panel{background:rgba(11,31,58,.9);border:2px solid var(--chalk);border-radius:6px;padding:16px;margin-bottom:16px}
 [hidden]{display:none!important}
 #vHome,#vList,#vDraw{display:none}
 [data-v=home] #vHome,[data-v=list] #vList,[data-v=draw] #vDraw{display:block}
@@ -41,7 +41,7 @@ ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(
 li{display:flex;align-items:center;gap:12px;padding:8px 12px;border:2px dashed rgba(243,246,238,.45);border-radius:6px;min-height:56px}
 li b{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(243,246,238,.18);font:700 26px 'Big Shoulders Display',Impact,sans-serif}
 li span{font-weight:600;font-size:18px;word-break:break-word}
-li.on{border-style:solid;border-color:var(--yellow);background:rgba(246,209,26,.12)}li.on b{background:var(--yellow);color:var(--ink)}
+li.on{border-style:solid;border-color:var(--yellow);background:rgba(92,200,255,.14)}li.on b{background:var(--yellow);color:var(--ink)}
 li.wait{border-style:solid;border-color:var(--chalk)}li.wait b{background:var(--chalk);color:var(--ink)}
 @media (max-width:560px){.shirt{font-size:64px;height:110px}.name{height:110px}.stage::after{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
