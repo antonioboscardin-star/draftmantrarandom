@@ -1,4 +1,4 @@
-:root{--grass:#2a5db0;--grass2:#3a4fb0;--night:#1b1240;--chalk:#f3f6ee;--yellow:#b79cff;--red:#d62839;--ink:#1a1033}
+:root{--grass:#1f5fa8;--grass2:#1a548f;--night:#0b1f3a;--chalk:#f3f6ee;--yellow:#5cc8ff;--red:#d62839;--ink:#0c1c33}
 *{box-sizing:border-box}
 body{margin:0;font-family:Barlow,system-ui,sans-serif;color:var(--chalk);background:var(--night);
 background-image:repeating-linear-gradient(90deg,var(--grass) 0 60px,var(--grass2) 60px 120px);min-height:100vh}
