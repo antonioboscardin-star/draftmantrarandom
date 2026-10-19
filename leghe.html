@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leghe e Risultati – Fantacalcio</title>
+<style>
+  :root {
+    --bg: #120c24;
+    --surface: #1c1336;
+    --surface-2: #251a46;
+    --line: #34265e;
+    --text: #ece8f8;
+    --muted: #9a90c0;
+    --accent: #22d3ee;
+    --violet: #8b5cf6;
+    --win: #34d399;
+    --draw: #fbbf24;
+    --loss: #f87171;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 80% -10%, #2a1a5e 0%, transparent 60%), var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  h1 { font-size: 1.4rem; margin: 0; letter-spacing: .2px; }
+  h1 span { color: var(--accent); }
+  .status { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--win); }
+  .dot.busy { background: var(--draw); }
+  .dot.err { background: var(--loss); }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+  .banner { border-color: var(--loss); background: #2a1424; }
+  .banner code { background: #0003; padding: 1px 5px; border-radius: 4px; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .toolbar .spacer { flex: 1; }
+  .gday { display: flex; align-items: center; gap: 6px; }
+  .gday input { width: 64px; text-align: center; font-weight: 700; font-size: 1.05rem; }
+
+  button, select, input, textarea {
+    font: inherit; color: var(--text); background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  }
+  textarea { width: 100%; min-height: 110px; resize: vertical; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button { cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: var(--violet); }
+  button.primary { background: var(--accent); color: #04222a; border-color: var(--accent); font-weight: 700; }
+  button.primary:hover { filter: brightness(1.08); }
+  button.ghost { background: transparent; }
+  button.icon { padding: 6px 9px; }
+  button.danger:hover { border-color: var(--loss); color: var(--loss); }
+
+  .summary { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { padding: 4px 10px; border-radius: 999px; font-size: .82rem; font-weight: 600; border: 1px solid var(--line); background: var(--surface-2); }
+  .pill.w { color: var(--win); } .pill.d { color: var(--draw); } .pill.l { color: var(--loss); } .pill.m { color: var(--muted); }
+
+  .head, .row {
+    display: grid;
+    grid-template-columns: 1.1fr 1.1fr 140px 100px 2fr 40px;
+    gap: 8px; align-items: center;
+  }
+  .head { padding: 0 10px 6px; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .6px; }
+  .row { padding: 8px 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; margin-bottom: 8px; }
+  .row.has-w { border-left: 4px solid var(--win); }
+  .row.has-d { border-left: 4px solid var(--draw); }
+  .row.has-l { border-left: 4px solid var(--loss); }
+  .row .lega { font-weight: 600; }
+  .row .team { color: var(--muted); }
+  .row .rec { display: block; font-size: .72rem; color: var(--muted); margin-top: 2px; }
+  .row input, .row select { width: 100%; }
+  .row input.bad { border-color: var(--loss); }
+  .empty { text-align: center; color: var(--muted); padding: 28px 10px; }
+  .lbl { display: none; }
+
+  details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .hint { color: var(--muted); font-size: .85rem; margin: 8px 0; }
+  .addline { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 10px; }
+
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--surface-2);
+    border: 1px solid var(--accent); padding: 10px 16px; border-radius: 10px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 760px) {
+    .head { display: none; }
+    .row { grid-template-columns: 1fr 1fr; }
+    .row .c-note, .row .c-id { grid-column: 1 / -1; }
+    .row .c-del { grid-column: 1 / -1; justify-self: end; }
+    .lbl { display: block; font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+    .addline { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Leghe <span>&amp; Risultati</span></h1>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Connessione…</span></div>
+  </header>
+
+  <div class="card banner" id="setupBanner" hidden>
+    <strong>Firebase non configurato.</strong>
+    Apri <code>leghe.html</code> e sostituisci i valori in <code>firebaseConfig</code> con quelli del tuo progetto
+    (Console Firebase → Impostazioni progetto → Le tue app → Configurazione SDK).
+  </div>
+
+  <details class="card" id="importBox">
+    <summary>Carica leghe e squadre</summary>
+    <p class="hint">Una riga per ogni squadra: <code>Lega;Squadra</code> (accetti anche tab o virgola). Puoi incollare il testo o caricare un file CSV/TXT. I doppioni vengono ignorati.</p>
+    <textarea id="importText" placeholder="Lega Amici;Corto Musismo&#10;Lega Mantra;As Capitano"></textarea>
+    <div class="toolbar" style="margin-top:8px">
+      <input type="file" id="importFile" accept=".csv,.txt,text/csv,text/plain">
+      <span class="spacer"></span>
+      <button class="primary" id="importBtn">Importa</button>
+    </div>
+    <div class="addline">
+      <input id="addLega" placeholder="Nuova lega" aria-label="Nome lega">
+      <input id="addSquadra" placeholder="Nuova squadra" aria-label="Nome squadra">
+      <button id="addBtn">Aggiungi</button>
+    </div>
+  </details>
+
+  <div class="card">
+    <div class="toolbar">
+      <div class="gday">
+        <button class="icon" id="prev" aria-label="Giornata precedente">◀</button>
+        <label for="giornata" style="color:var(--muted)">Giornata</label>
+        <input type="number" id="giornata" min="1" max="60" value="1">
+        <button class="icon" id="next" aria-label="Giornata successiva">▶</button>
+      </div>
+      <select id="filterLega" aria-label="Filtra per lega"><option value="">Tutte le leghe</option></select>
+      <span class="spacer"></span>
+      <div class="summary" id="summary"></div>
+      <button class="ghost" id="exportBtn">Esporta CSV</button>
+    </div>
+  </div>
+
+  <div class="head">
+    <div>Lega</div><div>Squadra</div><div>Esito</div><div>Risultato</div><div>Note</div><div></div>
+  </div>
+  <div id="list"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, getDocs, query, where }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+/* ====== CONFIGURAZIONE FIREBASE: incolla qui i valori del tuo progetto ====== */
+const firebaseConfig = {
+  apiKey: "INCOLLA_API_KEY",
+  authDomain: "INCOLLA_PROGETTO.firebaseapp.com",
+  projectId: "INCOLLA_PROJECT_ID",
+  storageBucket: "INCOLLA_PROGETTO.appspot.com",
+  messagingSenderId: "INCOLLA",
+  appId: "INCOLLA"
+};
+/* Nomi delle collezioni (prefisso "fc_" per non toccare i dati del sorteggio) */
+const COL_ENTRIES = "fc_leghe";
+const COL_RESULTS = "fc_risultati";
+/* ============================================================================ */
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const ESITI = { vinco: "Vinco", pareggio: "Pareggio", perdo: "Perdo" };
+
+let entries = [];            // {id, lega, squadra}
+let results = new Map();     // key `${entryId}_${giornata}` -> {esito, risultato, note}
+let giornata = 1;
+try { giornata = parseInt(localStorage.getItem("fc_giornata")) || 1; } catch {}
+$("giornata").value = giornata;
+
+const configured = !firebaseConfig.apiKey.startsWith("INCOLLA");
+let db = null;
+
+function setStatus(kind, txt) {
+  $("dot").className = "dot " + kind;
+  $("statusTxt").textContent = txt;
+}
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+/* ---------- Init Firebase ---------- */
+if (!configured) {
+  $("setupBanner").hidden = false;
+  setStatus("err", "Non configurato");
+} else {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  try { await signInAnonymously(getAuth(app)); } catch (e) { /* ok se le regole non richiedono auth */ }
+  onSnapshot(collection(db, COL_ENTRIES), (snap) => {
+    entries = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => a.lega.localeCompare(b.lega, "it") || a.squadra.localeCompare(b.squadra, "it"));
+    refreshFilter(); render(); setStatus("ok", "Connesso");
+  }, (e) => { console.error(e); setStatus("err", "Errore lettura (controlla le regole Firestore)"); });
+  onSnapshot(collection(db, COL_RESULTS), (snap) => {
+    results = new Map(snap.docs.map(d => [d.id, d.data()]));
+    if (!list.contains(document.activeElement)) render(); else updateSummary();
+  }, (e) => console.error(e));
+}
+
+const list = $("list");
+
+/* ---------- Render ---------- */
+function resKey(entryId, g = giornata) { return `${entryId}_${g}`; }
+function recordOf(entryId) {
+  let w = 0, d = 0, l = 0;
+  for (const [k, v] of results) {
+    if (!k.startsWith(entryId + "_")) continue;
+    if (v.esito === "vinco") w++; else if (v.esito === "pareggio") d++; else if (v.esito === "perdo") l++;
+  }
+  return { w, d, l };
+}
+function visibleEntries() {
+  const f = $("filterLega").value;
+  return f ? entries.filter(e => e.lega === f) : entries;
+}
+function refreshFilter() {
+  const sel = $("filterLega"), cur = sel.value;
+  const leghe = [...new Set(entries.map(e => e.lega))].sort((a, b) => a.localeCompare(b, "it"));
+  sel.innerHTML = '<option value="">Tutte le leghe</option>' + leghe.map(l => `<option>${esc(l)}</option>`).join("");
+  sel.value = leghe.includes(cur) ? cur : "";
+}
+function rowClass(esito) { return esito === "vinco" ? "has-w" : esito === "pareggio" ? "has-d" : esito === "perdo" ? "has-l" : ""; }
+
+function render() {
+  const vis = visibleEntries();
+  if (!vis.length) {
+    list.innerHTML = `<div class="empty">${entries.length ? "Nessuna squadra per questo filtro." : "Nessuna lega caricata. Apri “Carica leghe e squadre” per iniziare."}</div>`;
+    updateSummary(); return;
+  }
+  list.innerHTML = vis.map(e => {
+    const r = results.get(resKey(e.id)) || {};
+    const rec = recordOf(e.id);
+    const opts = ['<option value="">—</option>'].concat(Object.entries(ESITI).map(([k, v]) => `<option value="${k}"${r.esito === k ? " selected" : ""}>${v}</option>`)).join("");
+    return `<div class="row ${rowClass(r.esito)}" data-id="${esc(e.id)}">
+      <div class="c-lega"><span class="lbl">Lega</span><span class="lega">${esc(e.lega)}</span></div>
+      <div class="c-team"><span class="lbl">Squadra</span><span class="team">${esc(e.squadra)}</span><span class="rec">V${rec.w} · N${rec.d} · P${rec.l}</span></div>
+      <div><span class="lbl">Esito</span><select data-f="esito" aria-label="Esito">${opts}</select></div>
+      <div><span class="lbl">Risultato</span><input data-f="risultato" inputmode="numeric" placeholder="es. 3-1" value="${esc(r.risultato || "")}" aria-label="Risultato"></div>
+      <div class="c-note"><span class="lbl">Note</span><input data-f="note" placeholder="Note" value="${esc(r.note || "")}" aria-label="Note"></div>
+      <div class="c-del"><button class="icon danger ghost" data-del title="Elimina squadra" aria-label="Elimina squadra">✕</button></div>
+    </div>`;
+  }).join("");
+  updateSummary();
+}
+
+function updateSummary() {
+  const vis = visibleEntries();
+  let w = 0, d = 0, l = 0, m = 0;
+  for (const e of vis) {
+    const r = results.get(resKey(e.id));
+    if (r?.esito === "vinco") w++; else if (r?.esito === "pareggio") d++; else if (r?.esito === "perdo") l++; else m++;
+  }
+  $("summary").innerHTML = `<span class="pill w">V ${w}</span><span class="pill d">N ${d}</span><span class="pill l">P ${l}</span><span class="pill m">Da inserire ${m}</span>`;
+}
+
+/* ---------- Salvataggio risultati (autosave) ---------- */
+const timers = new Map();
+function normScore(s) {
+  const m = String(s).trim().match(/^(\d{1,3})\s*[-–:]\s*(\d{1,3})$/);
+  return m ? `${m[1]}-${m[2]}` : null;
+}
+function scheduleSave(entryId, g) {
+  const key = resKey(entryId, g);
+  clearTimeout(timers.get(key));
+  setStatus("busy", "Salvataggio…");
+  timers.set(key, setTimeout(async () => {
+    const r = results.get(key) || {};
+    try {
+      await setDoc(doc(db, COL_RESULTS, key), {
+        entryId, giornata: g,
+        esito: r.esito || "", risultato: r.risultato || "", note: r.note || "",
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      setStatus("ok", "Salvato");
+    } catch (e) { console.error(e); setStatus("err", "Errore di salvataggio"); }
+  }, 450));
+}
+
+list.addEventListener("input", (ev) => {
+  const el = ev.target, row = el.closest(".row");
+  if (!row || !el.dataset.f || !db) return;
+  const id = row.dataset.id, key = resKey(id);
+  const cur = { ...(results.get(key) || {}) };
+  if (el.dataset.f === "risultato") {
+    const n = normScore(el.value);
+    el.classList.toggle("bad", el.value.trim() !== "" && !n);
+    cur.risultato = n ?? el.value.trim();
+  } else {
+    cur[el.dataset.f] = el.value;
+  }
+  results.set(key, cur);
+  row.className = "row " + rowClass(cur.esito);
+  if (el.dataset.f === "esito") {
+    const rec = recordOf(id);
+    row.querySelector(".rec").textContent = `V${rec.w} · N${rec.d} · P${rec.l}`;
+  }
+  updateSummary();
+  scheduleSave(id, giornata);
+});
+
+list.addEventListener("click", async (ev) => {
+  const btn = ev.target.closest("[data-del]");
+  if (!btn || !db) return;
+  const id = btn.closest(".row").dataset.id;
+  const e = entries.find(x => x.id === id);
+  if (!confirm(`Eliminare “${e.squadra}” (${e.lega}) e tutti i suoi risultati?`)) return;
+  try {
+    const rs = await getDocs(query(collection(db, COL_RESULTS), where("entryId", "==", id)));
+    const batch = writeBatch(db);
+    rs.forEach(d => batch.delete(d.ref));
+    batch.delete(doc(db, COL_ENTRIES, id));
+    await batch.commit();
+    toast("Squadra eliminata");
+  } catch (err) { console.error(err); toast("Errore durante l'eliminazione"); }
+});
+
+/* ---------- Giornata / filtro ---------- */
+function setGiornata(n) {
+  giornata = Math.min(60, Math.max(1, n || 1));
+  $("giornata").value = giornata;
+  try { localStorage.setItem("fc_giornata", giornata); } catch {}
+  render();
+}
+$("prev").onclick = () => setGiornata(giornata - 1);
+$("next").onclick = () => setGiornata(giornata + 1);
+$("giornata").addEventListener("change", (e) => setGiornata(parseInt(e.target.value)));
+$("filterLega").addEventListener("change", render);
+
+/* ---------- Import / aggiunta ---------- */
+function parseList(text) {
+  const rows = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const sep = line.includes(";") ? ";" : line.includes("\t") ? "\t" : ",";
+    const parts = line.split(sep).map(s => s.trim().replace(/^"|"$/g, ""));
+    if (parts.length < 2 || !parts[0] || !parts[1]) continue;
+    rows.push({ lega: parts[0], squadra: parts[1] });
+  }
+  if (rows.length && rows[0].lega.toLowerCase() === "lega") rows.shift(); // intestazione
+  return rows;
+}
+const keyOf = (e) => (e.lega + "|" + e.squadra).toLowerCase();
+
+async function addEntries(rows) {
+  if (!db) return toast("Configura prima Firebase");
+  const existing = new Set(entries.map(keyOf));
+  const fresh = [];
+  for (const r of rows) { const k = keyOf(r); if (!existing.has(k)) { existing.add(k); fresh.push(r); } }
+  if (!fresh.length) return toast("Nessuna nuova squadra da aggiungere");
+  setStatus("busy", "Importazione…");
+  try {
+    for (let i = 0; i < fresh.length; i += 400) {
+      const batch = writeBatch(db);
+      fresh.slice(i, i + 400).forEach(r => batch.set(doc(collection(db, COL_ENTRIES)), { ...r, createdAt: serverTimestamp() }));
+      await batch.commit();
+    }
+    toast(`Aggiunte ${fresh.length} squadre`); setStatus("ok", "Salvato");
+  } catch (e) { console.error(e); setStatus("err", "Errore di importazione"); }
+}
+$("importBtn").onclick = async () => {
+  const rows = parseList($("importText").value);
+  if (!rows.length) return toast("Nessuna riga valida (formato Lega;Squadra)");
+  await addEntries(rows); $("importText").value = "";
+};
+$("importFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  $("importText").value = await f.text(); e.target.value = "";
+});
+$("addBtn").onclick = async () => {
+  const lega = $("addLega").value.trim(), squadra = $("addSquadra").value.trim();
+  if (!lega || !squadra) return toast("Inserisci lega e squadra");
+  await addEntries([{ lega, squadra }]); $("addSquadra").value = "";
+};
+
+/* ---------- Export CSV ---------- */
+$("exportBtn").onclick = () => {
+  const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+  const lines = ["Lega;Squadra;Giornata;Esito;Risultato;Note"];
+  const byId = new Map(entries.map(e => [e.id, e]));
+  const rs = [...results.values()].filter(r => byId.has(r.entryId))
+    .sort((a, b) => a.giornata - b.giornata);
+  for (const r of rs) {
+    const e = byId.get(r.entryId);
+    lines.push([q(e.lega), q(e.squadra), r.giornata, q(ESITI[r.esito] || ""), q(r.risultato), q(r.note)].join(";"));
+  }
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "risultati_leghe.csv"; a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+render();
+</script>
+</body>
+</html>
