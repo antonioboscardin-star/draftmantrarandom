@@ -79,12 +79,19 @@
   .row .rec { display: block; font-size: .72rem; color: var(--muted); margin-top: 2px; }
   .row input, .row select { width: 100%; }
   .row input.bad { border-color: var(--loss); }
+  .row select.mod { width: auto; display: block; font-size: .75rem; padding: 3px 6px; margin-top: 4px; color: var(--accent); }
+  .row .c-class {
+    grid-column: 1 / -1; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 2px;
+  }
+  .row .c-class label { font-size: .78rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .row .c-class input { width: 92px; }
   .empty { text-align: center; color: var(--muted); padding: 28px 10px; }
   .lbl { display: none; }
 
   details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
   .hint { color: var(--muted); font-size: .85rem; margin: 8px 0; }
-  .addline { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 10px; }
+  .addline { display: grid; grid-template-columns: 1fr 1fr 150px auto; gap: 8px; margin-top: 10px; }
 
   .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--surface-2);
     border: 1px solid var(--accent); padding: 10px 16px; border-radius: 10px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
@@ -93,8 +100,9 @@
   @media (max-width: 760px) {
     .head { display: none; }
     .row { grid-template-columns: 1fr 1fr; }
-    .row .c-note, .row .c-id { grid-column: 1 / -1; }
-    .row .c-del { grid-column: 1 / -1; justify-self: end; }
+    .row .c-note { grid-column: 1 / -1; }
+    .row .c-class { order: 4; }
+    .row .c-del { grid-column: 1 / -1; justify-self: end; order: 5; }
     .lbl { display: block; font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
     .addline { grid-template-columns: 1fr; }
   }
@@ -115,8 +123,8 @@
 
   <details class="card" id="importBox">
     <summary>Carica leghe e squadre</summary>
-    <p class="hint">Una riga per ogni squadra: <code>Lega;Squadra</code> (accetti anche tab o virgola). Puoi incollare il testo o caricare un file CSV/TXT. I doppioni vengono ignorati.</p>
-    <textarea id="importText" placeholder="Lega Amici;Corto Musismo&#10;Lega Mantra;As Capitano"></textarea>
+    <p class="hint">Una riga per ogni squadra: <code>Lega;Squadra;Modalità</code> (la modalità è facoltativa: Classic, Mantra o Euroleghe; vanno bene anche tab o virgola). Puoi incollare il testo o caricare un file CSV/TXT. I doppioni vengono ignorati.</p>
+    <textarea id="importText" placeholder="Lega Amici;Corto Musismo;Classic&#10;Lega Mantra;As Capitano;Mantra"></textarea>
     <div class="toolbar" style="margin-top:8px">
       <input type="file" id="importFile" accept=".csv,.txt,text/csv,text/plain">
       <span class="spacer"></span>
@@ -125,6 +133,9 @@
     <div class="addline">
       <input id="addLega" placeholder="Nuova lega" aria-label="Nome lega">
       <input id="addSquadra" placeholder="Nuova squadra" aria-label="Nome squadra">
+      <select id="addMod" aria-label="Modalità">
+        <option value="">Modalità…</option><option>Classic</option><option>Mantra</option><option>Euroleghe</option>
+      </select>
       <button id="addBtn">Aggiungi</button>
     </div>
   </details>
@@ -138,6 +149,9 @@
         <button class="icon" id="next" aria-label="Giornata successiva">▶</button>
       </div>
       <select id="filterLega" aria-label="Filtra per lega"><option value="">Tutte le leghe</option></select>
+      <select id="filterMod" aria-label="Filtra per modalità">
+        <option value="">Tutte le modalità</option><option>Classic</option><option>Mantra</option><option>Euroleghe</option>
+      </select>
       <span class="spacer"></span>
       <div class="summary" id="summary"></div>
       <button class="ghost" id="exportBtn">Esporta CSV</button>
@@ -153,7 +167,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore,initializeFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, getDocs, query, where }
+import { getFirestore, collection, doc, onSnapshot, setDoc, writeBatch, serverTimestamp, getDocs, query, where }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
@@ -165,7 +179,7 @@ const firebaseConfig = {
   storageBucket: "lista-leghe.firebasestorage.app",
   messagingSenderId: "317571424962",
   appId: "1:317571424962:web:82b2709bd701d0320b515b",
-  };
+};
 /* Nomi delle collezioni (prefisso "fc_" per non toccare i dati del sorteggio) */
 const COL_ENTRIES = "fc_leghe";
 const COL_RESULTS = "fc_risultati";
@@ -174,9 +188,22 @@ const COL_RESULTS = "fc_risultati";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 const ESITI = { vinco: "Vinco", pareggio: "Pareggio", perdo: "Perdo" };
+const MODALITA = ["Classic", "Mantra", "Euroleghe"];
+const normMod = (s) => {
+  const t = String(s ?? "").trim().toLowerCase();
+  return MODALITA.find(m => m.toLowerCase() === t || (t.length >= 3 && m.toLowerCase().startsWith(t))) || "";
+};
+const modOpts = (cur) => ['<option value="">Modalità…</option>']
+  .concat(MODALITA.map(m => `<option${cur === m ? " selected" : ""}>${m}</option>`)).join("");
+const NUM_FIELDS = {
+  posizione: /^([1-9]\d?)?$/,
+  distPrimo: /^(\d+(\.\d{1,2})?)?$/,
+  distPodio: /^(\d+(\.\d{1,2})?)?$/
+};
 
-let entries = [];            // {id, lega, squadra}
-let results = new Map();     // key `${entryId}_${giornata}` -> {esito, risultato, note}
+const list = $("list");
+let entries = [];            // {id, lega, squadra, modalita}
+let results = new Map();     // key `${entryId}_${giornata}` -> {esito, risultato, posizione, distPrimo, distPodio, note}
 let giornata = 1;
 try { giornata = parseInt(localStorage.getItem("fc_giornata")) || 1; } catch {}
 $("giornata").value = giornata;
@@ -199,20 +226,20 @@ if (!configured) {
   setStatus("err", "Non configurato");
 } else {
   const app = initializeApp(firebaseConfig);
-db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+  db = getFirestore(app);
   try { await signInAnonymously(getAuth(app)); } catch (e) { /* ok se le regole non richiedono auth */ }
   onSnapshot(collection(db, COL_ENTRIES), (snap) => {
     entries = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => a.lega.localeCompare(b.lega, "it") || a.squadra.localeCompare(b.squadra, "it"));
-    refreshFilter(); render(); setStatus("ok", "Connesso");
+    refreshFilter();
+    if (!list.contains(document.activeElement)) render();
+    setStatus("ok", "Connesso");
   }, (e) => { console.error(e); setStatus("err", "Errore lettura (controlla le regole Firestore)"); });
   onSnapshot(collection(db, COL_RESULTS), (snap) => {
     results = new Map(snap.docs.map(d => [d.id, d.data()]));
     if (!list.contains(document.activeElement)) render(); else updateSummary();
   }, (e) => console.error(e));
 }
-
-const list = $("list");
 
 /* ---------- Render ---------- */
 function resKey(entryId, g = giornata) { return `${entryId}_${g}`; }
@@ -225,8 +252,8 @@ function recordOf(entryId) {
   return { w, d, l };
 }
 function visibleEntries() {
-  const f = $("filterLega").value;
-  return f ? entries.filter(e => e.lega === f) : entries;
+  const f = $("filterLega").value, m = $("filterMod").value;
+  return entries.filter(e => (!f || e.lega === f) && (!m || e.modalita === m));
 }
 function refreshFilter() {
   const sel = $("filterLega"), cur = sel.value;
@@ -247,12 +274,18 @@ function render() {
     const rec = recordOf(e.id);
     const opts = ['<option value="">—</option>'].concat(Object.entries(ESITI).map(([k, v]) => `<option value="${k}"${r.esito === k ? " selected" : ""}>${v}</option>`)).join("");
     return `<div class="row ${rowClass(r.esito)}" data-id="${esc(e.id)}">
-      <div class="c-lega"><span class="lbl">Lega</span><span class="lega">${esc(e.lega)}</span></div>
+      <div class="c-lega"><span class="lbl">Lega</span><span class="lega">${esc(e.lega)}</span>
+        <select class="mod" data-mod title="Modalità della lega (vale per tutte le sue squadre)" aria-label="Modalità lega">${modOpts(e.modalita)}</select></div>
       <div class="c-team"><span class="lbl">Squadra</span><span class="team">${esc(e.squadra)}</span><span class="rec">V${rec.w} · N${rec.d} · P${rec.l}</span></div>
       <div><span class="lbl">Esito</span><select data-f="esito" aria-label="Esito">${opts}</select></div>
       <div><span class="lbl">Risultato</span><input data-f="risultato" inputmode="numeric" placeholder="es. 3-1" value="${esc(r.risultato || "")}" aria-label="Risultato"></div>
       <div class="c-note"><span class="lbl">Note</span><input data-f="note" placeholder="Note" value="${esc(r.note || "")}" aria-label="Note"></div>
       <div class="c-del"><button class="icon danger ghost" data-del title="Elimina squadra" aria-label="Elimina squadra">✕</button></div>
+      <div class="c-class">
+        <label>Posizione <input data-f="posizione" inputmode="numeric" placeholder="es. 3" value="${esc(r.posizione ?? "")}" aria-label="Posizione in classifica"></label>
+        <label>Dist. dal 1° <input data-f="distPrimo" inputmode="decimal" placeholder="punti" value="${esc(r.distPrimo ?? "")}" aria-label="Distacco dalla prima"></label>
+        <label>Dist. dal podio <input data-f="distPodio" inputmode="decimal" placeholder="punti" value="${esc(r.distPodio ?? "")}" aria-label="Distacco dal podio"></label>
+      </div>
     </div>`;
   }).join("");
   updateSummary();
@@ -284,6 +317,7 @@ function scheduleSave(entryId, g) {
       await setDoc(doc(db, COL_RESULTS, key), {
         entryId, giornata: g,
         esito: r.esito || "", risultato: r.risultato || "", note: r.note || "",
+        posizione: r.posizione || "", distPrimo: r.distPrimo || "", distPodio: r.distPodio || "",
         updatedAt: serverTimestamp()
       }, { merge: true });
       setStatus("ok", "Salvato");
@@ -291,21 +325,49 @@ function scheduleSave(entryId, g) {
   }, 450));
 }
 
-list.addEventListener("input", (ev) => {
+/* Modalità: vale per tutte le squadre della stessa lega */
+async function setLegaMod(entryId, modalita) {
+  const e = entries.find(x => x.id === entryId); if (!e) return;
+  setStatus("busy", "Salvataggio…");
+  try {
+    const batch = writeBatch(db);
+    entries.filter(x => x.lega === e.lega).forEach(x => batch.update(doc(db, COL_ENTRIES, x.id), { modalita }));
+    await batch.commit();
+    setStatus("ok", "Salvato");
+  } catch (err) { console.error(err); setStatus("err", "Errore di salvataggio"); }
+}
+
+list.addEventListener("input", async (ev) => {
   const el = ev.target, row = el.closest(".row");
-  if (!row || !el.dataset.f || !db) return;
+  if (!row || !db) return;
+  if (el.hasAttribute("data-mod")) { await setLegaMod(row.dataset.id, el.value); return; }
+  if (!el.dataset.f) return;
   const id = row.dataset.id, key = resKey(id);
   const cur = { ...(results.get(key) || {}) };
-  if (el.dataset.f === "risultato") {
+  const f = el.dataset.f;
+  if (f === "risultato") {
     const n = normScore(el.value);
     el.classList.toggle("bad", el.value.trim() !== "" && !n);
     cur.risultato = n ?? el.value.trim();
+  } else if (NUM_FIELDS[f]) {
+    const v = el.value.trim().replace(",", ".");
+    const ok = NUM_FIELDS[f].test(v);
+    el.classList.toggle("bad", !ok);
+    if (!ok) return;
+    cur[f] = v;
+    if (f === "posizione" && v) {          // se sei 1° o sul podio, i distacchi vuoti diventano 0
+      const n = Number(v);
+      for (const [nf, lim] of [["distPrimo", 1], ["distPodio", 3]]) {
+        const sib = row.querySelector(`[data-f="${nf}"]`);
+        if (n <= lim && !sib.value.trim()) { sib.value = "0"; cur[nf] = "0"; }
+      }
+    }
   } else {
-    cur[el.dataset.f] = el.value;
+    cur[f] = el.value;
   }
   results.set(key, cur);
   row.className = "row " + rowClass(cur.esito);
-  if (el.dataset.f === "esito") {
+  if (f === "esito") {
     const rec = recordOf(id);
     row.querySelector(".rec").textContent = `V${rec.w} · N${rec.d} · P${rec.l}`;
   }
@@ -329,7 +391,7 @@ list.addEventListener("click", async (ev) => {
   } catch (err) { console.error(err); toast("Errore durante l'eliminazione"); }
 });
 
-/* ---------- Giornata / filtro ---------- */
+/* ---------- Giornata / filtri ---------- */
 function setGiornata(n) {
   giornata = Math.min(60, Math.max(1, n || 1));
   $("giornata").value = giornata;
@@ -340,6 +402,7 @@ $("prev").onclick = () => setGiornata(giornata - 1);
 $("next").onclick = () => setGiornata(giornata + 1);
 $("giornata").addEventListener("change", (e) => setGiornata(parseInt(e.target.value)));
 $("filterLega").addEventListener("change", render);
+$("filterMod").addEventListener("change", render);
 
 /* ---------- Import / aggiunta ---------- */
 function parseList(text) {
@@ -350,7 +413,7 @@ function parseList(text) {
     const sep = line.includes(";") ? ";" : line.includes("\t") ? "\t" : ",";
     const parts = line.split(sep).map(s => s.trim().replace(/^"|"$/g, ""));
     if (parts.length < 2 || !parts[0] || !parts[1]) continue;
-    rows.push({ lega: parts[0], squadra: parts[1] });
+    rows.push({ lega: parts[0], squadra: parts[1], modalita: normMod(parts[2]) });
   }
   if (rows.length && rows[0].lega.toLowerCase() === "lega") rows.shift(); // intestazione
   return rows;
@@ -360,8 +423,16 @@ const keyOf = (e) => (e.lega + "|" + e.squadra).toLowerCase();
 async function addEntries(rows) {
   if (!db) return toast("Configura prima Firebase");
   const existing = new Set(entries.map(keyOf));
+  const modOf = new Map(entries.filter(e => e.modalita).map(e => [e.lega.toLowerCase(), e.modalita]));
   const fresh = [];
-  for (const r of rows) { const k = keyOf(r); if (!existing.has(k)) { existing.add(k); fresh.push(r); } }
+  for (const r of rows) {
+    const k = keyOf(r);
+    if (existing.has(k)) continue;
+    existing.add(k);
+    if (r.modalita) modOf.set(r.lega.toLowerCase(), r.modalita);
+    else r.modalita = modOf.get(r.lega.toLowerCase()) || "";   // eredita la modalità dalla lega
+    fresh.push(r);
+  }
   if (!fresh.length) return toast("Nessuna nuova squadra da aggiungere");
   setStatus("busy", "Importazione…");
   try {
@@ -375,7 +446,7 @@ async function addEntries(rows) {
 }
 $("importBtn").onclick = async () => {
   const rows = parseList($("importText").value);
-  if (!rows.length) return toast("Nessuna riga valida (formato Lega;Squadra)");
+  if (!rows.length) return toast("Nessuna riga valida (formato Lega;Squadra;Modalità)");
   await addEntries(rows); $("importText").value = "";
 };
 $("importFile").addEventListener("change", async (e) => {
@@ -385,21 +456,23 @@ $("importFile").addEventListener("change", async (e) => {
 $("addBtn").onclick = async () => {
   const lega = $("addLega").value.trim(), squadra = $("addSquadra").value.trim();
   if (!lega || !squadra) return toast("Inserisci lega e squadra");
-  await addEntries([{ lega, squadra }]); $("addSquadra").value = "";
+  await addEntries([{ lega, squadra, modalita: $("addMod").value }]); $("addSquadra").value = "";
 };
 
 /* ---------- Export CSV ---------- */
 $("exportBtn").onclick = () => {
   const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
-  const lines = ["Lega;Squadra;Giornata;Esito;Risultato;Note"];
+  const dec = (v) => String(v ?? "").replace(".", ",");
+  const lines = ["Lega;Modalità;Squadra;Giornata;Esito;Risultato;Posizione;Distacco 1°;Distacco podio;Note"];
   const byId = new Map(entries.map(e => [e.id, e]));
   const rs = [...results.values()].filter(r => byId.has(r.entryId))
     .sort((a, b) => a.giornata - b.giornata);
   for (const r of rs) {
     const e = byId.get(r.entryId);
-    lines.push([q(e.lega), q(e.squadra), r.giornata, q(ESITI[r.esito] || ""), q(r.risultato), q(r.note)].join(";"));
+    lines.push([q(e.lega), q(e.modalita), q(e.squadra), r.giornata, q(ESITI[r.esito] || ""), q(r.risultato),
+      q(r.posizione), q(dec(r.distPrimo)), q(dec(r.distPodio)), q(r.note)].join(";"));
   }
-  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = "risultati_leghe.csv"; a.click();
   URL.revokeObjectURL(a.href);
