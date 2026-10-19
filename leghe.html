@@ -197,8 +197,8 @@ const modOpts = (cur) => ['<option value="">Modalità…</option>']
   .concat(MODALITA.map(m => `<option${cur === m ? " selected" : ""}>${m}</option>`)).join("");
 const NUM_FIELDS = {
   posizione: /^([1-9]\d?)?$/,
-  distPrimo: /^(\d+(\.\d{1,2})?)?$/,
-  distPodio: /^(\d+(\.\d{1,2})?)?$/
+  distPrimo: /^(-?\d+(\.\d{1,2})?)?$/,
+  distPodio: /^(-?\d+(\.\d{1,2})?)?$/
 };
 
 const list = $("list");
@@ -283,8 +283,8 @@ function render() {
       <div class="c-del"><button class="icon danger ghost" data-del title="Elimina squadra" aria-label="Elimina squadra">✕</button></div>
       <div class="c-class">
         <label>Posizione <input data-f="posizione" inputmode="numeric" placeholder="es. 3" value="${esc(r.posizione ?? "")}" aria-label="Posizione in classifica"></label>
-        <label>Dist. dal 1° <input data-f="distPrimo" inputmode="decimal" placeholder="punti" value="${esc(r.distPrimo ?? "")}" aria-label="Distacco dalla prima"></label>
-        <label>Dist. dal podio <input data-f="distPodio" inputmode="decimal" placeholder="punti" value="${esc(r.distPodio ?? "")}" aria-label="Distacco dal podio"></label>
+        <label>Dist. dal 1° <input data-f="distPrimo" inputmode="text" placeholder="punti" value="${esc(r.distPrimo ?? "")}" aria-label="Distacco dalla prima"></label>
+        <label>Dist. dal podio <input data-f="distPodio" inputmode="text" placeholder="punti" value="${esc(r.distPodio ?? "")}" aria-label="Distacco dal podio"></label>
       </div>
     </div>`;
   }).join("");
