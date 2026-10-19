@@ -153,7 +153,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, getDocs, query, where }
+import { getFirestore,initializeFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, getDocs, query, where }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
@@ -199,7 +199,7 @@ if (!configured) {
   setStatus("err", "Non configurato");
 } else {
   const app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
+db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
   try { await signInAnonymously(getAuth(app)); } catch (e) { /* ok se le regole non richiedono auth */ }
   onSnapshot(collection(db, COL_ENTRIES), (snap) => {
     entries = snap.docs.map(d => ({ id: d.id, ...d.data() }))
