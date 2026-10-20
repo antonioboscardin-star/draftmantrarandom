@@ -86,6 +86,15 @@
   }
   .row .c-class label { font-size: .78rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   .row .c-class input { width: 92px; }
+  .row.pos-1 { background: linear-gradient(90deg, rgba(251,191,36,.18), var(--surface) 60%); box-shadow: inset 0 0 0 1px rgba(251,191,36,.6); }
+  .row.pos-podio { background: linear-gradient(90deg, rgba(34,211,238,.14), var(--surface) 60%); box-shadow: inset 0 0 0 1px rgba(34,211,238,.5); }
+  .posbadge { font-size: .75rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+  .posbadge:empty { display: none; }
+  .posbadge.g { background: rgba(251,191,36,.2); color: var(--draw); border: 1px solid rgba(251,191,36,.6); }
+  .posbadge.p { background: rgba(34,211,238,.15); color: var(--accent); border: 1px solid rgba(34,211,238,.5); }
+  .pill.g { color: var(--draw); border-color: rgba(251,191,36,.6); }
+  .pill.p { color: var(--accent); border-color: rgba(34,211,238,.5); }
+  .row .c-class button.copyrow { margin-left: auto; font-size: .75rem; padding: 4px 9px; }
   .empty { text-align: center; color: var(--muted); padding: 28px 10px; }
   .lbl { display: none; }
 
@@ -154,6 +163,7 @@
       </select>
       <span class="spacer"></span>
       <div class="summary" id="summary"></div>
+      <button class="ghost" id="copyBtn" title="Riporta posizione e distacchi della giornata precedente sulle squadre visibili (non sovrascrive i dati già inseriti)">Copia classifica</button>
       <button class="ghost" id="exportBtn">Esporta CSV</button>
     </div>
   </div>
@@ -262,6 +272,11 @@ function refreshFilter() {
   sel.value = leghe.includes(cur) ? cur : "";
 }
 function rowClass(esito) { return esito === "vinco" ? "has-w" : esito === "pareggio" ? "has-d" : esito === "perdo" ? "has-l" : ""; }
+function posClass(pos) { const n = Number(pos); return n === 1 ? "pos-1" : n >= 2 && n <= 3 ? "pos-podio" : ""; }
+function posBadge(pos) {
+  const n = Number(pos);
+  return n === 1 ? '<span class="posbadge g">🥇 1° posto</span>' : n >= 2 && n <= 3 ? `<span class="posbadge p">🏆 Podio (${n}°)</span>` : '<span class="posbadge"></span>';
+}
 
 function render() {
   const vis = visibleEntries();
@@ -273,7 +288,7 @@ function render() {
     const r = results.get(resKey(e.id)) || {};
     const rec = recordOf(e.id);
     const opts = ['<option value="">—</option>'].concat(Object.entries(ESITI).map(([k, v]) => `<option value="${k}"${r.esito === k ? " selected" : ""}>${v}</option>`)).join("");
-    return `<div class="row ${rowClass(r.esito)}" data-id="${esc(e.id)}">
+    return `<div class="row ${rowClass(r.esito)} ${posClass(r.posizione)}" data-id="${esc(e.id)}">
       <div class="c-lega"><span class="lbl">Lega</span><span class="lega">${esc(e.lega)}</span>
         <select class="mod" data-mod title="Modalità della lega (vale per tutte le sue squadre)" aria-label="Modalità lega">${modOpts(e.modalita)}</select></div>
       <div class="c-team"><span class="lbl">Squadra</span><span class="team">${esc(e.squadra)}</span><span class="rec">V${rec.w} · N${rec.d} · P${rec.l}</span></div>
@@ -282,9 +297,11 @@ function render() {
       <div class="c-note"><span class="lbl">Note</span><input data-f="note" placeholder="Note" value="${esc(r.note || "")}" aria-label="Note"></div>
       <div class="c-del"><button class="icon danger ghost" data-del title="Elimina squadra" aria-label="Elimina squadra">✕</button></div>
       <div class="c-class">
+        ${posBadge(r.posizione)}
         <label>Posizione <input data-f="posizione" inputmode="numeric" placeholder="es. 3" value="${esc(r.posizione ?? "")}" aria-label="Posizione in classifica"></label>
         <label>Dist. dal 1° <input data-f="distPrimo" inputmode="text" placeholder="punti" value="${esc(r.distPrimo ?? "")}" aria-label="Distacco dalla prima"></label>
         <label>Dist. dal podio <input data-f="distPodio" inputmode="text" placeholder="punti" value="${esc(r.distPodio ?? "")}" aria-label="Distacco dal podio"></label>
+        <button class="copyrow ghost" data-copy title="Copia posizione e distacchi dalla giornata precedente (sovrascrive)">↶ Da giornata prec.</button>
       </div>
     </div>`;
   }).join("");
@@ -293,12 +310,15 @@ function render() {
 
 function updateSummary() {
   const vis = visibleEntries();
-  let w = 0, d = 0, l = 0, m = 0;
+  let w = 0, d = 0, l = 0, m = 0, first = 0, podio = 0;
   for (const e of vis) {
     const r = results.get(resKey(e.id));
     if (r?.esito === "vinco") w++; else if (r?.esito === "pareggio") d++; else if (r?.esito === "perdo") l++; else m++;
+    const pc = posClass(r?.posizione);
+    if (pc === "pos-1") first++; else if (pc === "pos-podio") podio++;
   }
-  $("summary").innerHTML = `<span class="pill w">V ${w}</span><span class="pill d">N ${d}</span><span class="pill l">P ${l}</span><span class="pill m">Da inserire ${m}</span>`;
+  $("summary").innerHTML = `<span class="pill w">V ${w}</span><span class="pill d">N ${d}</span><span class="pill l">P ${l}</span><span class="pill m">Da inserire ${m}</span>`
+    + `<span class="pill g" title="Leghe in cui sei primo">🥇 1° posto ${first}</span><span class="pill p" title="Leghe in cui sei sul podio (2° o 3°)">🏆 Podio ${podio}</span>`;
 }
 
 /* ---------- Salvataggio risultati (autosave) ---------- */
@@ -366,7 +386,8 @@ list.addEventListener("input", async (ev) => {
     cur[f] = el.value;
   }
   results.set(key, cur);
-  row.className = "row " + rowClass(cur.esito);
+  row.className = "row " + rowClass(cur.esito) + " " + posClass(cur.posizione);
+  row.querySelector(".posbadge").outerHTML = posBadge(cur.posizione);
   if (f === "esito") {
     const rec = recordOf(id);
     row.querySelector(".rec").textContent = `V${rec.w} · N${rec.d} · P${rec.l}`;
@@ -375,7 +396,39 @@ list.addEventListener("input", async (ev) => {
   scheduleSave(id, giornata);
 });
 
+/* Copia posizione e distacchi dalla giornata precedente */
+async function copyStandings(ids, overwrite) {
+  if (!db) return toast("Configura prima Firebase");
+  if (giornata <= 1) return toast("Non c'è una giornata precedente");
+  const F = ["posizione", "distPrimo", "distPodio"];
+  const has = (o) => o && F.some(f => o[f] !== undefined && o[f] !== "");
+  const ops = [];
+  for (const id of ids) {
+    const prev = results.get(resKey(id, giornata - 1));
+    const cur = results.get(resKey(id)) || {};
+    if (!has(prev) || (!overwrite && has(cur))) continue;
+    const data = {}; F.forEach(f => data[f] = prev[f] ?? "");
+    ops.push({ id, data, cur });
+  }
+  if (!ops.length) return toast(`Niente da copiare dalla giornata ${giornata - 1}`);
+  setStatus("busy", "Salvataggio…");
+  try {
+    for (let i = 0; i < ops.length; i += 400) {
+      const batch = writeBatch(db);
+      ops.slice(i, i + 400).forEach(({ id, data }) =>
+        batch.set(doc(db, COL_RESULTS, resKey(id)), { entryId: id, giornata, ...data, updatedAt: serverTimestamp() }, { merge: true }));
+      await batch.commit();
+    }
+    ops.forEach(({ id, data, cur }) => results.set(resKey(id), { ...cur, ...data }));
+    render(); setStatus("ok", "Salvato");
+    toast(`Classifica copiata dalla giornata ${giornata - 1} (${ops.length} squadre)`);
+  } catch (e) { console.error(e); setStatus("err", "Errore di salvataggio"); }
+}
+$("copyBtn").onclick = () => copyStandings(visibleEntries().map(e => e.id), false);
+
 list.addEventListener("click", async (ev) => {
+  const cp = ev.target.closest("[data-copy]");
+  if (cp) { await copyStandings([cp.closest(".row").dataset.id], true); return; }
   const btn = ev.target.closest("[data-del]");
   if (!btn || !db) return;
   const id = btn.closest(".row").dataset.id;
