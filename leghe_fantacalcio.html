@@ -97,7 +97,7 @@
   .row .c-class button.copyrow { margin-left: auto; font-size: .75rem; padding: 4px 9px; }
   .forma { display: inline-flex; align-items: center; gap: 4px; }
   .formalbl { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-right: 2px; }
-  .fm { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: .72rem; font-weight: 700;
+  .fm { min-width: 38px; height: 24px; padding: 0 7px; border-radius: 6px; display: grid; place-items: center; font-size: .78rem; font-weight: 700; white-space: nowrap;
     border: 1px solid var(--line); color: var(--muted); background: var(--surface-2); cursor: default; }
   .fm.w { background: rgba(52,211,153,.18); color: var(--win); border-color: rgba(52,211,153,.55); }
   .fm.d { background: rgba(251,191,36,.18); color: var(--draw); border-color: rgba(251,191,36,.55); }
@@ -309,10 +309,11 @@ function formaHtml(entryId) {
   const chips = [];
   for (let g = Math.max(1, giornata - 5); g < giornata; g++) {
     const r = results.get(resKey(entryId, g)), m = FORMA[r?.esito];
-    const tip = `Giornata ${g}: ` + (m ? m[2] + (r.risultato ? " " + r.risultato : "") : "nessun dato");
-    chips.push(`<span class="fm ${m ? m[1] : ""}" title="${esc(tip)}">${m ? m[0] : "–"}</span>`);
+    const tip = `Giornata ${g}: ` + (m ? m[2] : "esito non indicato") + (r?.risultato ? " " + r.risultato : "");
+    const txt = r?.risultato || (m ? m[0] : "–");   // risultato numerico; se manca, la lettera dell'esito
+    chips.push(`<span class="fm ${m ? m[1] : ""}" title="${esc(tip)}">${esc(txt)}</span>`);
   }
-  return chips.length ? `<span class="forma"><span class="formalbl">Ultime</span>${chips.join("")}</span>` : "";
+  return chips.length ? `<span class="forma"><span class="formalbl">Ultimi risultati</span>${chips.join("")}</span>` : "";
 }
 function posClass(pos) { const n = Number(pos); return n === 1 ? "pos-1" : n >= 2 && n <= 3 ? "pos-podio" : ""; }
 function posBadge(pos) {
@@ -339,11 +340,11 @@ function render() {
       <div class="c-note"><span class="lbl">Note</span><input data-f="note" placeholder="Note" value="${esc(r.note || "")}" aria-label="Note"></div>
       <div class="c-del"><button class="icon danger ghost" data-del title="Elimina squadra" aria-label="Elimina squadra">✕</button></div>
       <div class="c-class">
-        ${formaHtml(e.id)}
         ${posBadge(r.posizione)}
         <label>Posizione <input data-f="posizione" inputmode="numeric" placeholder="es. 3" value="${esc(r.posizione ?? "")}" aria-label="Posizione in classifica"></label>
         <label>Dist. dal 1° <input data-f="distPrimo" inputmode="text" placeholder="punti" value="${esc(r.distPrimo ?? "")}" aria-label="Distacco dalla prima"></label>
         <label>Dist. dal podio <input data-f="distPodio" inputmode="text" placeholder="punti" value="${esc(r.distPodio ?? "")}" aria-label="Distacco dal podio"></label>
+        ${formaHtml(e.id)}
         <button class="copyrow ghost" data-copy title="Copia posizione e distacchi dalla giornata precedente (sovrascrive)">↶ Da giornata prec.</button>
       </div>
     </div>`;
