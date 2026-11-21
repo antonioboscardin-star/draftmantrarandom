@@ -869,17 +869,17 @@ const { proposeLineup, DEFAULTS, teamAbbr, lookupMatch, lookupXg } = Engine;
 
 // ====================== CONFIGURAZIONE (da incollare) ======================
 const firebaseConfig = {
-  apiKey: "INCOLLA_API_KEY",
-  authDomain: "INCOLLA_PROJECT_ID.firebaseapp.com",
-  projectId: "INCOLLA_PROJECT_ID",
-  storageBucket: "INCOLLA_PROJECT_ID.appspot.com",
-  messagingSenderId: "INCOLLA",
-  appId: "INCOLLA"
+  apiKey: "AIzaSyAi4UBKTdByb9RL8MfrdYmq18pe1zPeQak",
+  authDomain: "fantaformazione-2d2ef.firebaseapp.com",
+  projectId: "fantaformazione-2d2ef",
+  storageBucket: "fantaformazione-2d2ef.firebasestorage.app",
+  messagingSenderId: "184998842088",
+  appId: "1:184998842088:web:d6c655973dc6637553035d"
 };
 // Dati online (probabili formazioni da fantacalcio.it, xG/xA da FotMob): li scrive il job pianificato
 // di GitHub Actions nel branch "fantaformazione-data" del TUO repository (che deve essere pubblico).
 // Scrivi "tuo-utente/nome-repo", ad esempio "mrossi/sito".
-const GITHUB_REPO = "INCOLLA_UTENTE/INCOLLA_REPO";
+const GITHUB_REPO = "antonioboscardin-star/draftmantrarandom/refs/heads";
 const SIGNALS_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/fantaformazione-data/signals.json`;
 const SIGNALS_STALE_HOURS = 12;
 // ===========================================================================
