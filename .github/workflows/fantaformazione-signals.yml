@@ -1,0 +1,60 @@
+# Copia questo file in <TUO-REPO>/.github/workflows/fantaformazione-signals.yml
+# e modifica SOLO la riga FF_DIR (cartella dove hai messo il progetto, relativa alla radice del repo).
+name: FantaFormazione - aggiorna dati online
+
+on:
+  schedule:
+    - cron: '15 */3 * * *'      # ogni 3 ore (orario UTC; GitHub può ritardare di qualche minuto)
+    - cron: '45 * * * 0,6'      # in più, ogni ora il sabato e la domenica (giorni di partita)
+  workflow_dispatch:             # avvio manuale da Actions -> Run workflow
+
+permissions:
+  contents: write                # serve per salvare signals.json nel branch dei dati
+
+concurrency:
+  group: fantaformazione-signals
+  cancel-in-progress: false
+
+env:
+  FF_DIR: fantaformazione        # <-- cartella del progetto nel repo (es. docs/fantaformazione se Pages pubblica /docs)
+  DATA_BRANCH: fantaformazione-data
+  FOTMOB_SEASON_ID: '36072'      # id stagione FotMob: cambia a ogni stagione (lo trovi nell'indirizzo della pagina)
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installa dipendenze
+        working-directory: ${{ env.FF_DIR }}
+        run: npm install --no-audit --no-fund
+
+      - name: Recupera la versione precedente dei dati (se esiste)
+        run: |
+          mkdir -p "$RUNNER_TEMP/data"
+          if git ls-remote --exit-code --heads origin "$DATA_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$DATA_BRANCH"
+            git show "origin/$DATA_BRANCH:signals.json" > "$RUNNER_TEMP/data/signals.json" || true
+          fi
+
+      - name: Leggi le fonti online
+        working-directory: ${{ env.FF_DIR }}
+        run: node scraper/fetch-signals.js "$RUNNER_TEMP/data/signals.json"
+
+      - name: Pubblica signals.json nel branch dei dati
+        run: |
+          cd "$RUNNER_TEMP"
+          rm -rf publish && mkdir publish && cd publish
+          git init -q
+          git config user.name  "fantaformazione-bot"
+          git config user.email "fantaformazione-bot@users.noreply.github.com"
+          cp "$RUNNER_TEMP/data/signals.json" signals.json
+          git add signals.json
+          git commit -q -m "Aggiorna dati online $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:refs/heads/$DATA_BRANCH
