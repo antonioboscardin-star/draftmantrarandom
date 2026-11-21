@@ -6,13 +6,13 @@
 <title>FantaFormazione</title>
 <style>
   :root {
-    --bg: #0f1a14; --panel: #16251c; --panel2: #1c2f23; --line: #2b4435;
-    --text: #e8f1ea; --muted: #93aa9b; --accent: #3ddc84; --accent2: #ffd166;
-    --bad: #ff6b6b; --warn: #ffb04a; --P: #f4c542; --D: #4aa3ff; --C: #3ddc84; --A: #ff6b6b;
+    --bg: #0a1228; --panel: #101c3a; --panel2: #17275a; --line: #263b7a; --field: #0a1330; --on-accent: #04122b;
+    --text: #e6edff; --muted: #8fa3d6; --accent: #38bdf8; --accent2: #ffd166;
+    --bad: #ff6b6b; --warn: #ffb04a; --P: #f4c542; --D: #a78bfa; --C: #22d3ee; --A: #ff6b6b;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+  body { margin: 0; background: radial-gradient(1200px 500px at 50% -150px, #14307a 0%, var(--bg) 70%) no-repeat, var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: linear-gradient(90deg, var(--panel), #0f2a63); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
   header h1 { margin: 0; font-size: 18px; letter-spacing: .3px; }
   header h1 span { color: var(--accent); }
   nav { display: flex; gap: 6px; margin-left: 16px; flex-wrap: wrap; }
@@ -30,9 +30,9 @@
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
   .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
-  input, select, textarea { width: 100%; background: #0c1510; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; }
+  input, select, textarea { width: 100%; background: var(--field); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; }
   textarea { min-height: 120px; resize: vertical; }
-  button.btn { background: var(--accent); color: #07140c; border: 0; padding: 9px 16px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.btn { background: var(--accent); color: var(--on-accent); border: 0; padding: 9px 16px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
   button.btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; }
   button.btn.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); font-weight: 500; }
   button.btn:disabled { opacity: .45; cursor: not-allowed; }
@@ -45,12 +45,12 @@
   .banner { padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; border: 1px solid var(--line); background: var(--panel2); }
   .banner.err { border-color: var(--bad); color: #ffd5d5; }
   .banner.warn { border-color: var(--warn); color: #ffe6c2; }
-  .banner.ok { border-color: var(--accent); color: #c9f5da; }
+  .banner.ok { border-color: var(--accent); color: #c7ecff; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 10px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--line); font-size: 13px; }
   .chip.bad { border-color: var(--bad); color: #ffd5d5; }
   .chip button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0 6px; }
-  .role { display: inline-block; width: 20px; text-align: center; font-weight: 700; font-size: 12px; border-radius: 4px; color: #07140c; }
+  .role { display: inline-block; width: 20px; text-align: center; font-weight: 700; font-size: 12px; border-radius: 4px; color: var(--on-accent); }
   .role.P { background: var(--P); } .role.D { background: var(--D); } .role.C { background: var(--C); } .role.A { background: var(--A); }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -75,7 +75,34 @@
   .login h2 { font-size: 28px; }
   .cap { color: var(--accent2); font-weight: 700; }
   dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; max-width: 520px; width: 92%; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .unavail td { opacity: .5; }
+  .filters { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); align-items: end; }
+  .filters label { margin: 0 0 4px; }
+  .filters .wide { grid-column: span 2; }
+  .stats th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  .stats th.sortable:hover { color: var(--text); }
+  .stats th.sorted { color: var(--accent); }
+  .stats td { white-space: nowrap; }
+  .stats td.name { white-space: normal; min-width: 150px; }
+  .stats-meta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
   dialog::backdrop { background: rgba(0,0,0,.6); }
+  /* Righe compatte della formazione: una riga per giocatore */
+  .role.m { width: auto; min-width: 22px; padding: 0 5px; white-space: nowrap; }
+  table.compact td { white-space: nowrap; vertical-align: middle; padding: 6px 8px; }
+  table.compact td.pn { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  table.compact td.rl { width: 1%; }
+  .pname, .fvv, .role[data-tip] { cursor: help; }
+  .pname, .fvv { border-bottom: 1px dotted var(--muted); }
+  .fv { font-weight: 700; color: var(--accent2); }
+  .mt-l { font-variant-numeric: tabular-nums; letter-spacing: .3px; }
+  .ha { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 3px; margin-left: 2px; }
+  /* Tooltip: passaggio del mouse (desktop) o tocco (mobile) */
+  .tip { position: fixed; z-index: 50; max-width: min(340px, calc(100vw - 16px)); background: var(--panel2); color: var(--text); border: 1px solid var(--accent); border-radius: 10px; padding: 9px 12px; font-size: 12.5px; line-height: 1.5; box-shadow: 0 8px 24px rgba(0,0,0,.5); pointer-events: none; }
+  .tip[hidden] { display: none; }
+  .tip .tip-h { font-weight: 700; margin-bottom: 4px; }
+  .tip .tip-h .muted { font-weight: 400; }
+  .tip hr { border: 0; border-top: 1px solid var(--line); margin: 5px 0; }
 </style>
 </head>
 <body>
@@ -86,6 +113,7 @@
     <button data-view="teams" class="active">Le mie squadre</button>
     <button data-view="edit">Nuova squadra</button>
     <button data-view="proposal" class="hidden" id="navProposal">Formazione</button>
+    <button data-view="stats" class="hidden" id="navStats">Statistiche</button>
     <button data-view="admin" class="hidden" id="navAdmin">Admin database</button>
   </nav>
   <div class="spacer"></div>
@@ -149,6 +177,32 @@
   <!-- FORMAZIONE -->
   <section id="v-proposal" class="hidden">
     <div id="proposalBox"></div>
+  </section>
+
+  <!-- STATISTICHE -->
+  <section id="v-stats" class="hidden">
+    <h2>Statistiche <span class="muted small" id="statsCount"></span></h2>
+    <p class="note" style="margin-top:-6px">Dati principali del Listone caricato e xG/xA di tutti i giocatori. <a href="https://www.fotmob.com/it/leagues/55/stats/serie/players" target="_blank" rel="noopener">Statistiche complete su FotMob ↗</a></p>
+    <div class="card">
+      <div class="filters">
+        <div class="wide"><label for="stSearch">Cerca (nome o squadra)</label><input id="stSearch" placeholder="es. Malen, Roma…" autocomplete="off"></div>
+        <div><label for="stTeam">Squadra</label><select id="stTeam"><option value="">Tutte</option></select></div>
+        <div><label for="stRole">Ruolo Classic</label><select id="stRole"><option value="">Tutti</option><option>P</option><option>D</option><option>C</option><option>A</option></select></div>
+        <div><label for="stMantra">Ruolo Mantra</label><select id="stMantra"><option value="">Tutti</option></select></div>
+        <div><label for="stMinSeason">FM stagione min.</label><input id="stMinSeason" inputmode="decimal" placeholder="es. 6.5"></div>
+        <div><label for="stMinLast5">FM ult.5 min.</label><input id="stMinLast5" inputmode="decimal" placeholder="es. 6.5"></div>
+        <div><label for="stMinTit">Titolarità att. min. %</label><input id="stMinTit" inputmode="decimal" placeholder="es. 70"></div>
+        <div><label for="stAvail">Disponibilità</label><select id="stAvail"><option value="">Tutti</option><option value="ok">Solo disponibili</option><option value="out">Solo indisponibili</option></select></div>
+        <div><label for="stXg">xG/xA</label><select id="stXg"><option value="">Tutti</option><option value="has">Solo con dati FotMob</option><option value="credit">xG sopra i gol (in credito)</option><option value="debt">Gol sopra xG (in debito)</option></select></div>
+        <div><button class="btn secondary" id="stReset">Azzera filtri</button></div>
+      </div>
+    </div>
+    <div id="statsBanner"></div>
+    <div class="tablewrap"><table class="stats">
+      <thead id="statsHead"></thead>
+      <tbody id="statsRows"></tbody>
+    </table></div>
+    <p class="note" id="statsNote"></p>
   </section>
 
   <!-- ADMIN -->
@@ -394,11 +448,14 @@ const Engine = (() => {
   /**
    * Motore di calcolo della formazione (puro, senza rete: testabile in locale).
    *
-   * Per ogni giocatore calcola un "valore atteso" (ev) per la prossima giornata:
+   * Per ogni giocatore calcola il FV (Fanta Valore) per la prossima giornata:
    *   punteggio = forma (FM attesa + FM stagione + FM ultime 5, dal Listone)
    *             + correzione xG/xA (FotMob): chi ha xG sopra i gol segnati è "in credito" (+),
    *               chi ha segnato più dei gol attesi è "in debito" (-); stessa logica, più piccola, per gli assist
-   *   ev        = p * punteggio + (1-p)*p * soglia_sostituto      (p = titolarità prevista)
+   *   FV        = punteggio x difficoltà della partita (0,9-1,1 dai punti in classifica, rispetto all'intero campionato)
+   *                         x fattore campo (1,01 in casa, 0,99 in trasferta)
+   *   La titolarità NON entra nel FV. Per scegliere la formazione si usa ev = FV, ma 0 per chi non può giocare
+   *   (indisponibile/squalificato).
    * poi sceglie il modulo migliore (Classic: scelta per ruolo; Mantra: assegnazione ottima
    * dei giocatori agli slot del modulo con algoritmo ungherese).
    */
@@ -415,7 +472,7 @@ const Engine = (() => {
 
   const TEAM_STOP = new Set([
     'ac', 'fc', 'as', 'ss', 'ssc', 'us', 'cfc', 'sc', 'calcio', 'bergamo', 'brianza',
-    'football', 'club', '1909', '1907', '1913', 'spa',
+    'football', 'club', '1909', '1907', '1913', 'spa', 'hellas', 'acf', 'bc',
   ]);
 
   function teamKey(s) {
@@ -485,7 +542,14 @@ const Engine = (() => {
     k5: 3,                  // "partite fantasma" della FM stagione nel ridimensionare la FM ultime 5
     trendThreshold: 0.4,    // scarto ultime5 - stagione per segnalare crescita/calo
     defaultFm: 6.0,         // se mancano tutte e tre
-    replacementFloor: 4.5,  // rendimento ipotetico del sostituto (rischio: 3 prudente, 5.5 aggressivo)
+    // Difficoltà della partita: moltiplicatore da diffMin a diffMax in base alla differenza di punti in classifica
+    // (squadra del giocatore - avversaria) rispetto all'ampiezza della classifica (primo - ultimo):
+    // prima contro ultima = diffMax, ultima contro prima = diffMin, pari punti = 1.
+    diffMin: 0.9,
+    diffMax: 1.1,
+    homeFactor: 1.01,       // fattore campo: in casa
+    awayFactor: 0.99,       // fattore campo: in trasferta
+    minProb: 0,             // titolarità sotto questa soglia = non schierabile (0 = nessuna soglia: contano solo indisponibili/squalificati)
     // Correzione xG/xA: (attesi - realizzati) per giornata giocata x punti fantacalcio x peso, con tetto
     goalPts: 3,             // un gol vale ~3 punti
     assistPts: 1,           // un assist vale 1 punto
@@ -507,12 +571,62 @@ const Engine = (() => {
     return (n * obs + k * prior) / (n + k);
   }
 
+  // ---------- Partita: avversario, difficoltà e campo ----------
+  const round3 = (x) => Math.round(x * 1000) / 1000;
+
+  /** Moltiplicatore da diffMin a diffMax: 1 a pari punti, diffMax se si è davanti di tutta la classifica (range), diffMin se dietro. */
+  function difficultyFactor(diffPts, range, opts) {
+    const o = { ...DEFAULTS, ...(opts || {}) };
+    if (!isNum(diffPts) || !isNum(range) || range <= 0) return 1;
+    const mid = (o.diffMin + o.diffMax) / 2, half = (o.diffMax - o.diffMin) / 2;
+    return round3(mid + half * clamp(diffPts / range, -1, 1));
+  }
+
+  /** Avversario e casa/trasferta (dalle probabili formazioni), fattore difficoltà (dalla classifica). Null se la partita non è nota. */
+  function lookupMatch(p, sig, opts) {
+    const o = { ...DEFAULTS, ...(opts || {}) };
+    const matches = (sig && sig.matches) || [];
+    const table = (sig && sig.table) || [];
+    let opp = null, home = null;
+    for (const m of matches) {
+      if (teamsMatch(p.team, m.home)) { opp = m.away; home = true; break; }
+      if (teamsMatch(p.team, m.away)) { opp = m.home; home = false; break; }
+    }
+    if (!opp) return null;
+    const find = (name) => table.find((t) => teamsMatch(name, t.name));
+    const own = find(p.team), other = find(opp);
+    const all = table.map((t) => t.pts).filter(isNum);
+    const range = all.length >= 2 ? Math.max(...all) - Math.min(...all) : 0;
+    let diffPts = null, factor = 1;
+    if (own && other && isNum(own.pts) && isNum(other.pts)) {
+      diffPts = own.pts - other.pts;
+      factor = difficultyFactor(diffPts, range, o);
+    }
+    return {
+      opp, home, diffPts, range, factor,
+      ownPts: own && isNum(own.pts) ? own.pts : null, oppPts: other && isNum(other.pts) ? other.pts : null,
+      fieldFactor: home ? o.homeFactor : o.awayFactor,
+    };
+  }
+
+  /** Riga xG/xA di FotMob del giocatore (portieri esclusi). */
+  function lookupXg(p, sig) {
+    if (p.role === 'P') return null;
+    return findBestLenient((sig && sig.xg) || [], 'name', 'team', p.name, p.team);
+  }
+
+  /** Prime 3 lettere del nome squadra; se la squadra è nel database ("known") usa il nome del database. */
+  function teamAbbr(name, known) {
+    if (!name) return '';
+    const hit = (known || []).find((k) => teamsMatch(k, name));
+    return teamKey(hit || name).replace(/ /g, '').slice(0, 3).toUpperCase();
+  }
+
   // ---------- Punteggio giocatori ----------
   function scorePlayers(roster, signals, opts) {
     const o = { ...DEFAULTS, ...(opts || {}) };
     const sig = signals || {};
     const lineupPlayers = (sig.lineups && sig.lineups.players) || [];
-    const xgList = sig.xg || [];
     const round = isNum(sig.round) ? sig.round : null;
     const games = Math.max(1, (round || 12) - 1); // giornate già giocate
     const haveLineups = lineupPlayers.length > 0;
@@ -569,7 +683,7 @@ const Engine = (() => {
       // ---- xG / xA: correzione "attesi - realizzati" (portieri esclusi) ----
       let xg = null, xa = null, goals = null, assists = null, xgAdj = 0, xaAdj = 0;
       if (p.role !== 'P') {
-        const e = findBestLenient(xgList, 'name', 'team', p.name, p.team);
+        const e = lookupXg(p, sig);
         if (e) {
           xg = isNum(e.xg) ? e.xg : null; goals = isNum(e.goals) ? e.goals : null;
           xa = isNum(e.xa) ? e.xa : null; assists = isNum(e.assists) ? e.assists : null;
@@ -579,8 +693,16 @@ const Engine = (() => {
       }
       const xBonus = xgAdj + xaAdj;
 
+      // ---- Partita: difficoltà (punti in classifica) e fattore campo ----
+      const mi = lookupMatch(p, sig, o);
+      const diffFactor = mi ? mi.factor : 1;
+      const fieldFactor = mi ? mi.fieldFactor : 1;
+
+      // FV = punteggio x difficoltà x campo. La titolarità NON entra nel FV: serve solo a escludere chi non può giocare.
       const score = form + xBonus;
-      const ev = prob * score + (1 - prob) * prob * o.replacementFloor;
+      const fv = score * diffFactor * fieldFactor;
+      const available = prob > 0 && prob >= o.minProb;
+      const ev = available ? fv : 0; // valore usato per scegliere la formazione
 
       return {
         id: p.id, name: p.name, team: p.team, role: p.role, roleMantra: p.roleMantra || [],
@@ -588,7 +710,10 @@ const Engine = (() => {
         form: round2(form), trend,
         prob: round2(prob), status, xg, goals, xa, assists,
         xgAdj: round2(xgAdj), xaAdj: round2(xaAdj), xBonus: round2(xBonus),
-        score: round2(score), ev: round2(ev), notes,
+        score: round2(score), fv: round2(fv), ev: round2(ev), notes,
+        available, opp: mi ? mi.opp : null, home: mi ? mi.home : null,
+        diffPts: mi ? mi.diffPts : null, diffFactor: round3(diffFactor), fieldFactor: round3(fieldFactor),
+        ownPts: mi ? mi.ownPts : null, oppPts: mi ? mi.oppPts : null, tableRange: mi ? mi.range : null,
       };
     });
   }
@@ -735,26 +860,26 @@ const Engine = (() => {
     res.all = scored.slice().sort(byEv);
     return res;
   }
-  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
+  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
 })();
 /* ==== ENGINE:END ==== */
 
 const { planImport, playerId, parseMantra, missingColumns, latestUpdate, RECOMMENDED_COLUMNS, MANTRA_ROLES } = Listone;
-const { proposeLineup, DEFAULTS } = Engine;
+const { proposeLineup, DEFAULTS, teamAbbr, lookupMatch, lookupXg } = Engine;
 
 // ====================== CONFIGURAZIONE (da incollare) ======================
 const firebaseConfig = {
-  apiKey: "AIzaSyAi4UBKTdByb9RL8MfrdYmq18pe1zPeQak",
-  authDomain: "fantaformazione-2d2ef.firebaseapp.com",
-  projectId: "fantaformazione-2d2ef",
-  storageBucket: "fantaformazione-2d2ef.firebasestorage.app",
-  messagingSenderId: "184998842088",
-  appId: "1:184998842088:web:d6c655973dc6637553035d"
+  apiKey: "INCOLLA_API_KEY",
+  authDomain: "INCOLLA_PROJECT_ID.firebaseapp.com",
+  projectId: "INCOLLA_PROJECT_ID",
+  storageBucket: "INCOLLA_PROJECT_ID.appspot.com",
+  messagingSenderId: "INCOLLA",
+  appId: "INCOLLA"
 };
 // Dati online (probabili formazioni da fantacalcio.it, xG/xA da FotMob): li scrive il job pianificato
 // di GitHub Actions nel branch "fantaformazione-data" del TUO repository (che deve essere pubblico).
 // Scrivi "tuo-utente/nome-repo", ad esempio "mrossi/sito".
-const GITHUB_REPO = "antonioboscardin-star/draftmantrarandom/refs/heads";
+const GITHUB_REPO = "INCOLLA_UTENTE/INCOLLA_REPO";
 const SIGNALS_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/fantaformazione-data/signals.json`;
 const SIGNALS_STALE_HOURS = 12;
 // ===========================================================================
@@ -795,7 +920,7 @@ function msg(text, kind = "ok", ms = 6000) {
 const clearMsg = () => ($("msg").innerHTML = "");
 
 // ------------------------------- Navigazione -------------------------------
-const VIEWS = ["login", "teams", "edit", "proposal", "admin"];
+const VIEWS = ["login", "teams", "edit", "proposal", "stats", "admin"];
 function show(view) {
   VIEWS.forEach((v) => $("v-" + v).classList.toggle("hidden", v !== view));
   document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
@@ -830,6 +955,7 @@ if (configured) {
     } catch { state.isAdmin = false; }
     $("adminBadge").classList.toggle("hidden", !state.isAdmin);
     $("navAdmin").classList.toggle("hidden", !state.isAdmin);
+    $("navStats").classList.remove("hidden");
     try {
       await Promise.all([loadPlayers(), loadTeams()]);
       renderTeams();
@@ -965,8 +1091,6 @@ $("btnSaveTeam").addEventListener("click", async () => {
 });
 
 // ------------------------------- Proposta formazione -------------------------------
-const RISK = { prudente: 3.0, bilanciato: DEFAULTS.replacementFloor, aggressivo: 5.5 };
-
 async function loadSignals() {
   if (GITHUB_REPO.includes("INCOLLA")) throw new Error("GITHUB_REPO non configurato in index.html");
   const r = await fetch(SIGNALS_URL + "?t=" + Date.now(), { cache: "no-store" });
@@ -974,10 +1098,21 @@ async function loadSignals() {
   return r.json();
 }
 
-async function propose(team, refresh, risk) {
+// Dati online condivisi fra proposta e statistiche (si riscaricano al massimo ogni minuto, o con "Ricarica dati online").
+let sigCache = null;
+async function getSignals(force) {
+  if (sigCache && !force && Date.now() - sigCache.at < 60000) return sigCache.data;
+  let data;
+  try { data = await loadSignals(); }
+  catch (e) { const m = String(e.message || e); data = { errors: { lineups: m, xg: m, table: m } }; }
+  data.errors = data.errors || {};
+  sigCache = { at: Date.now(), data };
+  return data;
+}
+const knownTeams = () => [...new Set(state.players.map((p) => p.team))];
+
+async function propose(team, refresh) {
   state.lastTeam = team;
-  const riskSel = RISK[risk || state.lastRisk] != null ? (risk || state.lastRisk) : "bilanciato";
-  state.lastRisk = riskSel;
   $("navProposal").classList.remove("hidden");
   $("proposalBox").innerHTML = `<div class="card"><h2>${esc(team.teamName)}</h2><p class="muted">Carico i dati online e calcolo il modulo migliore…</p></div>`;
   show("proposal");
@@ -987,12 +1122,9 @@ async function propose(team, refresh, risk) {
     const roster = ids.map((id) => byId.get(id)).filter(Boolean);
     if (roster.length < 25) throw new Error("La rosa deve avere almeno 25 giocatori presenti nel database.");
 
-    let signals;
-    try { signals = await loadSignals(); }
-    catch (e) { const m = String(e.message || e); signals = { errors: { lineups: m, xg: m } }; }
-    signals.errors = signals.errors || {};
+    const signals = await getSignals(!!refresh);
 
-    const result = proposeLineup(team.leagueType, roster, signals, { replacementFloor: RISK[riskSel] });
+    const result = proposeLineup(team.leagueType, roster, signals);
     if (result.error) throw new Error(result.error);
     const ageH = signals.fetchedAt ? (Date.now() - signals.fetchedAt) / 3600000 : null;
     const meta = {
@@ -1001,9 +1133,11 @@ async function propose(team, refresh, risk) {
       counts: {
         lineups: (signals.lineups && signals.lineups.players && signals.lineups.players.length) || 0,
         xg: (signals.xg || []).length,
+        table: (signals.table || []).length,
+        matches: (signals.matches || []).length,
       },
       sourceTimes: signals.sourceTimes || {},
-      missingPlayers: ids.length - roster.length, risk: riskSel,
+      missingPlayers: ids.length - roster.length,
     };
     const data = { result, meta };
     state.lastResult = data;
@@ -1027,23 +1161,91 @@ function trendIcon(t) {
   return t === "up" ? '<span class="up" title="In crescita: ultime 5 sopra la media di stagione">▲</span>'
     : t === "down" ? '<span class="down" title="In calo: ultime 5 sotto la media di stagione">▼</span>' : "";
 }
-function rowHtml(p, withSlot, captainId) {
-  const has = (x) => x != null;
-  const xgTxt = has(p.xg) ? `xG ${fmt(p.xg, 1)} · gol ${has(p.goals) ? p.goals : "–"}` : "";
-  const xaTxt = has(p.xa) ? `xA ${fmt(p.xa, 1)} · ass. ${has(p.assists) ? p.assists : "–"}` : "";
-  const xs = xgTxt || xaTxt ? `<span class="note">${[xgTxt, xaTxt].filter(Boolean).join("<br>")}</span>` : "–";
-  const adj = p.xBonus ? `<span class="${p.xBonus > 0 ? "up" : "down"}" title="Correzione da xG−gol (${fmt(p.xgAdj)}) e xA−assist (${fmt(p.xaAdj)})">${p.xBonus > 0 ? "+" : ""}${fmt(p.xBonus)}</span>` : "–";
-  return `<tr>
-    <td><span class="role ${esc(p.role)}">${esc(p.role)}</span> <b>${esc(p.name)}</b>${p.id === captainId ? ' <span class="cap" title="Capitano consigliato">©</span>' : ""}
-      <div class="note">${esc(p.team)}${withSlot && p.slot ? " · slot " + esc(p.slot) : ""}${p.notes && p.notes.length ? " · " + esc(p.notes.join("; ")) : ""}</div></td>
-    <td class="num">${fmt(p.fmExp)}</td><td class="num">${fmt(p.fmSeason)}</td>
-    <td class="num" title="${p.n5 != null ? p.n5 + " presenze nelle ultime 5" : ""}">${fmt(p.fmLast5)}</td>
-    <td class="num"><b>${fmt(p.form)}</b> ${trendIcon(p.trend)}</td>
-    <td class="num"><span class="prob ${probCls(p.prob)}">${Math.round(p.prob * 100)}%</span></td>
-    <td class="num">${xs}</td><td class="num">${adj}</td>
-    <td class="num ev">${fmt(p.ev)}</td></tr>`;
+// ---- Tooltip: passaggio del mouse (desktop) o tocco (mobile) su qualunque elemento con data-tip ----
+const tipBox = document.createElement("div");
+tipBox.id = "tip"; tipBox.className = "tip"; tipBox.hidden = true; tipBox.setAttribute("role", "tooltip");
+document.body.appendChild(tipBox);
+let tipOwner = null, lastPointer = "mouse";
+function tipShow(el) {
+  const html = el.getAttribute("data-tip");
+  if (!html) return;
+  tipBox.innerHTML = html; tipBox.hidden = false; tipOwner = el;
+  const r = el.getBoundingClientRect(), w = tipBox.offsetWidth, h = tipBox.offsetHeight, m = 8;
+  const left = Math.min(Math.max(m, r.left), Math.max(m, window.innerWidth - w - m));
+  let top = r.bottom + 6;
+  if (top + h > window.innerHeight - m) top = Math.max(m, r.top - h - 6);
+  tipBox.style.left = left + "px"; tipBox.style.top = top + "px";
 }
-const THEAD = `<thead><tr><th>Giocatore</th><th class="num" title="Fantamedia attesa">FM att.</th><th class="num" title="Fantamedia stagione corrente">FM stag.</th><th class="num" title="Fantamedia ultime 5 giornate">FM ult.5</th><th class="num" title="Stato di forma: media pesata delle tre fantamedie">Forma</th><th class="num">Titolarità</th><th class="num" title="xG e xA di campionato con gol e assist realmente segnati (FotMob)">xG / xA</th><th class="num" title="Correzione da (xG−gol) e (xA−assist): positiva se ha segnato meno del previsto">Corr. xG/xA</th><th class="num">Valore</th></tr></thead>`;
+function tipHide() { tipBox.hidden = true; tipOwner = null; }
+document.addEventListener("pointerdown", (e) => { lastPointer = e.pointerType || "mouse"; }, true);
+document.addEventListener("pointerover", (e) => { if (e.pointerType !== "mouse") return; const el = e.target.closest("[data-tip]"); if (el && el !== tipOwner) tipShow(el); });
+document.addEventListener("pointerout", (e) => { if (e.pointerType !== "mouse") return; const el = e.target.closest("[data-tip]"); if (el && !el.contains(e.relatedTarget)) tipHide(); });
+document.addEventListener("focusin", (e) => { if (lastPointer === "touch") return; const el = e.target.closest && e.target.closest("[data-tip]"); if (el) tipShow(el); });
+document.addEventListener("focusout", tipHide);
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-tip]");
+  if (lastPointer === "touch") { if (el && el !== tipOwner) tipShow(el); else tipHide(); }
+  else if (!el) tipHide();
+});
+window.addEventListener("scroll", tipHide, true);
+
+// ---- Riga compatta: [ruolo] giocatore · partita · titolarità · FV ----
+const n2 = (x) => fmt(x, 2);
+const sg = (x) => (x > 0 ? "+" : "") + fmt(x, 2);
+
+/** Dettaglio del calcolo del FV (tooltip sul valore). */
+function fvTip(p) {
+  const L = [];
+  L.push(`<div class="tip-h">FV ${n2(p.fv)} <span class="muted">= (forma + corr. xG/xA) × difficoltà × campo</span></div>`);
+  L.push(`<div>FM attesa ${n2(p.fmExp)} · stagione ${n2(p.fmSeason)} · ult.5 ${n2(p.fmLast5)}</div>`);
+  L.push(`<div>Forma <b>${n2(p.form)}</b>${p.trend === "up" ? " ▲ in crescita" : p.trend === "down" ? " ▼ in calo" : ""}</div>`);
+  L.push(`<div>Corr. xG <b>${p.xg != null && p.goals != null ? sg(p.xgAdj) : "–"}</b>${p.xg != null ? ` <span class="muted">(xG ${fmt(p.xg, 1)} · gol ${p.goals ?? "–"})</span>` : ' <span class="muted">(nessun dato FotMob)</span>'}</div>`);
+  L.push(`<div>Corr. xA <b>${p.xa != null && p.assists != null ? sg(p.xaAdj) : "–"}</b>${p.xa != null ? ` <span class="muted">(xA ${fmt(p.xa, 1)} · assist ${p.assists ?? "–"})</span>` : ""}</div>`);
+  L.push(`<div>Punteggio <b>${n2(p.score)}</b></div><hr>`);
+  if (p.opp) {
+    L.push(`<div>Difficoltà <b>×${n2(p.diffFactor)}</b> <span class="muted">${p.diffPts != null ? `(${p.ownPts} pt contro ${p.oppPts} pt)` : "(classifica non disponibile)"}</span></div>`);
+    L.push(`<div>Campo <b>×${n2(p.fieldFactor)}</b> <span class="muted">(${p.home ? "in casa" : "in trasferta"})</span></div>`);
+  } else L.push(`<div class="muted">Partita non riconosciuta: difficoltà e campo ×1,00</div>`);
+  L.push(`<hr><div class="muted">Titolarità ${Math.round(p.prob * 100)}%, non entra nel FV${p.available === false ? " · non schierabile" : ""}</div>`);
+  return L.join("");
+}
+
+/** Note sul giocatore (tooltip sul nome). */
+function nameTip(p) {
+  const L = [`<div class="tip-h">${esc(p.name)} <span class="muted">${esc(p.team)}</span></div>`];
+  const st = STATUS_TXT[p.status];
+  if (st) L.push(`<div>Stato: ${esc(st)}</div>`);
+  if (p.notes && p.notes.length) p.notes.forEach((x) => L.push(`<div>• ${esc(x)}</div>`));
+  else L.push(`<div class="muted">Nessuna nota.</div>`);
+  return L.join("");
+}
+
+/** Ruolo Classic (lega Classic) o ruolo/i Mantra (lega Mantra, con lo slot nel tooltip). */
+function roleBox(p, type) {
+  if (type === "Mantra") {
+    const r = (p.roleMantra || []).join("/") || p.role;
+    const tip = p.slot ? ` data-tip="${esc(`Slot nel modulo: <b>${esc(p.slot)}</b>`)}" tabindex="0"` : "";
+    return `<span class="role m ${esc(p.role)}"${tip}>${esc(r)}</span>`;
+  }
+  return `<span class="role ${esc(p.role)}">${esc(p.role)}</span>`;
+}
+
+/** Partita: squadra del giocatore - avversaria (3 lettere) e C/T = casa/trasferta. */
+function matchHtml(p, kt) {
+  if (!p.opp) return '<span class="muted">–</span>';
+  return `<span class="mt-l">${esc(teamAbbr(p.team, kt))}-${esc(teamAbbr(p.opp, kt))}</span><span class="ha" title="${p.home ? "In casa" : "In trasferta"}">${p.home ? "C" : "T"}</span>`;
+}
+
+function rowHtml(p, captainId, type) {
+  const kt = knownTeams();
+  return `<tr class="${p.available === false ? "unavail" : ""}">
+    <td class="rl">${roleBox(p, type)}</td>
+    <td class="pn"><span class="pname" data-tip="${esc(nameTip(p))}" tabindex="0">${esc(p.name)}</span>${p.id === captainId ? ' <span class="cap" title="Capitano consigliato">©</span>' : ""}</td>
+    <td>${matchHtml(p, kt)}</td>
+    <td class="num"><span class="prob ${probCls(p.prob)}">${Math.round(p.prob * 100)}%</span></td>
+    <td class="num fv"><span class="fvv" data-tip="${esc(fvTip(p))}" tabindex="0">${fmt(p.fv)}</span></td></tr>`;
+}
+const THEAD = `<thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R</th><th>Giocatore</th><th title="Squadra del giocatore - avversaria. C = in casa, T = in trasferta">Partita</th><th class="num" title="Titolarità prevista (probabili formazioni)">Tit.</th><th class="num" title="Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo. Passa il mouse (o tocca) per il dettaglio">FV</th></tr></thead>`;
 
 function renderProposal(team, { result, meta }) {
   const capId = result.captain ? result.captain.id : null;
@@ -1053,7 +1255,7 @@ function renderProposal(team, { result, meta }) {
     : meta.errors && meta.errors[key]
     ? `<span class="pill errp" title="${esc(meta.errors[key])}">${label}: non disponibile</span>`
     : `<span class="pill okp">${label}: ${count}</span>`;
-  const degraded = meta.errors && (meta.errors.lineups || meta.errors.xg);
+  const degraded = meta.errors && (meta.errors.lineups || meta.errors.xg || meta.errors.table || meta.errors.matches);
   const age = listoneAge();
   $("proposalBox").innerHTML = `
     <div class="row"><h2 class="grow" style="margin:0">${esc(team.teamName)} <span class="badge ${esc(team.leagueType)}">${esc(team.leagueType)}</span></h2>
@@ -1067,34 +1269,161 @@ function renderProposal(team, { result, meta }) {
     <div class="card">
       <div class="kv">
         <div><span>Modulo consigliato</span><div class="big">${esc(result.module)}</div></div>
-        <div><span>Valore atteso totale</span><div class="big">${fmt(result.totalEv, 1)}</div></div>
+        <div><span>FV totale titolari</span><div class="big">${fmt(result.totalEv, 1)}</div></div>
         <div><span>Capitano</span><div class="big" style="font-size:20px">${esc(result.captain ? result.captain.name : "–")}</div></div>
       </div>
-      <div class="src">${pill("lineups", "Probabili formazioni", meta.counts.lineups)}${pill("xg", "xG/xA (FotMob)", meta.counts.xg)}</div>
-      <div class="row small"><label style="margin:0">Profilo di rischio</label>
-        <select id="riskSel" style="width:auto"><option value="prudente">Prudente</option><option value="bilanciato">Bilanciato</option><option value="aggressivo">Aggressivo</option></select>
-        <span class="muted">Prudente penalizza di più chi potrebbe non giocare.</span></div>
+      <div class="src">${pill("lineups", "Probabili formazioni", meta.counts.lineups)}${pill("xg", "xG/xA (FotMob)", meta.counts.xg)}${pill("table", "Classifica (FotMob)", meta.counts.table)}${pill("matches", "Partite", meta.counts.matches)}</div>
     </div>
     ${result.warnings.length ? `<div class="banner warn"><b>Attenzione:</b><br>${result.warnings.map(esc).join("<br>")}</div>` : ""}
     <h3>Titolari</h3>
-    <div class="tablewrap"><table>${THEAD}<tbody>${result.lineup.map((p) => rowHtml(p, true, capId)).join("")}</tbody></table></div>
+    <div class="tablewrap"><table class="compact">${THEAD}<tbody>${result.lineup.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
     <h3>Panchina consigliata (in ordine)</h3>
-    <div class="tablewrap"><table>${THEAD}<tbody>${result.bench.map((p) => rowHtml(p, false, capId)).join("")}</tbody></table></div>
+    <div class="tablewrap"><table class="compact">${THEAD}<tbody>${result.bench.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
     <h3>Altri moduli valutati</h3>
-    <div class="card"><table><thead><tr><th>Modulo</th><th class="num">Valore atteso</th><th class="num">Δ vs migliore</th></tr></thead><tbody>
+    <div class="card"><table><thead><tr><th>Modulo</th><th class="num">FV totale</th><th class="num">Δ vs migliore</th></tr></thead><tbody>
       ${result.alternatives.map((a) => `<tr><td>${esc(a.module)}</td><td class="num">${fmt(a.totalEv, 1)}</td><td class="num">${fmt(a.totalEv - result.totalEv, 1)}</td></tr>`).join("")}
     </tbody></table></div>
-    <details class="card"><summary>Tutta la rosa ordinata per valore atteso</summary>
-      <div class="tablewrap" style="margin-top:10px"><table>${THEAD}<tbody>${result.all.map((p) => rowHtml(p, false, capId)).join("")}</tbody></table></div></details>
-    <p class="note"><b>Come si calcola.</b> Valore = titolarità × (forma + correzione xG/xA) + quota di sostituto.
-      Forma = media pesata di FM attesa (30%), FM stagione (30%) e FM ultime 5 (40%) del Listone: uno 0 vale "nessun dato" e le medie costruite su poche presenze vengono avvicinate alla precedente (▲/▼ = ultime 5 sopra/sotto la stagione).
-      La correzione xG/xA è piccola: positiva se un giocatore ha segnato meno dei gol attesi (xG), negativa se ha segnato di più; stesso ragionamento, con peso ancora minore, per gli assist (xA). Per giornata giocata: 3 punti × (xG − gol) × 0,30 (massimo ±0,30) e 1 punto × (xA − assist) × 0,15 (massimo ±0,10).
+    <details class="card"><summary>Tutta la rosa ordinata per FV</summary>
+      <div class="tablewrap" style="margin-top:10px"><table class="compact">${THEAD}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
+    <p class="note"><b>Come si calcola il FV (Fanta Valore).</b> FV = (forma + correzione xG/xA) × difficoltà della partita × campo. Passa il mouse sul FV (o toccalo da mobile) per vedere il dettaglio di ogni giocatore; sul nome per le note.
+      Forma = media pesata di FM attesa (30%), FM stagione (30%) e FM ultime 5 (40%) del Listone: uno 0 vale "nessun dato" e le medie costruite su poche presenze vengono avvicinate alla precedente.
+      Correzione xG/xA: positiva se un giocatore ha segnato meno dei gol attesi (xG), negativa se ha segnato di più; stesso ragionamento, con peso ancora minore, per gli assist (xA).
+      Difficoltà: da 0,90 a 1,10 in base alla differenza di punti in classifica FotMob rispetto all'ampiezza della classifica (prima contro ultima = 1,10; ultima contro prima = 0,90; pari punti = 1,00). Campo: 1,01 in casa, 0,99 in trasferta.
+      La titolarità non entra nel FV: serve a escludere indisponibili e squalificati dalla formazione e a segnalare i rischi.
       È un supporto alla decisione, non una garanzia di punteggio.</p>`;
-  $("riskSel").value = meta.risk || "bilanciato";
-  $("riskSel").addEventListener("change", (e) => propose(team, false, e.target.value));
-  $("btnRefresh").addEventListener("click", () => propose(team, true, $("riskSel").value));
+  $("btnRefresh").addEventListener("click", () => propose(team, true));
   $("btnBack").addEventListener("click", () => show("teams"));
 }
+
+// ------------------------------- Statistiche -------------------------------
+const STATUS_TXT = { lineup: "Titolare", bench: "Panchina", out: "Indisp.", suspended: "Squal.", doubt: "Dubbio", "non in lista": "Non in lista", "stima listone": "Stima Listone" };
+const signed = (x, d = 1) => (x == null ? "–" : (x > 0 ? "+" : "") + Number(x).toFixed(d));
+const pct = (x) => (x == null || Number.isNaN(x) ? "–" : Math.round(x) + "%");
+// k = chiave di ordinamento, t = tipo (str/num), get = valore, show = testo mostrato
+const ST_COLS = [
+  { k: "name", l: "Giocatore", t: "str", get: (r) => r.p.name, show: (r) => `<span class="role ${esc(r.p.role)}">${esc(r.p.role)}</span> <b>${esc(r.p.name)}</b>`, cls: "name" },
+  { k: "team", l: "Sq.", t: "str", get: (r) => r.p.team, show: (r) => esc(teamAbbr(r.p.team, knownTeams())), title: "Squadra (prime 3 lettere)" },
+  { k: "role", l: "R", t: "str", get: (r) => r.p.role, show: (r) => esc(r.p.role), title: "Ruolo Classic" },
+  { k: "mantra", l: "Mantra", t: "str", get: (r) => (r.p.roleMantra || []).join(", "), show: (r) => esc((r.p.roleMantra || []).join(", ")) },
+  { k: "fmExp", l: "FM att.", t: "num", get: (r) => r.p.fmExp, show: (r) => fmt(r.p.fmExp), title: "Fantamedia attesa" },
+  { k: "fmSeason", l: "FM stag.", t: "num", get: (r) => r.p.fmSeason, show: (r) => fmt(r.p.fmSeason), title: "Fantamedia stagione corrente" },
+  { k: "fmLast5", l: "FM ult.5", t: "num", get: (r) => r.p.fmLast5, show: (r) => fmt(r.p.fmLast5), title: "Fantamedia ultime 5 giornate" },
+  { k: "form", l: "Forma", t: "num", get: (r) => r.s.form, show: (r) => `<b>${fmt(r.s.form)}</b> ${trendIcon(r.s.trend)}`, title: "Stato di forma: media pesata delle tre fantamedie" },
+  { k: "titExp", l: "Tit. att.", t: "num", get: (r) => r.p.titExp, show: (r) => pct(r.p.titExp), title: "Titolarità attesa (Listone)" },
+  { k: "titSeason", l: "Tit. stag.", t: "num", get: (r) => r.p.titSeason, show: (r) => pct(r.p.titSeason), title: "Titolarità stagione corrente (Listone)" },
+  { k: "titLast5", l: "Tit. ult.5", t: "num", get: (r) => r.p.titLast5, show: (r) => pct(r.p.titLast5), title: "Titolarità ultime 5 (Listone)" },
+  { k: "prob", l: "Tit. prev.", t: "num", get: (r) => r.s.prob * 100, show: (r) => `<span class="prob ${probCls(r.s.prob)}">${Math.round(r.s.prob * 100)}%</span>`, title: "Titolarità prevista per la prossima giornata (probabili formazioni)" },
+  { k: "status", l: "Stato", t: "str", get: (r) => STATUS_TXT[r.s.status] || "", show: (r) => esc(STATUS_TXT[r.s.status] || "–"), title: "Stato nelle probabili formazioni" },
+  { k: "match", l: "Partita", t: "str", get: (r) => (r.s.opp ? teamAbbr(r.s.opp, knownTeams()) : ""), show: (r) => matchHtml(r.s, knownTeams()), title: "Prossima partita: squadra del giocatore - avversaria; C = in casa, T = in trasferta" },
+  { k: "diff", l: "Diff.", t: "num", get: (r) => (r.s.opp ? r.s.diffFactor : null), show: (r) => (r.s.opp ? "×" + fmt(r.s.diffFactor) : "–"), title: "Fattore difficoltà partita (0,90–1,10) dai punti in classifica" },
+  { k: "field", l: "Campo", t: "num", get: (r) => (r.s.opp ? r.s.fieldFactor : null), show: (r) => (r.s.opp ? "×" + fmt(r.s.fieldFactor) : "–"), title: "Fattore campo: 1,01 in casa, 0,99 in trasferta" },
+  { k: "xg", l: "xG", t: "num", get: (r) => r.s.xg, show: (r) => fmt(r.s.xg, 1), title: "Gol attesi (FotMob)" },
+  { k: "goals", l: "Gol", t: "num", get: (r) => r.s.goals, show: (r) => (r.s.goals == null ? "–" : r.s.goals), title: "Gol segnati (FotMob)" },
+  { k: "xgd", l: "xG−Gol", t: "num", get: (r) => r.xgd, show: (r) => `<span class="${r.xgd > 0 ? "up" : r.xgd < 0 ? "down" : ""}">${signed(r.xgd)}</span>`, title: "Positivo = ha segnato meno del previsto" },
+  { k: "xa", l: "xA", t: "num", get: (r) => r.s.xa, show: (r) => fmt(r.s.xa, 1), title: "Assist attesi (FotMob)" },
+  { k: "assists", l: "Ass.", t: "num", get: (r) => r.s.assists, show: (r) => (r.s.assists == null ? "–" : r.s.assists), title: "Assist (FotMob)" },
+  { k: "xad", l: "xA−Ass.", t: "num", get: (r) => r.xad, show: (r) => `<span class="${r.xad > 0 ? "up" : r.xad < 0 ? "down" : ""}">${signed(r.xad)}</span>`, title: "Positivo = ha servito meno assist del previsto" },
+  { k: "fv", l: "FV", t: "num", get: (r) => r.s.fv, show: (r) => `<span class="ev">${fmt(r.s.fv)}</span>`, title: "Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo" },
+];
+const stState = { sort: "fmSeason", dir: -1, wired: false, cache: null };
+
+async function statsRowsFor(signals) {
+  const c = stState.cache;
+  if (c && c.players === state.players && c.signals === signals) return c.rows;
+  const scored = new Map(scorePlayersAll(state.players, signals).map((x) => [x.id, x]));
+  const rows = state.players.map((p) => {
+    const sc = scored.get(p.id);
+    return { p, s: sc, xgd: sc.xg != null && sc.goals != null ? sc.xg - sc.goals : null, xad: sc.xa != null && sc.assists != null ? sc.xa - sc.assists : null };
+  });
+  stState.cache = { players: state.players, signals, rows };
+  return rows;
+}
+const scorePlayersAll = (players, signals) => Engine.scorePlayers(players, signals);
+
+function statsFiltered(rows) {
+  const q = norm($("stSearch").value), team = $("stTeam").value, role = $("stRole").value, mantra = $("stMantra").value;
+  const num = (id) => { const v = Number(String($(id).value).replace(",", ".")); return String($(id).value).trim() && Number.isFinite(v) ? v : null; };
+  const minS = num("stMinSeason"), min5 = num("stMinLast5"), minT = num("stMinTit");
+  const av = $("stAvail").value, xf = $("stXg").value;
+  return rows.filter((r) => {
+    const p = r.p;
+    if (q && !(norm(p.name).includes(q) || norm(p.team).includes(q))) return false;
+    if (team && p.team !== team) return false;
+    if (role && p.role !== role) return false;
+    if (mantra && !(p.roleMantra || []).includes(mantra)) return false;
+    if (minS != null && !(p.fmSeason != null && p.fmSeason >= minS)) return false;
+    if (min5 != null && !(p.fmLast5 != null && p.fmLast5 >= min5)) return false;
+    if (minT != null && !(p.titExp != null && p.titExp >= minT)) return false;
+    if (av === "ok" && !r.s.available) return false;
+    if (av === "out" && r.s.available) return false;
+    if (xf === "has" && r.s.xg == null && r.s.xa == null) return false;
+    if (xf === "credit" && !(r.xgd > 0)) return false;
+    if (xf === "debt" && !(r.xgd < 0)) return false;
+    return true;
+  });
+}
+
+function statsSorted(rows) {
+  const col = ST_COLS.find((c) => c.k === stState.sort) || ST_COLS[0];
+  const dir = stState.dir;
+  return rows.slice().sort((a, b) => {
+    const x = col.get(a), y = col.get(b);
+    const nx = x == null || x === "" || Number.isNaN(x), ny = y == null || y === "" || Number.isNaN(y);
+    if (nx || ny) return nx && ny ? 0 : nx ? 1 : -1; // i valori mancanti vanno sempre in fondo
+    const c = col.t === "num" ? x - y : String(x).localeCompare(String(y), "it");
+    return c * dir || a.p.name.localeCompare(b.p.name, "it");
+  });
+}
+
+function renderStatsTable() {
+  const rows = statsSorted(statsFiltered(stState.cache.rows));
+  $("statsHead").innerHTML = `<tr>${ST_COLS.map((c) => `<th class="sortable ${c.t === "num" ? "num" : ""} ${c.k === stState.sort ? "sorted" : ""}" data-k="${c.k}" title="${esc((c.title || c.l) + " — clic per ordinare")}">${esc(c.l)}${c.k === stState.sort ? (stState.dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>`;
+  $("statsRows").innerHTML = rows.map((r) => `<tr class="${r.s.available ? "" : "unavail"}">${ST_COLS.map((c) => `<td class="${c.t === "num" ? "num" : ""} ${c.cls || ""}">${c.show(r)}</td>`).join("")}</tr>`).join("")
+    || `<tr><td colspan="${ST_COLS.length}" class="muted">Nessun giocatore con questi filtri.</td></tr>`;
+  $("statsCount").textContent = `(${rows.length} di ${stState.cache.rows.length})`;
+  document.querySelectorAll("#statsHead th").forEach((th) => th.addEventListener("click", () => {
+    const k = th.dataset.k, col = ST_COLS.find((c) => c.k === k);
+    if (stState.sort === k) stState.dir = -stState.dir; else { stState.sort = k; stState.dir = col.t === "num" ? -1 : 1; }
+    renderStatsTable();
+  }));
+}
+
+function wireStats() {
+  if (stState.wired) return;
+  stState.wired = true;
+  ["stSearch", "stMinSeason", "stMinLast5", "stMinTit"].forEach((id) => $(id).addEventListener("input", renderStatsTable));
+  ["stTeam", "stRole", "stMantra", "stAvail", "stXg"].forEach((id) => $(id).addEventListener("change", renderStatsTable));
+  $("stReset").addEventListener("click", () => {
+    ["stSearch", "stMinSeason", "stMinLast5", "stMinTit"].forEach((id) => ($(id).value = ""));
+    ["stTeam", "stRole", "stMantra", "stAvail", "stXg"].forEach((id) => ($(id).value = ""));
+    renderStatsTable();
+  });
+}
+
+async function renderStats() {
+  wireStats();
+  const teamSel = $("stTeam"), cur = teamSel.value;
+  teamSel.innerHTML = '<option value="">Tutte</option>' + knownTeams().sort((a, b) => a.localeCompare(b, "it")).map((t) => `<option>${esc(t)}</option>`).join("");
+  teamSel.value = cur;
+  if (!$("stMantra").options.length || $("stMantra").options.length === 1) $("stMantra").innerHTML = '<option value="">Tutti</option>' + MANTRA_ROLES.map((r) => `<option>${esc(r)}</option>`).join("");
+  if (!state.players.length) {
+    $("statsBanner").innerHTML = `<div class="banner warn">Il database giocatori è vuoto: l'admin deve caricare il Listone.</div>`;
+    $("statsHead").innerHTML = ""; $("statsRows").innerHTML = ""; $("statsCount").textContent = "";
+    return;
+  }
+  $("statsRows").innerHTML = `<tr><td class="muted">Calcolo…</td></tr>`;
+  const signals = await getSignals(false);
+  const err = signals.errors || {};
+  const bad = ["lineups", "xg", "table"].filter((k) => err[k]);
+  const upd = signals.fetchedAt ? new Date(signals.fetchedAt).toLocaleString("it-IT") : null;
+  const age = listoneAge();
+  $("statsBanner").innerHTML = (bad.length ? `<div class="banner warn">Dati online non disponibili per: ${bad.map((k) => ({ lineups: "probabili formazioni", xg: "xG/xA", table: "classifica" }[k])).join(", ")}. Le relative colonne restano vuote.</div>` : "")
+    + `<div class="stats-meta muted small">${age ? "Listone del " + esc(age.text) : "Nessun Listone importato"}${upd ? " · dati online del " + esc(upd) : ""}${signals.round ? " · giornata " + signals.round : ""}</div>`;
+  await statsRowsFor(signals);
+  $("statsNote").innerHTML = "Clic sull'intestazione di una colonna per ordinare (di nuovo per invertire). I valori mancanti vanno sempre in fondo. <b>xG−Gol</b> e <b>xA−Ass.</b>: positivi = il giocatore ha prodotto meno del previsto (in credito), negativi = più del previsto. Le righe sbiadite sono giocatori indisponibili o squalificati.";
+  renderStatsTable();
+}
+$("navStats").addEventListener("click", renderStats);
 
 // ------------------------------- Admin DB -------------------------------
 const ROLES = ["P", "D", "C", "A"];
