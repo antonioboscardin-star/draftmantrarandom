@@ -1,7 +1,7 @@
 /**
  * Lettura delle fonti online (eseguita da GitHub Actions: dal browser CORS lo impedirebbe).
  *  - fantacalcio.it → probabili formazioni, indisponibili, squalificati, in dubbio
- *  - fotmob.com     → xG e xA di campionato, con gol e assist realmente segnati
+ *  - fotmob.com     → xG e xA di campionato, con gol e assist realmente segnati; classifica (punti)
  *
  * Il parsing è tollerante (link, testi e JSON incorporato, non classi CSS) ma resta legato
  * all'HTML dei siti: se cambiano, la fonte restituisce un errore che finisce in signals.json
@@ -88,9 +88,27 @@ function parseLineups(html) {
     }
   });
 
+  // Partite: ogni intestazione <h2> con DUE link a squadre (/serie-a/squadre/<slug>) = casa, trasferta
+  const matches = [];
+  const seenM = new Set();
+  $('h2').each((_, el) => {
+    const teams = [];
+    $(el).find('a').each((__, a) => {
+      const href = $(a).attr('href') || '';
+      if (/\/serie-a\/squadre\/[^/]+\/?$/.test(href)) {
+        const name = $(a).text().replace(/\s+/g, ' ').trim();
+        if (name) teams.push(name);
+      }
+    });
+    if (teams.length === 2 && !seenM.has(teams.join('|'))) {
+      seenM.add(teams.join('|'));
+      matches.push({ home: teams[0], away: teams[1] });
+    }
+  });
+
   const players = [...map.values()];
   if (!players.length) throw new Error('nessun giocatore riconosciuto nella pagina (struttura cambiata?)');
-  return { round, modules, players };
+  return { round, modules, matches, players };
 }
 
 async function fetchLineups() {
@@ -244,20 +262,103 @@ async function fetchXg() {
 }
 
 // ---------------------------------------------------------------------------
+// FotMob — classifica (punti), per il fattore "difficoltà della partita"
+// ---------------------------------------------------------------------------
+const FM_TABLE_PAGE = `https://www.fotmob.com/it/leagues/${FM_LEAGUE}/table/teams`;
+const FM_LEAGUE_API = `https://www.fotmob.com/api/leagues?id=${FM_LEAGUE}&ccode3=ITA`;
+
+/** JSON FotMob: cerca le liste di squadre { name, pts, played }; sceglie "all" (la con più partite giocate). */
+function parseFotmobTableJson(json) {
+  const found = [];
+  (function walk(n) {
+    if (Array.isArray(n)) {
+      const ok = n.length >= 8 && n.every((x) => x && typeof x === 'object' && typeof x.pts === 'number' && (x.name || x.shortName));
+      if (ok) found.push(n);
+      n.forEach(walk);
+    } else if (n && typeof n === 'object') Object.values(n).forEach(walk);
+  })(json);
+  if (!found.length) return [];
+  const played = (l) => l.reduce((a, x) => a + (Number(x.played) || 0), 0);
+  const best = found.reduce((a, b) => (played(b) > played(a) ? b : a));
+  return best.map((x) => ({ name: String(x.name || x.shortName).trim(), pts: x.pts, played: Number(x.played) || null }));
+}
+
+function parseFotmobTableEmbedded(html) {
+  const m = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!m) return [];
+  try { return parseFotmobTableJson(JSON.parse(m[1])); } catch { return []; }
+}
+
+/** HTML: righe con link /teams/<id>/... e colonne "pos, PG, V, N, P, GF-GS, DR, Pt". */
+function parseFotmobTableRows(html) {
+  const $ = cheerio.load(html);
+  const TEAM = /\/teams\/(\d+)\//;
+  const out = new Map();
+  $('a[href*="/teams/"]').each((_, el) => {
+    const m = ($(el).attr('href') || '').match(TEAM);
+    if (!m || !$(el).text().trim()) return; // i link solo-logo (prossima avversaria, forma) non sono la squadra della riga
+    let node = $(el), row = null;
+    for (let i = 0; i < 6 && node.length; i++) {
+      const ids = new Set(node.find('a[href*="/teams/"]').addBack('a[href*="/teams/"]').map((_, a) => ($(a).attr('href') || '').match(TEAM)?.[1]).get());
+      if (ids.size > 2) break;
+      const t = spacedText($, node).replace(/\d+\s*-\s*\d+/g, ' ').replace(/[+\-−]\s*\d+/g, ' ');
+      if ((t.match(/\b\d+\b/g) || []).length >= 6) { row = { node, text: t }; break; }
+      node = node.parent();
+    }
+    if (!row) return;
+    const nums = (row.text.match(/\b\d+\b/g) || []).map(Number);
+    const [, played, w, d] = nums;
+    let pts = nums[nums.length - 1];
+    // controllo di coerenza: punti ~ 3*V + N (salvo penalizzazioni)
+    if (!(Number.isFinite(pts) && Number.isFinite(w) && Number.isFinite(d) && Math.abs(pts - (3 * w + d)) <= 15)) return;
+    const first = row.node.find('a[href*="/teams/"]').addBack('a[href*="/teams/"]').filter((_, a) => $(a).text().trim()).first();
+    const slug = ($(el).attr('href') || '').match(/\/teams\/\d+\/[^/]+\/([^/?#]+)/);
+    const name = first.text().replace(/\s+/g, ' ').trim() || (slug ? nameFromSlug(slug[1]) : '');
+    if (name && !out.has(m[1]) && !(played > 0 && pts > 3 * played)) out.set(m[1], { name, pts, played });
+  });
+  return [...out.values()];
+}
+
+async function fetchTable() {
+  const attempts = [];
+  try {
+    const html = await getText(FM_TABLE_PAGE);
+    let r = parseFotmobTableEmbedded(html);
+    if (r.length >= 8) return r;
+    r = parseFotmobTableRows(html);
+    if (r.length >= 8) return r;
+    attempts.push('pagina senza classifica leggibile');
+  } catch (e) { attempts.push(String(e.message || e)); }
+  try {
+    const r = parseFotmobTableJson(JSON.parse(await getText(FM_LEAGUE_API)));
+    if (r.length >= 8) return r;
+    attempts.push('API senza classifica');
+  } catch (e) { attempts.push(String(e.message || e)); }
+  throw new Error(`FotMob classifica: ${attempts.join(' / ')} (struttura cambiata o accesso bloccato?)`);
+}
+
+// ---------------------------------------------------------------------------
 async function fetchAll() {
   const errors = {};
-  const out = { fetchedAt: Date.now(), round: null, lineups: { modules: {}, players: [] }, xg: [], errors };
+  const out = { fetchedAt: Date.now(), round: null, lineups: { modules: {}, players: [] }, matches: [], xg: [], table: [], errors };
 
-  const [l, x] = await Promise.allSettled([fetchLineups(), fetchXg()]);
+  const [l, x, t] = await Promise.allSettled([fetchLineups(), fetchXg(), fetchTable()]);
   if (l.status === 'fulfilled') {
     out.round = l.value.round;
     out.lineups = { modules: l.value.modules, players: l.value.players };
+    out.matches = l.value.matches || [];
+    if (!out.matches.length) errors.matches = 'partite non riconosciute nella pagina delle probabili formazioni';
   } else errors.lineups = String((l.reason && l.reason.message) || l.reason);
   if (x.status === 'fulfilled') {
     out.xg = [...x.value];
     if (x.value.partial && x.value.partial.length) errors.xgPartial = x.value.partial.join(' / ');
   } else errors.xg = String((x.reason && x.reason.message) || x.reason);
+  if (t.status === 'fulfilled') out.table = t.value;
+  else errors.table = String((t.reason && t.reason.message) || t.reason);
   return out;
 }
 
-export { fetchAll, parseLineups, parseFotmobRows, parseFotmobJson, parseFotmobEmbedded, mergeFotmob };
+export {
+  fetchAll, parseLineups, parseFotmobRows, parseFotmobJson, parseFotmobEmbedded, mergeFotmob,
+  parseFotmobTableJson, parseFotmobTableEmbedded, parseFotmobTableRows,
+};
