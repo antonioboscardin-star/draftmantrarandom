@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Admin = esiste un documento admins/{uid}. Si crea SOLO dalla console Firebase
+    // (le regole sotto impediscono ai client di scriverlo).
+    function isAdmin() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function numOrNull(v) {
+      return v == null || v is number;
+    }
+
+    // Giocatore del database (importato dal Listone_FC.xlsx o modificato a mano dall'admin).
+    function validPlayer(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.team is string && d.team.size() > 0 && d.team.size() <= 40
+        && d.role in ['P', 'D', 'C', 'A']
+        && d.roleMantra is list && d.roleMantra.size() >= 1 && d.roleMantra.size() <= 4
+        && numOrNull(d.get('fmExp', null))
+        && numOrNull(d.get('fmSeason', null))
+        && numOrNull(d.get('fmLast5', null))
+        && numOrNull(d.get('titExp', null))
+        && numOrNull(d.get('titSeason', null))
+        && numOrNull(d.get('titLast5', null))
+        && numOrNull(d.get('unavailableUntilRound', null))
+        && d.get('roleManual', false) is bool
+        && d.get('roleCheck', false) is bool;
+    }
+
+    function validTeam(d) {
+      return d.leagueName is string && d.leagueName.size() > 0 && d.leagueName.size() <= 80
+        && d.teamName is string && d.teamName.size() > 0 && d.teamName.size() <= 80
+        && d.leagueType in ['Classic', 'Mantra']
+        && d.players is list && d.players.size() >= 25 && d.players.size() <= 36;
+    }
+
+    // Database giocatori: lettura a tutti gli utenti loggati, scrittura solo admin.
+    match /players/{playerId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validPlayer(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Info sull'ultimo import del Listone (data del file, chi lo ha caricato): scrive solo l'admin.
+    match /meta/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Rose: ogni utente vede e modifica solo le proprie.
+    match /users/{uid}/teams/{teamId} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+                            && validTeam(request.resource.data);
+    }
+
+    // Un utente può leggere solo il proprio documento admin (per mostrare il pannello).
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}

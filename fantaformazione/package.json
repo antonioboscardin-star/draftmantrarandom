@@ -1,0 +1,13 @@
+{
+  "name": "fantaformazione",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/engine.test.mjs test/listone.test.mjs",
+    "fetch-signals": "node scraper/fetch-signals.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  }
+}

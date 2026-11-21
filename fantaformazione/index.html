@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FantaFormazione</title>
+<style>
+  :root {
+    --bg: #0f1a14; --panel: #16251c; --panel2: #1c2f23; --line: #2b4435;
+    --text: #e8f1ea; --muted: #93aa9b; --accent: #3ddc84; --accent2: #ffd166;
+    --bad: #ff6b6b; --warn: #ffb04a; --P: #f4c542; --D: #4aa3ff; --C: #3ddc84; --A: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; letter-spacing: .3px; }
+  header h1 span { color: var(--accent); }
+  nav { display: flex; gap: 6px; margin-left: 16px; flex-wrap: wrap; }
+  nav button { background: transparent; color: var(--muted); border: 1px solid transparent; padding: 6px 12px; border-radius: 8px; cursor: pointer; font: inherit; }
+  nav button.active { color: var(--text); background: var(--panel2); border-color: var(--line); }
+  .spacer { flex: 1; }
+  .user { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.admin { color: var(--accent2); border-color: var(--accent2); }
+  .badge.Classic { color: var(--accent); border-color: var(--accent); }
+  .badge.Mantra { color: var(--accent2); border-color: var(--accent2); }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  h2 { font-size: 20px; margin: 0 0 14px; }
+  h3 { font-size: 15px; margin: 18px 0 8px; color: var(--accent); text-transform: uppercase; letter-spacing: .6px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; background: #0c1510; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; }
+  textarea { min-height: 120px; resize: vertical; }
+  button.btn { background: var(--accent); color: #07140c; border: 0; padding: 9px 16px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; }
+  button.btn.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); font-weight: 500; }
+  button.btn:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 0 0 auto; }
+  .row .grow { flex: 1 1 200px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12px; }
+  .hidden { display: none !important; }
+  .banner { padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; border: 1px solid var(--line); background: var(--panel2); }
+  .banner.err { border-color: var(--bad); color: #ffd5d5; }
+  .banner.warn { border-color: var(--warn); color: #ffe6c2; }
+  .banner.ok { border-color: var(--accent); color: #c9f5da; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 10px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--line); font-size: 13px; }
+  .chip.bad { border-color: var(--bad); color: #ffd5d5; }
+  .chip button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0 6px; }
+  .role { display: inline-block; width: 20px; text-align: center; font-weight: 700; font-size: 12px; border-radius: 4px; color: #07140c; }
+  .role.P { background: var(--P); } .role.D { background: var(--D); } .role.C { background: var(--C); } .role.A { background: var(--A); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; position: sticky; top: 0; background: var(--panel); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ev { font-weight: 700; color: var(--accent2); }
+  .prob { display: inline-block; min-width: 38px; text-align: right; }
+  .prob.low { color: var(--bad); } .prob.mid { color: var(--warn); }
+  .tablewrap { overflow-x: auto; max-height: 760px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+  .big { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .kv { display: flex; gap: 24px; flex-wrap: wrap; margin: 8px 0 4px; }
+  .kv div span { display: block; font-size: 12px; color: var(--muted); }
+  .src { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+  .src .pill { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); }
+  .src .pill.okp { color: var(--accent); border-color: var(--accent); }
+  .src .pill.errp { color: var(--bad); border-color: var(--bad); }
+  .note { font-size: 12px; color: var(--muted); }
+  .up { color: var(--accent); } .down { color: var(--bad); }
+  .kv b { font-size: 20px; }
+  a { color: var(--accent); }
+  .login { text-align: center; padding: 80px 20px; }
+  .login h2 { font-size: 28px; }
+  .cap { color: var(--accent2); font-weight: 700; }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; max-width: 520px; width: 92%; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fanta<span>Formazione</span></h1>
+  <nav id="nav" class="hidden">
+    <button data-view="teams" class="active">Le mie squadre</button>
+    <button data-view="edit">Nuova squadra</button>
+    <button data-view="proposal" class="hidden" id="navProposal">Formazione</button>
+    <button data-view="admin" class="hidden" id="navAdmin">Admin database</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="user hidden" id="userBox">
+    <span id="userName"></span><span class="badge admin hidden" id="adminBadge">admin</span>
+    <button class="btn secondary" id="btnLogout">Esci</button>
+  </div>
+</header>
+
+<main>
+  <div id="cfgBanner" class="banner err hidden">
+    Configurazione Firebase mancante: apri <code>index.html</code> e incolla l'oggetto <code>firebaseConfig</code> del tuo progetto (vedi README).
+  </div>
+  <div id="msg"></div>
+
+  <!-- LOGIN -->
+  <section id="v-login" class="login hidden">
+    <h2>Trova la formazione migliore</h2>
+    <p class="muted">Carica la tua rosa, scegli Classic o Mantra e ottieni il modulo e gli undici consigliati<br>in base a forma, probabili formazioni e xG/xA.</p>
+    <p><button class="btn" id="btnLogin">Accedi con Google</button></p>
+  </section>
+
+  <!-- LE MIE SQUADRE -->
+  <section id="v-teams" class="hidden">
+    <h2>Le mie squadre</h2>
+    <div id="teamsList" class="grid"></div>
+    <p id="teamsEmpty" class="muted hidden">Nessuna squadra caricata. Crea la prima da "Nuova squadra".</p>
+  </section>
+
+  <!-- CREA / MODIFICA SQUADRA -->
+  <section id="v-edit" class="hidden">
+    <h2 id="editTitle">Nuova squadra</h2>
+    <div class="card">
+      <div class="grid">
+        <div><label>Nome lega</label><input id="fLeague" maxlength="80" placeholder="es. Lega degli Amici"></div>
+        <div><label>Tipologia lega</label>
+          <select id="fType"><option>Classic</option><option>Mantra</option></select></div>
+        <div><label>Nome squadra</label><input id="fTeam" maxlength="80" placeholder="es. FC Esempio"></div>
+      </div>
+
+      <label>Aggiungi giocatori (scrivi il nome e premi Invio, oppure incolla un elenco: un giocatore per riga)</label>
+      <div class="row">
+        <input class="grow" id="fSearch" list="playerNames" placeholder="Cerca nel database giocatori…" autocomplete="off">
+        <button class="btn secondary" id="btnAddOne">Aggiungi</button>
+      </div>
+      <datalist id="playerNames"></datalist>
+      <textarea id="fBulk" placeholder="Incolla qui l'elenco (un nome per riga, formato listone: Cognome N.)"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn secondary" id="btnBulk">Aggiungi elenco incollato</button></div>
+
+      <h3>Rosa <span id="rosterCount" class="muted"></span></h3>
+      <div id="rosterChips" class="chips"></div>
+      <p class="note">La rosa deve avere da 25 a 36 giocatori, tutti presenti nel database. Se un nome non viene trovato, controlla l'ortografia (formato "Cognome N.") o chiedi all'admin di aggiungerlo.</p>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="btnSaveTeam" disabled>Salva squadra</button>
+        <button class="btn secondary" id="btnCancelEdit">Annulla</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMAZIONE -->
+  <section id="v-proposal" class="hidden">
+    <div id="proposalBox"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="v-admin" class="hidden">
+    <h2>Database giocatori <span class="muted small" id="adminCount"></span></h2>
+    <div class="card">
+      <h3 style="margin-top:0">Aggiorna dal Listone (.xlsx)</h3>
+      <p class="note">Carica il file <b>Listone_FC.xlsx</b> (foglio "ALL"). Uso: <code>name, team, roleMantra</code>, le tre fantamedie
+        (<code>expectedFantamedia</code>, <code>currentSeasonFantamedia</code>, <code>lastFiveMatchesFantamedia</code>), le relative titolarità,
+        <code>unavailableUntilRound</code> e <code>playerStatus</code>. Nelle fantamedie uno 0 significa "nessun dato". Prima di scrivere vedrai un'anteprima delle differenze.
+        Il ruolo Classic si legge dalla colonna <code>roleClassic</code>; se manca lo ricavo dai ruoli Mantra e segnalo i casi dubbi, che puoi correggere qui sotto.</p>
+      <input type="file" id="xlsxIn" accept=".xlsx,.xls">
+      <div id="importPreview"></div>
+    </div>
+    <div id="listoneInfo" class="note" style="margin-bottom:10px"></div>
+    <div id="checkBox"></div>
+    <div class="card">
+      <h3 style="margin-top:0">Modifica singolo giocatore</h3>
+      <div class="grid">
+        <div><label>Nome (come nel listone, es. Paz N.)</label><input id="pName"></div>
+        <div><label>Squadra</label><input id="pTeam"></div>
+        <div><label>Ruolo Classic</label><select id="pRole"><option>P</option><option>D</option><option>C</option><option>A</option></select></div>
+        <div><label>Ruoli Mantra (es. Dc oppure M, C)</label><input id="pMantra"></div>
+        <div><label>FM attesa</label><input id="pExp" inputmode="decimal"></div>
+        <div><label>FM stagione</label><input id="pSeason" inputmode="decimal"></div>
+        <div><label>FM ultime 5</label><input id="pLast5" inputmode="decimal"></div>
+      </div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="btnPSave">Salva giocatore</button><button class="btn secondary" id="btnPClear">Pulisci</button></div>
+    </div>
+    <input id="adminFilter" placeholder="Filtra per nome, squadra o ruolo…" style="margin-bottom:10px">
+    <div class="tablewrap"><table>
+      <thead><tr><th>Nome</th><th>Squadra</th><th title="Ruolo Classic">R</th><th>Mantra</th><th class="num">FM att.</th><th class="num">FM stag.</th><th class="num">FM ult.5</th><th class="num">Tit. att.</th><th></th></tr></thead>
+      <tbody id="adminRows"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+// ---------------------------------------------------------------------------
+// Lettura del Listone e motore di calcolo: inclusi qui per avere TUTTO in questo unico file.
+// ---------------------------------------------------------------------------
+/* ==== LISTONE:START (i test leggono il codice fra questi marcatori) ==== */
+const Listone = (() => {
+  // Conversione righe del Listone (foglio "ALL" di Listone_FC.xlsx) -> documento giocatore.
+  // Modulo puro (nessuna dipendenza), usato dall'app e dai test.
+
+  const num = (v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(String(v).replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // Nel listone 0 significa "dato assente" (es. nessuna presenza): lo trasformo in null.
+  const numOrNull = (v) => {
+    const n = num(v);
+    return n === null || n === 0 ? null : n;
+  };
+
+  const MANTRA_ROLES = ["Por", "Dd", "Ds", "Dc", "B", "E", "M", "C", "W", "T", "A", "Pc"];
+
+  function parseMantra(v) {
+    return String(v ?? "")
+      .split(/[\/,;]+/)
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .map((x) => MANTRA_ROLES.find((r) => r.toLowerCase() === x.toLowerCase()) || x);
+  }
+
+  const DEF_ROLES = ["Dd", "Ds", "Dc", "B"];
+
+  /**
+   * Ruolo Classic ricavato dai ruoli Mantra (il listone non lo riporta):
+   *   Por -> P ; qualsiasi Dd/Ds/Dc/B (anche con E: terzini che fanno l'esterno) -> D ;
+   *   solo A/Pc -> A ; tutto il resto (E, M, C, W, T, o misti con A) -> C.
+   * I casi dubbi (vedi roleToCheck) vanno verificati dall'admin, che può correggerli dal pannello.
+   */
+  function classicRole(mantra) {
+    const r = Array.isArray(mantra) ? mantra : parseMantra(mantra);
+    if (!r.length) return null;
+    if (r.every((x) => x === "Por")) return "P";
+    if (r.includes("Por")) return null; // combinazione incoerente
+    if (r.some((x) => DEF_ROLES.includes(x))) return "D";
+    if (r.every((x) => ["A", "Pc"].includes(x))) return "A";
+    if (r.length === 1 && r[0] === "E") return "D"; // nel Listone gli "E" puri sono terzini
+    return "C";
+  }
+
+  /**
+   * true se il ruolo Classic ricavato è un'ipotesi: ruoli misti centrocampo/attacco (es. "W, A", "T, A")
+   * oppure solo esterno ("E", "E, W"), che in Classic possono essere C, D o A a seconda del giocatore.
+   */
+  function roleToCheck(mantra) {
+    const r = Array.isArray(mantra) ? mantra : parseMantra(mantra);
+    if (r.includes("Por") || r.some((x) => DEF_ROLES.includes(x))) return false;
+    const att = r.some((x) => x === "A" || x === "Pc");
+    const mid = r.some((x) => ["E", "M", "C", "W", "T"].includes(x));
+    if (att && mid) return true;
+    return r.includes("E") && !r.some((x) => x === "M" || x === "C");
+  }
+
+  // "MILINKOVIC-SAVIC V." -> "Milinkovic-Savic V."  (formato di fantacalcio.it)
+  function prettyName(s) {
+    return String(s || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase()
+      .replace(/(^|[\s\-'’.])(\p{L})/gu, (_, sep, ch) => sep + ch.toUpperCase());
+  }
+
+  // Rende uniforme il nome di una colonna (spazi/maiuscole)
+  const key = (k) => String(k).trim().toLowerCase();
+
+  function rowToPlayer(row) {
+    const r = {};
+    for (const k of Object.keys(row)) r[key(k)] = row[k];
+    const name = prettyName(r["name"]);
+    const team = String(r["team"] ?? "").trim();
+    if (!name) throw new Error("nome mancante");
+    if (!team) throw new Error(`${name}: squadra mancante`);
+    const roleMantra = parseMantra(r["rolemantra"]);
+    if (!roleMantra.length) throw new Error(`${name}: ruolo Mantra mancante`);
+    const unknown = roleMantra.filter((x) => !MANTRA_ROLES.includes(x));
+    if (unknown.length) throw new Error(`${name}: ruolo Mantra sconosciuto (${unknown.join(", ")})`);
+    // Ruolo Classic: se il Listone ha la colonna roleClassic è quello ufficiale; altrimenti lo deduco dai ruoli Mantra.
+    const fileRole = String(r["roleclassic"] ?? "").trim().toUpperCase();
+    const roleFromFile = ["P", "D", "C", "A"].includes(fileRole);
+    const role = roleFromFile ? fileRole : classicRole(roleMantra);
+    if (!role) throw new Error(`${name}: ruoli Mantra incoerenti (${roleMantra.join(", ")})`);
+
+    const pct = (v) => {
+      const n = num(v);
+      return n === null ? null : Math.max(0, Math.min(100, n));
+    };
+    return {
+      name,
+      team,
+      role,
+      roleFromFile, // non viene salvato nel DB: serve solo a planImport
+      roleMantra,
+      // fantamedie (0 nel listone = nessun dato)
+      fmExp: numOrNull(r["expectedfantamedia"]),
+      fmSeason: numOrNull(r["currentseasonfantamedia"]),
+      fmLast5: numOrNull(r["lastfivematchesfantamedia"]),
+      // % di presenze (servono per capire quanto è affidabile ciascuna fantamedia)
+      titExp: pct(r["expectedtitolarita"]),
+      titSeason: pct(r["currentseasontitolarity"]),
+      titLast5: pct(r["lastfivematchestitolarity"]),
+      unavailableUntilRound: numOrNull(r["unavailableuntilround"]),
+      status: r["playerstatus"] ? String(r["playerstatus"]).trim().toUpperCase().slice(0, 2) : null,
+    };
+  }
+
+  const FIELDS = ["team", "role", "roleManual", "roleCheck", "fmExp", "fmSeason", "fmLast5", "titExp", "titSeason", "titLast5", "unavailableUntilRound", "status"];
+  const same = (a, b) => (a == null && b == null) || (typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < 1e-9 : a === b);
+
+  function samePlayer(a, b) {
+    if (!FIELDS.every((f) => same(a[f], b[f]))) return false;
+    return JSON.stringify(a.roleMantra || []) === JSON.stringify(b.roleMantra || []);
+  }
+
+  /** Id documento stabile: nome + squadra. */
+  const slug = (s) =>
+    String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim().replace(/ /g, "-");
+  const playerId = (p) => `${slug(p.name)}__${slug(p.team)}`;
+
+  /** Colonne senza le quali l'import non ha senso. */
+  const REQUIRED_COLUMNS = ["name", "team", "roleMantra", "expectedFantamedia", "currentSeasonFantamedia", "lastFiveMatchesFantamedia"];
+  /** Colonne che migliorano il calcolo (affidabilità delle medie, disponibilità): se mancano avviso ma importo. */
+  const RECOMMENDED_COLUMNS = ["roleClassic", "expectedTitolarita", "currentSeasonTitolarity", "lastFiveMatchesTitolarity", "unavailableUntilRound"];
+
+  const headerSet = (rows) => new Set(rows.flatMap((r) => Object.keys(r || {}).map(key)));
+  const missingColumns = (rows, cols = REQUIRED_COLUMNS) => {
+    const h = headerSet(rows);
+    return cols.filter((c) => !h.has(key(c)));
+  };
+
+  /** Data/ora di aggiornamento più recente nella colonna updatedAt del listone (stringa ISO) o null. */
+  function latestUpdate(rows) {
+    let best = null;
+    for (const r of rows) {
+      for (const k of Object.keys(r || {})) {
+        if (key(k) !== "updatedat" || !r[k]) continue;
+        const t = Date.parse(r[k]);
+        if (Number.isFinite(t) && (best === null || t > best)) best = t;
+      }
+    }
+    return best === null ? null : new Date(best).toISOString();
+  }
+
+  /**
+   * rows: righe del foglio; existing: giocatori già nel DB. Ritorna anteprima delle modifiche.
+   * Un ruolo Classic corretto a mano dall'admin (roleManual) non viene mai sovrascritto dal file.
+   */
+  function planImport(rows, existing) {
+    const byId = new Map(existing.map((p) => [p.id, p]));
+    const incoming = new Map();
+    const errors = [];
+    rows.forEach((row, i) => {
+      if (row == null || Object.values(row).every((v) => v === null || v === "")) return;
+      try {
+        const p = rowToPlayer(row);
+        const id = playerId(p);
+        if (incoming.has(id)) throw new Error(`${p.name} (${p.team}) è duplicato nel file`);
+        const old = byId.get(id);
+        if (p.roleFromFile) {            // il Listone indica il ruolo Classic: è la fonte ufficiale
+          p.roleManual = false;
+          p.roleCheck = false;
+        } else if (old && old.roleManual) { // file senza roleClassic: tengo la correzione fatta a mano
+          p.role = old.role;
+          p.roleManual = true;
+          p.roleCheck = false;
+        } else {                         // ruolo dedotto dai ruoli Mantra: segnalo i casi dubbi
+          p.roleManual = false;
+          p.roleCheck = roleToCheck(p.roleMantra);
+        }
+        delete p.roleFromFile;
+        incoming.set(id, { id, ...p });
+      } catch (e) {
+        errors.push(`riga ${i + 2}: ${e.message}`);
+      }
+    });
+    const added = [], updated = [], unchanged = [], removed = [];
+    for (const [id, p] of incoming) {
+      const old = byId.get(id);
+      if (!old) added.push(p);
+      else if (samePlayer(old, p)) unchanged.push(p);
+      else updated.push(p);
+    }
+    for (const p of existing) if (!incoming.has(p.id)) removed.push(p);
+    return { added, updated, unchanged, removed, errors, total: incoming.size };
+  }
+  return { num, MANTRA_ROLES, parseMantra, classicRole, roleToCheck, prettyName, rowToPlayer, samePlayer, slug, playerId, REQUIRED_COLUMNS, RECOMMENDED_COLUMNS, missingColumns, latestUpdate, planImport };
+})();
+/* ==== LISTONE:END ==== */
+
+/* ==== ENGINE:START (i test leggono il codice fra questi marcatori) ==== */
+const Engine = (() => {
+  /**
+   * Motore di calcolo della formazione (puro, senza rete: testabile in locale).
+   *
+   * Per ogni giocatore calcola un "valore atteso" (ev) per la prossima giornata:
+   *   punteggio = forma (FM attesa + FM stagione + FM ultime 5, dal Listone)
+   *             + correzione xG/xA (FotMob): chi ha xG sopra i gol segnati è "in credito" (+),
+   *               chi ha segnato più dei gol attesi è "in debito" (-); stessa logica, più piccola, per gli assist
+   *   ev        = p * punteggio + (1-p)*p * soglia_sostituto      (p = titolarità prevista)
+   * poi sceglie il modulo migliore (Classic: scelta per ruolo; Mantra: assegnazione ottima
+   * dei giocatori agli slot del modulo con algoritmo ungherese).
+   */
+
+  // ---------- Utilità di normalizzazione / matching ----------
+  const norm = (s) =>
+    String(s || '')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const TEAM_STOP = new Set([
+    'ac', 'fc', 'as', 'ss', 'ssc', 'us', 'cfc', 'sc', 'calcio', 'bergamo', 'brianza',
+    'football', 'club', '1909', '1907', '1913', 'spa',
+  ]);
+
+  function teamKey(s) {
+    let t = norm(s).split(' ').filter((x) => x && !TEAM_STOP.has(x)).join(' ');
+    if (t === 'internazionale') t = 'inter';
+    return t;
+  }
+
+  function teamsMatch(a, b) {
+    const x = teamKey(a), y = teamKey(b);
+    if (!x || !y) return false;
+    return x === y || x.includes(y) || y.includes(x);
+  }
+
+  const tokens = (s) => norm(s).split(' ').filter(Boolean);
+  const core = (s) => tokens(s).filter((t) => t.length > 1);
+  const initials = (s) => tokens(s).filter((t) => t.length === 1);
+
+  /**
+   * Confronta un giocatore del DB con un nome esterno ("Paz N." vs "Nico Paz").
+   * Ritorna un punteggio: 3 = nome identico, 2 = compatibile (stessa squadra), 0 = no.
+   */
+  function matchScore(dbName, dbTeam, extName, extTeam) {
+    const a = norm(dbName), b = norm(extName);
+    if (!a || !b) return 0;
+    const teamOk = extTeam ? teamsMatch(dbTeam, extTeam) : true;
+    if (a === b) return teamOk ? 3 : 1;
+    if (!teamOk) return 0;
+    const ca = core(dbName), cb = core(extName);
+    if (!ca.length || !cb.length) return 0;
+    const sub = (x, y) => x.every((t) => y.includes(t));
+    if (!(sub(ca, cb) || sub(cb, ca))) return 0;
+    // le iniziali del DB devono corrispondere alle iniziali dei token "extra" dell'altro nome
+    const ia = initials(dbName);
+    const ib = initials(extName);
+    const extraB = cb.filter((t) => !ca.includes(t));
+    const extraA = ca.filter((t) => !cb.includes(t));
+    const okA = ia.every((i) => extraB.some((t) => t[0] === i) || ib.includes(i));
+    const okB = ib.every((i) => extraA.some((t) => t[0] === i) || ia.includes(i));
+    return okA && okB ? 2 : 0;
+  }
+
+  function findBest(list, nameKey, teamKey_, dbName, dbTeam) {
+    let best = null, bs = 0;
+    for (const e of list) {
+      const s = matchScore(dbName, dbTeam, e[nameKey], e[teamKey_]);
+      if (s > bs) { bs = s; best = e; }
+    }
+    return bs >= 2 ? best : null;
+  }
+
+  /** Come findBest, ma se la squadra esterna non è affidabile prova senza squadra, purché il nome identifichi UN solo giocatore. */
+  function findBestLenient(list, nameKey, teamKey_, dbName, dbTeam) {
+    const strict = findBest(list, nameKey, teamKey_, dbName, dbTeam);
+    if (strict) return strict;
+    const cands = list.filter((e) => matchScore(dbName, dbTeam, e[nameKey], '') >= 2);
+    return cands.length === 1 ? cands[0] : null;
+  }
+
+  // ---------- Parametri ----------
+  const DEFAULTS = {
+    // Stato di forma = media pesata delle tre fantamedie del listone
+    wExp: 0.30,             // fantamedia attesa (stima di inizio stagione)
+    wSeason: 0.30,          // fantamedia stagione corrente
+    wLast5: 0.40,           // fantamedia ultime 5 giornate
+    kSeason: 4,             // "partite fantasma" della FM attesa nel ridimensionare la FM stagione
+    k5: 3,                  // "partite fantasma" della FM stagione nel ridimensionare la FM ultime 5
+    trendThreshold: 0.4,    // scarto ultime5 - stagione per segnalare crescita/calo
+    defaultFm: 6.0,         // se mancano tutte e tre
+    replacementFloor: 4.5,  // rendimento ipotetico del sostituto (rischio: 3 prudente, 5.5 aggressivo)
+    // Correzione xG/xA: (attesi - realizzati) per giornata giocata x punti fantacalcio x peso, con tetto
+    goalPts: 3,             // un gol vale ~3 punti
+    assistPts: 1,           // un assist vale 1 punto
+    wXg: 0.30,              // peso della correzione xG - gol
+    wXa: 0.15,              // peso della correzione xA - assist (volutamente più piccolo)
+    xgCap: 0.30,            // massimo +/- punti di correzione da xG
+    xaCap: 0.10,            // massimo +/- punti di correzione da xA
+    neutralAvailability: 0.7, // se non ci sono né probabili formazioni né titolarità attesa
+    missingAvailability: 0.1, // se la squadra è nota ma il giocatore non compare in lista
+  };
+
+  const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
+  const pos = (x) => (isNum(x) && x > 0 ? x : null); // nel listone 0 = nessuna presenza / nessun dato
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+
+  /** Media ridimensionata sul campione: con poche presenze pesa di più il valore di riferimento (prior). */
+  function shrink(obs, n, prior, k) {
+    if (obs == null || n <= 0) return prior;
+    return (n * obs + k * prior) / (n + k);
+  }
+
+  // ---------- Punteggio giocatori ----------
+  function scorePlayers(roster, signals, opts) {
+    const o = { ...DEFAULTS, ...(opts || {}) };
+    const sig = signals || {};
+    const lineupPlayers = (sig.lineups && sig.lineups.players) || [];
+    const xgList = sig.xg || [];
+    const round = isNum(sig.round) ? sig.round : null;
+    const games = Math.max(1, (round || 12) - 1); // giornate già giocate
+    const haveLineups = lineupPlayers.length > 0;
+
+    return roster.map((p) => {
+      const notes = [];
+
+      // ---- Stato di forma: FM attesa + FM stagione + FM ultime 5 (0 nel listone = nessun dato) ----
+      const exp = pos(p.fmExp), season = pos(p.fmSeason), last5 = pos(p.fmLast5);
+      const prior = exp != null ? exp : season != null ? season : last5 != null ? last5 : o.defaultFm;
+      if (exp == null && season == null && last5 == null) notes.push('Nessuna fantamedia nel database: uso valore neutro');
+      // presenze stimate dalla % di titolarità del listone
+      const nSeason = isNum(p.titSeason) ? clamp((p.titSeason / 100) * games, 0, games) : season != null ? games / 2 : 0;
+      const n5 = isNum(p.titLast5) ? Math.round(clamp((p.titLast5 / 100) * 5, 0, 5)) : last5 != null ? 2 : 0;
+      const seasonS = shrink(season, nSeason, prior, o.kSeason);
+      const last5S = shrink(last5, n5, seasonS, o.k5);
+      const form = o.wExp * prior + o.wSeason * seasonS + o.wLast5 * last5S;
+      let trend = null;
+      if (last5 != null && n5 >= 2) {
+        if (last5S - seasonS >= o.trendThreshold) trend = 'up';
+        else if (seasonS - last5S >= o.trendThreshold) trend = 'down';
+      }
+      if (last5 != null && n5 <= 1) notes.push('Ultime 5: una sola presenza, valore poco affidabile');
+
+      // ---- Disponibilità ----
+      const listoneOut = isNum(p.unavailableUntilRound) && p.unavailableUntilRound > 0 && round != null && p.unavailableUntilRound > round;
+      let prob, status = 'n/d', note = '';
+      if (haveLineups) {
+        const e = findBest(lineupPlayers, 'name', 'team', p.name, p.team);
+        if (e) {
+          status = e.status;
+          note = e.note || '';
+          if (e.status === 'out' || e.status === 'suspended') prob = 0;
+          else if (e.status === 'doubt') prob = isNum(e.pct) ? Math.min(e.pct / 100, 0.4) : 0.4;
+          else prob = isNum(e.pct) ? e.pct / 100 : o.neutralAvailability;
+          if (prob === 0) notes.push(e.status === 'suspended' ? 'Squalificato' : 'Indisponibile' + (note ? `: ${note}` : ''));
+          else if (e.status === 'doubt') notes.push('In dubbio' + (note ? `: ${note}` : ''));
+        } else {
+          prob = o.missingAvailability;
+          status = 'non in lista';
+          notes.push('Non compare nelle probabili formazioni');
+        }
+      } else if (listoneOut) {
+        prob = 0; status = 'out';
+        notes.push(`Indisponibile fino alla giornata ${p.unavailableUntilRound} (listone)`);
+      } else if (isNum(p.titExp) && p.titExp > 0) {
+        prob = clamp(p.titExp / 100, 0, 1); status = 'stima listone';
+        notes.push('Probabili formazioni non disponibili: uso la titolarità attesa del listone');
+      } else {
+        prob = o.neutralAvailability;
+        notes.push('Probabili formazioni non disponibili: titolarità stimata');
+      }
+
+      // ---- xG / xA: correzione "attesi - realizzati" (portieri esclusi) ----
+      let xg = null, xa = null, goals = null, assists = null, xgAdj = 0, xaAdj = 0;
+      if (p.role !== 'P') {
+        const e = findBestLenient(xgList, 'name', 'team', p.name, p.team);
+        if (e) {
+          xg = isNum(e.xg) ? e.xg : null; goals = isNum(e.goals) ? e.goals : null;
+          xa = isNum(e.xa) ? e.xa : null; assists = isNum(e.assists) ? e.assists : null;
+          if (xg != null && goals != null) xgAdj = clamp(o.wXg * o.goalPts * (xg - goals) / games, -o.xgCap, o.xgCap);
+          if (xa != null && assists != null) xaAdj = clamp(o.wXa * o.assistPts * (xa - assists) / games, -o.xaCap, o.xaCap);
+        }
+      }
+      const xBonus = xgAdj + xaAdj;
+
+      const score = form + xBonus;
+      const ev = prob * score + (1 - prob) * prob * o.replacementFloor;
+
+      return {
+        id: p.id, name: p.name, team: p.team, role: p.role, roleMantra: p.roleMantra || [],
+        fmExp: exp, fmSeason: season, fmLast5: last5, n5,
+        form: round2(form), trend,
+        prob: round2(prob), status, xg, goals, xa, assists,
+        xgAdj: round2(xgAdj), xaAdj: round2(xaAdj), xBonus: round2(xBonus),
+        score: round2(score), ev: round2(ev), notes,
+      };
+    });
+  }
+
+  const round2 = (x) => Math.round(x * 100) / 100;
+
+  // ---------- Classic ----------
+  const CLASSIC_MODULES = ['3-4-3', '3-5-2', '4-3-3', '4-4-2', '4-5-1', '5-3-2', '5-4-1'];
+
+  function byEv(a, b) { return b.ev - a.ev || b.score - a.score; }
+
+  function proposeClassic(scored, opts) {
+    const o = { benchD: 2, benchC: 2, benchA: 2, ...(opts || {}) };
+    const roles = { P: [], D: [], C: [], A: [] };
+    scored.forEach((p) => roles[p.role] && roles[p.role].push(p));
+    Object.values(roles).forEach((l) => l.sort(byEv));
+
+    const results = [];
+    for (const m of CLASSIC_MODULES) {
+      const [d, c, a] = m.split('-').map(Number);
+      if (roles.P.length < 1 || roles.D.length < d || roles.C.length < c || roles.A.length < a) continue;
+      const lineup = [
+        ...roles.P.slice(0, 1), ...roles.D.slice(0, d), ...roles.C.slice(0, c), ...roles.A.slice(0, a),
+      ];
+      results.push({ module: m, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)) });
+    }
+    if (!results.length) return { error: 'Rosa insufficiente per comporre un modulo Classic (servono almeno 1 P, 3 D, 3 C, 1 A).' };
+    results.sort((x, y) => y.totalEv - x.totalEv);
+    const best = results[0];
+    const used = new Set(best.lineup.map((p) => p.id));
+    const rest = (r, n) => roles[r].filter((p) => !used.has(p.id)).slice(0, n);
+    const bench = [...rest('P', 1), ...rest('D', o.benchD), ...rest('C', o.benchC), ...rest('A', o.benchA)];
+    return finish('Classic', best, bench, results);
+  }
+
+  // ---------- Mantra ----------
+  /**
+   * ATTENZIONE: gli slot dei moduli Mantra qui sotto sono un'approssimazione ragionevole dei ruoli
+   * ammessi per ogni posizione. Vanno confrontati con il regolamento della TUA lega e, se serve,
+   * modificati qui: ogni slot è la lista dei ruoli Mantra ammessi (Por, Dd, Ds, Dc, B, E, M, C, W, T, A, Pc).
+   */
+  const S = {
+    POR: ['Por'], DC: ['Dc', 'B'], DD: ['Dd'], DS: ['Ds'],
+    E: ['E'], M: ['M'], C: ['C'], MC: ['M', 'C'], EW: ['E', 'W'], MCW: ['M', 'C', 'W'],
+    W: ['W'], WA: ['W', 'A'], WT: ['W', 'T'], T: ['T'], TA: ['T', 'A'],
+    A: ['A'], APC: ['A', 'Pc'], PC: ['Pc'],
+  };
+  const D4 = [S.DD, S.DC, S.DC, S.DS];
+  const D3 = [S.DC, S.DC, S.DC];
+  const MANTRA_MODULES = {
+    '3-4-3':   [S.POR, ...D3, S.E, S.MC, S.MC, S.E, S.WA, S.APC, S.WA],
+    '3-4-2-1': [S.POR, ...D3, S.E, S.MC, S.MC, S.E, S.WT, S.WT, S.APC],
+    '3-4-1-2': [S.POR, ...D3, S.E, S.MC, S.MC, S.E, S.T, S.APC, S.APC],
+    '3-5-2':   [S.POR, ...D3, S.E, S.M, S.MC, S.C, S.E, S.APC, S.APC],
+    '4-3-3':   [S.POR, ...D4, S.M, S.C, S.MC, S.WA, S.APC, S.WA],
+    '4-4-2':   [S.POR, ...D4, S.EW, S.M, S.C, S.EW, S.APC, S.APC],
+    '4-3-1-2': [S.POR, ...D4, S.M, S.C, S.MC, S.T, S.APC, S.APC],
+    '4-3-2-1': [S.POR, ...D4, S.M, S.C, S.MC, S.WT, S.WT, S.APC],
+    '4-2-3-1': [S.POR, ...D4, S.M, S.MC, S.WT, S.T, S.WT, S.APC],
+    '4-5-1':   [S.POR, ...D4, S.EW, S.M, S.MC, S.C, S.EW, S.APC],
+  };
+
+  function hungarian(cost) {
+    const n = cost.length, m = cost[0].length, INF = 1e12;
+    const u = Array(n + 1).fill(0), v = Array(m + 1).fill(0);
+    const p = Array(m + 1).fill(0), way = Array(m + 1).fill(0);
+    for (let i = 1; i <= n; i++) {
+      p[0] = i;
+      let j0 = 0;
+      const minv = Array(m + 1).fill(INF), used = Array(m + 1).fill(false);
+      do {
+        used[j0] = true;
+        const i0 = p[j0];
+        let delta = INF, j1 = 0;
+        for (let j = 1; j <= m; j++) {
+          if (used[j]) continue;
+          const cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
+          if (cur < minv[j]) { minv[j] = cur; way[j] = j0; }
+          if (minv[j] < delta) { delta = minv[j]; j1 = j; }
+        }
+        for (let j = 0; j <= m; j++) {
+          if (used[j]) { u[p[j]] += delta; v[j] -= delta; } else minv[j] -= delta;
+        }
+        j0 = j1;
+      } while (p[j0] !== 0);
+      do { const j1 = way[j0]; p[j0] = p[j1]; j0 = j1; } while (j0);
+    }
+    const ans = Array(n).fill(-1);
+    for (let j = 1; j <= m; j++) if (p[j]) ans[p[j] - 1] = j - 1;
+    return ans;
+  }
+
+  function proposeMantra(scored, opts) {
+    const o = { benchSize: 7, ...(opts || {}) };
+    const BIG = 1e6;
+    const results = [];
+    for (const [module, slots] of Object.entries(MANTRA_MODULES)) {
+      if (scored.length < slots.length) continue;
+      const cost = slots.map((allowed) =>
+        scored.map((p) => (p.roleMantra.some((r) => allowed.includes(r)) ? -p.ev : BIG)));
+      const assign = hungarian(cost);
+      if (assign.some((j, i) => j < 0 || cost[i][j] >= BIG)) continue; // modulo non realizzabile
+      const lineup = assign.map((j, i) => ({ ...scored[j], slot: slots[i].join('/') }));
+      results.push({ module, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)) });
+    }
+    if (!results.length) {
+      return { error: 'Nessun modulo Mantra realizzabile con i ruoli Mantra presenti in rosa. Controlla i ruoli Mantra dei giocatori nel database.' };
+    }
+    results.sort((x, y) => y.totalEv - x.totalEv);
+    const best = results[0];
+    const used = new Set(best.lineup.map((p) => p.id));
+    const rest = scored.filter((p) => !used.has(p.id)).sort(byEv);
+    const gk = rest.find((p) => p.role === 'P');
+    const bench = [];
+    if (gk) bench.push(gk);
+    for (const p of rest) {
+      if (bench.length >= o.benchSize + 1) break;
+      if (!bench.includes(p)) bench.push(p);
+    }
+    return finish('Mantra', best, bench, results);
+  }
+
+  // ---------- Esito ----------
+  function finish(type, best, bench, results) {
+    const outfield = best.lineup.filter((p) => p.role !== 'P');
+    const captain = outfield.slice().sort(byEv)[0] || null;
+    const warnings = [];
+    best.lineup.forEach((p) => { if (p.prob <= 0.35) warnings.push(`${p.name}: rischio alto di non giocare (${Math.round(p.prob * 100)}%)`); });
+    return {
+      type,
+      module: best.module,
+      lineup: best.lineup,
+      bench,
+      captain: captain ? { id: captain.id, name: captain.name } : null,
+      totalEv: best.totalEv,
+      alternatives: results.slice(0, 5).map((r) => ({ module: r.module, totalEv: r.totalEv })),
+      warnings,
+    };
+  }
+
+  function proposeLineup(type, roster, signals, opts) {
+    const scored = scorePlayers(roster, signals, opts);
+    const res = type === 'Mantra' ? proposeMantra(scored, opts) : proposeClassic(scored, opts);
+    res.all = scored.slice().sort(byEv);
+    return res;
+  }
+  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
+})();
+/* ==== ENGINE:END ==== */
+
+const { planImport, playerId, parseMantra, missingColumns, latestUpdate, RECOMMENDED_COLUMNS, MANTRA_ROLES } = Listone;
+const { proposeLineup, DEFAULTS } = Engine;
+
+// ====================== CONFIGURAZIONE (da incollare) ======================
+const firebaseConfig = {
+  apiKey: "INCOLLA_API_KEY",
+  authDomain: "INCOLLA_PROJECT_ID.firebaseapp.com",
+  projectId: "INCOLLA_PROJECT_ID",
+  storageBucket: "INCOLLA_PROJECT_ID.appspot.com",
+  messagingSenderId: "INCOLLA",
+  appId: "INCOLLA"
+};
+// Dati online (probabili formazioni da fantacalcio.it, xG/xA da FotMob): li scrive il job pianificato
+// di GitHub Actions nel branch "fantaformazione-data" del TUO repository (che deve essere pubblico).
+// Scrivi "tuo-utente/nome-repo", ad esempio "mrossi/sito".
+const GITHUB_REPO = "INCOLLA_UTENTE/INCOLLA_REPO";
+const SIGNALS_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/fantaformazione-data/signals.json`;
+const SIGNALS_STALE_HOURS = 12;
+// ===========================================================================
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+const slug = (s) => norm(s).replace(/ /g, "-");
+const pid = playerId; // stesso id usato dall'import del Listone
+const fmt = (x, d = 2) => (x == null || Number.isNaN(x) ? "–" : Number(x).toFixed(d));
+
+const configured = !firebaseConfig.apiKey.startsWith("INCOLLA");
+if (!configured) $("cfgBanner").classList.remove("hidden");
+
+let app, auth, db;
+if (configured) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+}
+
+const state = {
+  user: null, isAdmin: false,
+  players: [],            // database giocatori
+  teams: [],              // squadre dell'utente
+  editingId: null,        // id squadra in modifica
+  roster: [],             // [{raw, player|null}]
+  lastResult: null, lastTeam: null,
+  listone: null,          // info sull'ultimo import del Listone (data del file)
+};
+
+// ------------------------------- Messaggi -------------------------------
+function msg(text, kind = "ok", ms = 6000) {
+  const el = $("msg");
+  el.innerHTML = `<div class="banner ${kind}">${esc(text)}</div>`;
+  if (ms) setTimeout(() => { if (el.firstChild && el.textContent.includes(text)) el.innerHTML = ""; }, ms);
+}
+const clearMsg = () => ($("msg").innerHTML = "");
+
+// ------------------------------- Navigazione -------------------------------
+const VIEWS = ["login", "teams", "edit", "proposal", "admin"];
+function show(view) {
+  VIEWS.forEach((v) => $("v-" + v).classList.toggle("hidden", v !== view));
+  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+}
+document.querySelectorAll("#nav button").forEach((b) => b.addEventListener("click", () => {
+  clearMsg();
+  if (b.dataset.view === "edit") startEdit(null);
+  else show(b.dataset.view);
+}));
+
+// ------------------------------- Auth -------------------------------
+$("btnLogin").addEventListener("click", async () => {
+  if (!configured) return msg("Configura prima Firebase (vedi banner).", "err", 0);
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch (e) { msg("Accesso non riuscito: " + e.message, "err"); }
+});
+$("btnLogout").addEventListener("click", () => signOut(auth));
+
+if (configured) {
+  onAuthStateChanged(auth, async (user) => {
+    state.user = user;
+    if (!user) {
+      $("nav").classList.add("hidden"); $("userBox").classList.add("hidden");
+      show("login");
+      return;
+    }
+    $("userName").textContent = user.displayName || user.email;
+    $("userBox").classList.remove("hidden"); $("nav").classList.remove("hidden");
+    try {
+      const a = await getDoc(doc(db, "admins", user.uid));
+      state.isAdmin = a.exists();
+    } catch { state.isAdmin = false; }
+    $("adminBadge").classList.toggle("hidden", !state.isAdmin);
+    $("navAdmin").classList.toggle("hidden", !state.isAdmin);
+    try {
+      await Promise.all([loadPlayers(), loadTeams()]);
+      renderTeams();
+      show("teams");
+    } catch (e) { msg("Errore nel caricamento dati: " + e.message, "err", 0); }
+  });
+} else show("login");
+
+// ------------------------------- Dati -------------------------------
+async function loadPlayers() {
+  const snap = await getDocs(collection(db, "players"));
+  state.players = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  state.players.sort((a, b) => a.name.localeCompare(b.name, "it"));
+  $("playerNames").innerHTML = state.players.map((p) => `<option value="${esc(p.name)}">${esc(p.team)} · ${esc(p.role)}</option>`).join("");
+  try { const m = await getDoc(doc(db, "meta", "listone")); state.listone = m.exists() ? m.data() : null; }
+  catch { state.listone = null; }
+}
+function listoneAge() {
+  const l = state.listone;
+  if (!l || !l.updatedAt) return null;
+  const d = new Date(l.updatedAt);
+  return { text: d.toLocaleDateString("it-IT"), days: Math.floor((Date.now() - d.getTime()) / 86400000) };
+}
+async function loadTeams() {
+  const snap = await getDocs(collection(db, "users", state.user.uid, "teams"));
+  state.teams = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  state.teams.sort((a, b) => (a.leagueName + a.teamName).localeCompare(b.leagueName + b.teamName, "it"));
+}
+
+// ------------------------------- Squadre -------------------------------
+function renderTeams() {
+  $("teamsEmpty").classList.toggle("hidden", state.teams.length > 0);
+  $("teamsList").innerHTML = state.teams.map((t) => {
+    const lp = t.lastProposal;
+    return `<div class="card">
+      <div class="row"><strong class="grow">${esc(t.teamName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span></div>
+      <div class="muted small">${esc(t.leagueName)} · ${t.players.length} giocatori</div>
+      ${lp ? `<div class="small" style="margin-top:8px">Ultima proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…</div>` : ""}
+      <div class="row" style="margin-top:12px">
+        <button class="btn" data-act="propose" data-id="${esc(t.id)}">Proponi formazione migliore</button>
+        <button class="btn secondary" data-act="edit" data-id="${esc(t.id)}">Modifica</button>
+        <button class="btn danger" data-act="del" data-id="${esc(t.id)}">Elimina</button>
+      </div></div>`;
+  }).join("");
+}
+$("teamsList").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const t = state.teams.find((x) => x.id === b.dataset.id);
+  if (!t) return;
+  if (b.dataset.act === "edit") startEdit(t);
+  if (b.dataset.act === "propose") propose(t, false);
+  if (b.dataset.act === "del" && confirm(`Eliminare la squadra "${t.teamName}"?`)) {
+    await deleteDoc(doc(db, "users", state.user.uid, "teams", t.id));
+    await loadTeams(); renderTeams(); msg("Squadra eliminata.");
+  }
+});
+
+// ------------------------------- Editor rosa -------------------------------
+function findPlayer(raw) {
+  const n = norm(raw);
+  if (!n) return null;
+  const exact = state.players.filter((p) => norm(p.name) === n);
+  if (exact.length) return exact[0];
+  const nt = n.split(" ").filter((t) => t.length > 1);
+  const cand = state.players.filter((p) => {
+    const pt = norm(p.name).split(" ").filter((t) => t.length > 1);
+    return nt.length && (nt.every((t) => pt.includes(t)) || pt.every((t) => nt.includes(t)));
+  });
+  return cand.length === 1 ? cand[0] : null;
+}
+function addToRoster(raw) {
+  raw = raw.trim();
+  if (!raw) return;
+  const player = findPlayer(raw);
+  if (player && state.roster.some((r) => r.player && r.player.id === player.id)) return;
+  if (!player && state.roster.some((r) => !r.player && norm(r.raw) === norm(raw))) return;
+  state.roster.push({ raw, player });
+}
+function startEdit(team) {
+  state.editingId = team ? team.id : null;
+  $("editTitle").textContent = team ? "Modifica squadra" : "Nuova squadra";
+  $("fLeague").value = team ? team.leagueName : "";
+  $("fType").value = team ? team.leagueType : "Classic";
+  $("fTeam").value = team ? team.teamName : "";
+  state.roster = [];
+  if (team) team.players.forEach((p) => {
+    const found = state.players.find((x) => x.id === p.id);
+    state.roster.push({ raw: p.name, player: found || null });
+  });
+  $("fSearch").value = ""; $("fBulk").value = "";
+  renderRoster(); show("edit");
+}
+function renderRoster() {
+  const n = state.roster.length;
+  const unmatched = state.roster.filter((r) => !r.player).length;
+  $("rosterCount").textContent = `(${n}/36${unmatched ? ` · ${unmatched} non trovati` : ""})`;
+  $("rosterChips").innerHTML = state.roster.map((r, i) => r.player
+    ? `<span class="chip"><span class="role ${esc(r.player.role)}">${esc(r.player.role)}</span>${esc(r.player.name)} <span class="muted small">${esc(r.player.team)}</span><button data-i="${i}" title="Rimuovi">×</button></span>`
+    : `<span class="chip bad" title="Non presente nel database">⚠ ${esc(r.raw)}<button data-i="${i}" title="Rimuovi">×</button></span>`).join("");
+  const league = $("fLeague").value.trim(), team = $("fTeam").value.trim();
+  $("btnSaveTeam").disabled = !(league && team && n >= 25 && n <= 36 && unmatched === 0);
+}
+["fLeague", "fTeam"].forEach((id) => $(id).addEventListener("input", renderRoster));
+$("rosterChips").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-i]");
+  if (!b) return;
+  state.roster.splice(Number(b.dataset.i), 1); renderRoster();
+});
+function addOne() { addToRoster($("fSearch").value); $("fSearch").value = ""; renderRoster(); }
+$("btnAddOne").addEventListener("click", addOne);
+$("fSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addOne(); } });
+$("btnBulk").addEventListener("click", () => {
+  $("fBulk").value.split(/\r?\n/).forEach((l) => addToRoster(l.replace(/^\s*[\d.\-)]+\s+/, "")));
+  $("fBulk").value = ""; renderRoster();
+});
+$("btnCancelEdit").addEventListener("click", () => show("teams"));
+$("btnSaveTeam").addEventListener("click", async () => {
+  const players = state.roster.map((r) => ({ id: r.player.id, name: r.player.name }));
+  const data = {
+    leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, teamName: $("fTeam").value.trim(),
+    players, updatedAt: serverTimestamp(),
+  };
+  try {
+    if (state.editingId) {
+      const old = state.teams.find((t) => t.id === state.editingId);
+      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, createdAt: old.createdAt || serverTimestamp() });
+    } else {
+      await addDoc(collection(db, "users", state.user.uid, "teams"), { ...data, createdAt: serverTimestamp() });
+    }
+    await loadTeams(); renderTeams(); show("teams"); msg("Squadra salvata.");
+  } catch (e) { msg("Salvataggio non riuscito: " + e.message, "err", 0); }
+});
+
+// ------------------------------- Proposta formazione -------------------------------
+const RISK = { prudente: 3.0, bilanciato: DEFAULTS.replacementFloor, aggressivo: 5.5 };
+
+async function loadSignals() {
+  if (GITHUB_REPO.includes("INCOLLA")) throw new Error("GITHUB_REPO non configurato in index.html");
+  const r = await fetch(SIGNALS_URL + "?t=" + Date.now(), { cache: "no-store" });
+  if (!r.ok) throw new Error(r.status === 404 ? "file dei dati non ancora creato (avvia il job su GitHub Actions)" : "HTTP " + r.status);
+  return r.json();
+}
+
+async function propose(team, refresh, risk) {
+  state.lastTeam = team;
+  const riskSel = RISK[risk || state.lastRisk] != null ? (risk || state.lastRisk) : "bilanciato";
+  state.lastRisk = riskSel;
+  $("navProposal").classList.remove("hidden");
+  $("proposalBox").innerHTML = `<div class="card"><h2>${esc(team.teamName)}</h2><p class="muted">Carico i dati online e calcolo il modulo migliore…</p></div>`;
+  show("proposal");
+  try {
+    const byId = new Map(state.players.map((p) => [p.id, p]));
+    const ids = (team.players || []).map((p) => p.id).filter(Boolean);
+    const roster = ids.map((id) => byId.get(id)).filter(Boolean);
+    if (roster.length < 25) throw new Error("La rosa deve avere almeno 25 giocatori presenti nel database.");
+
+    let signals;
+    try { signals = await loadSignals(); }
+    catch (e) { const m = String(e.message || e); signals = { errors: { lineups: m, xg: m } }; }
+    signals.errors = signals.errors || {};
+
+    const result = proposeLineup(team.leagueType, roster, signals, { replacementFloor: RISK[riskSel] });
+    if (result.error) throw new Error(result.error);
+    const ageH = signals.fetchedAt ? (Date.now() - signals.fetchedAt) / 3600000 : null;
+    const meta = {
+      fetchedAt: signals.fetchedAt || null, round: signals.round || null, errors: signals.errors,
+      staleHours: ageH != null && ageH > SIGNALS_STALE_HOURS ? Math.round(ageH) : null,
+      counts: {
+        lineups: (signals.lineups && signals.lineups.players && signals.lineups.players.length) || 0,
+        xg: (signals.xg || []).length,
+      },
+      sourceTimes: signals.sourceTimes || {},
+      missingPlayers: ids.length - roster.length, risk: riskSel,
+    };
+    const data = { result, meta };
+    state.lastResult = data;
+    renderProposal(team, data);
+    // Ultima proposta salvata sulla squadra (facoltativo: se fallisce non è un problema).
+    updateDoc(doc(db, "users", state.user.uid, "teams", team.id), {
+      lastProposal: {
+        createdAt: serverTimestamp(), type: result.type, module: result.module, totalEv: result.totalEv,
+        lineup: result.lineup.map((p) => p.name), bench: result.bench.map((p) => p.name),
+        captain: result.captain ? result.captain.name : null,
+      },
+    }).then(async () => { await loadTeams(); renderTeams(); }).catch(() => {});
+  } catch (e) {
+    $("proposalBox").innerHTML = `<div class="banner err">Calcolo non riuscito: ${esc(e.message)}</div><button class="btn secondary" id="btnBackT">Torna alle squadre</button>`;
+    $("btnBackT").addEventListener("click", () => show("teams"));
+  }
+}
+
+function probCls(p) { return p <= 0.4 ? "low" : p <= 0.7 ? "mid" : ""; }
+function trendIcon(t) {
+  return t === "up" ? '<span class="up" title="In crescita: ultime 5 sopra la media di stagione">▲</span>'
+    : t === "down" ? '<span class="down" title="In calo: ultime 5 sotto la media di stagione">▼</span>' : "";
+}
+function rowHtml(p, withSlot, captainId) {
+  const has = (x) => x != null;
+  const xgTxt = has(p.xg) ? `xG ${fmt(p.xg, 1)} · gol ${has(p.goals) ? p.goals : "–"}` : "";
+  const xaTxt = has(p.xa) ? `xA ${fmt(p.xa, 1)} · ass. ${has(p.assists) ? p.assists : "–"}` : "";
+  const xs = xgTxt || xaTxt ? `<span class="note">${[xgTxt, xaTxt].filter(Boolean).join("<br>")}</span>` : "–";
+  const adj = p.xBonus ? `<span class="${p.xBonus > 0 ? "up" : "down"}" title="Correzione da xG−gol (${fmt(p.xgAdj)}) e xA−assist (${fmt(p.xaAdj)})">${p.xBonus > 0 ? "+" : ""}${fmt(p.xBonus)}</span>` : "–";
+  return `<tr>
+    <td><span class="role ${esc(p.role)}">${esc(p.role)}</span> <b>${esc(p.name)}</b>${p.id === captainId ? ' <span class="cap" title="Capitano consigliato">©</span>' : ""}
+      <div class="note">${esc(p.team)}${withSlot && p.slot ? " · slot " + esc(p.slot) : ""}${p.notes && p.notes.length ? " · " + esc(p.notes.join("; ")) : ""}</div></td>
+    <td class="num">${fmt(p.fmExp)}</td><td class="num">${fmt(p.fmSeason)}</td>
+    <td class="num" title="${p.n5 != null ? p.n5 + " presenze nelle ultime 5" : ""}">${fmt(p.fmLast5)}</td>
+    <td class="num"><b>${fmt(p.form)}</b> ${trendIcon(p.trend)}</td>
+    <td class="num"><span class="prob ${probCls(p.prob)}">${Math.round(p.prob * 100)}%</span></td>
+    <td class="num">${xs}</td><td class="num">${adj}</td>
+    <td class="num ev">${fmt(p.ev)}</td></tr>`;
+}
+const THEAD = `<thead><tr><th>Giocatore</th><th class="num" title="Fantamedia attesa">FM att.</th><th class="num" title="Fantamedia stagione corrente">FM stag.</th><th class="num" title="Fantamedia ultime 5 giornate">FM ult.5</th><th class="num" title="Stato di forma: media pesata delle tre fantamedie">Forma</th><th class="num">Titolarità</th><th class="num" title="xG e xA di campionato con gol e assist realmente segnati (FotMob)">xG / xA</th><th class="num" title="Correzione da (xG−gol) e (xA−assist): positiva se ha segnato meno del previsto">Corr. xG/xA</th><th class="num">Valore</th></tr></thead>`;
+
+function renderProposal(team, { result, meta }) {
+  const capId = result.captain ? result.captain.id : null;
+  const upd = meta.fetchedAt ? new Date(meta.fetchedAt).toLocaleString("it-IT") : "–";
+  const pill = (key, label, count) => key === "xg" && !(meta.errors && meta.errors.xg) && meta.errors && meta.errors.xgPartial
+    ? `<span class="pill errp" title="${esc(meta.errors.xgPartial)}">${label}: parziale (${count})</span>`
+    : meta.errors && meta.errors[key]
+    ? `<span class="pill errp" title="${esc(meta.errors[key])}">${label}: non disponibile</span>`
+    : `<span class="pill okp">${label}: ${count}</span>`;
+  const degraded = meta.errors && (meta.errors.lineups || meta.errors.xg);
+  const age = listoneAge();
+  $("proposalBox").innerHTML = `
+    <div class="row"><h2 class="grow" style="margin:0">${esc(team.teamName)} <span class="badge ${esc(team.leagueType)}">${esc(team.leagueType)}</span></h2>
+      <button class="btn secondary" id="btnRefresh">Ricarica dati online</button>
+      <button class="btn secondary" id="btnBack">Squadre</button></div>
+    <p class="muted small">${esc(team.leagueName)}${meta.round ? " · giornata " + meta.round : ""} · dati online del ${esc(upd)}${age ? " · Listone del " + esc(age.text) : ""}</p>
+    ${!age ? `<div class="banner warn">Nessun Listone importato: fantamedie e titolarità non sono disponibili, il consiglio si basa solo sui dati online.</div>` : age.days > 10 ? `<div class="banner warn">Il Listone è del ${esc(age.text)} (${age.days} giorni fa): fantamedie, titolarità e infortuni potrebbero essere indietro. L'admin può caricare il file aggiornato.</div>` : ""}
+    ${meta.staleHours ? `<div class="banner warn">I dati online hanno ${meta.staleHours} ore: il job di GitHub Actions potrebbe essere fermo (controlla la scheda Actions del repository).</div>` : ""}
+    ${degraded ? `<div class="banner warn">Alcune fonti online non erano leggibili: per quelle uso valori neutri, quindi il consiglio è meno affidabile. Passa il mouse sulle etichette qui sotto per il dettaglio.</div>` : ""}
+    ${meta.missingPlayers ? `<div class="banner warn">${meta.missingPlayers} giocatori della rosa non sono più nel database e sono stati ignorati.</div>` : ""}
+    <div class="card">
+      <div class="kv">
+        <div><span>Modulo consigliato</span><div class="big">${esc(result.module)}</div></div>
+        <div><span>Valore atteso totale</span><div class="big">${fmt(result.totalEv, 1)}</div></div>
+        <div><span>Capitano</span><div class="big" style="font-size:20px">${esc(result.captain ? result.captain.name : "–")}</div></div>
+      </div>
+      <div class="src">${pill("lineups", "Probabili formazioni", meta.counts.lineups)}${pill("xg", "xG/xA (FotMob)", meta.counts.xg)}</div>
+      <div class="row small"><label style="margin:0">Profilo di rischio</label>
+        <select id="riskSel" style="width:auto"><option value="prudente">Prudente</option><option value="bilanciato">Bilanciato</option><option value="aggressivo">Aggressivo</option></select>
+        <span class="muted">Prudente penalizza di più chi potrebbe non giocare.</span></div>
+    </div>
+    ${result.warnings.length ? `<div class="banner warn"><b>Attenzione:</b><br>${result.warnings.map(esc).join("<br>")}</div>` : ""}
+    <h3>Titolari</h3>
+    <div class="tablewrap"><table>${THEAD}<tbody>${result.lineup.map((p) => rowHtml(p, true, capId)).join("")}</tbody></table></div>
+    <h3>Panchina consigliata (in ordine)</h3>
+    <div class="tablewrap"><table>${THEAD}<tbody>${result.bench.map((p) => rowHtml(p, false, capId)).join("")}</tbody></table></div>
+    <h3>Altri moduli valutati</h3>
+    <div class="card"><table><thead><tr><th>Modulo</th><th class="num">Valore atteso</th><th class="num">Δ vs migliore</th></tr></thead><tbody>
+      ${result.alternatives.map((a) => `<tr><td>${esc(a.module)}</td><td class="num">${fmt(a.totalEv, 1)}</td><td class="num">${fmt(a.totalEv - result.totalEv, 1)}</td></tr>`).join("")}
+    </tbody></table></div>
+    <details class="card"><summary>Tutta la rosa ordinata per valore atteso</summary>
+      <div class="tablewrap" style="margin-top:10px"><table>${THEAD}<tbody>${result.all.map((p) => rowHtml(p, false, capId)).join("")}</tbody></table></div></details>
+    <p class="note"><b>Come si calcola.</b> Valore = titolarità × (forma + correzione xG/xA) + quota di sostituto.
+      Forma = media pesata di FM attesa (30%), FM stagione (30%) e FM ultime 5 (40%) del Listone: uno 0 vale "nessun dato" e le medie costruite su poche presenze vengono avvicinate alla precedente (▲/▼ = ultime 5 sopra/sotto la stagione).
+      La correzione xG/xA è piccola: positiva se un giocatore ha segnato meno dei gol attesi (xG), negativa se ha segnato di più; stesso ragionamento, con peso ancora minore, per gli assist (xA). Per giornata giocata: 3 punti × (xG − gol) × 0,30 (massimo ±0,30) e 1 punto × (xA − assist) × 0,15 (massimo ±0,10).
+      È un supporto alla decisione, non una garanzia di punteggio.</p>`;
+  $("riskSel").value = meta.risk || "bilanciato";
+  $("riskSel").addEventListener("change", (e) => propose(team, false, e.target.value));
+  $("btnRefresh").addEventListener("click", () => propose(team, true, $("riskSel").value));
+  $("btnBack").addEventListener("click", () => show("teams"));
+}
+
+// ------------------------------- Admin DB -------------------------------
+const ROLES = ["P", "D", "C", "A"];
+const toNum = (v) => { const t = String(v ?? "").trim().replace(",", "."); if (!t) return null; const n = Number(t); return Number.isFinite(n) && n > 0 ? n : null; };
+const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("it-IT") : "–");
+let pending = null;      // import in anteprima: { plan, updatedAt, fileName, warnings }
+let onlyCheck = false;   // filtro "solo ruoli da verificare"
+const needsCheck = (p) => p.roleCheck && !p.roleManual;
+
+function renderAdmin() {
+  const toCheck = state.players.filter(needsCheck);
+  $("adminCount").textContent = `(${state.players.length} giocatori)`;
+  const l = state.listone;
+  $("listoneInfo").innerHTML = l
+    ? `Ultimo import: Listone del <b>${fmtDate(l.updatedAt)}</b> · ${esc(l.fileName || "")} · ${l.count} giocatori`
+    : "Nessun Listone importato: carica il file .xlsx qui sopra.";
+  $("checkBox").innerHTML = toCheck.length
+    ? `<div class="banner warn"><b>${toCheck.length} giocatori con ruolo Classic da verificare.</b> Per loro il Listone importato non indicava il ruolo Classic (colonna <code>roleClassic</code>) e l'ho dedotto dai ruoli Mantra (⚠). Correggilo dal menu nella colonna R, oppure importa un Listone che contiene <code>roleClassic</code>.
+        <label style="display:inline;margin-left:8px"><input type="checkbox" id="onlyCheck" style="width:auto" ${onlyCheck ? "checked" : ""}> mostra solo questi</label></div>`
+    : "";
+  const q = norm($("adminFilter").value);
+  const matching = state.players.filter((p) => (!onlyCheck || needsCheck(p))
+    && (!q || norm(`${p.name} ${p.team} ${p.role} ${(p.roleMantra || []).join(" ")}`).includes(q)));
+  const rows = matching.slice(0, 400);
+  if (matching.length > rows.length) $("adminCount").textContent += ` · tabella: primi ${rows.length} di ${matching.length}, usa il filtro`;
+  $("adminRows").innerHTML = rows.map((p) => `<tr>
+    <td>${esc(p.name)}</td><td>${esc(p.team)}</td>
+    <td><select data-role="${esc(p.id)}" style="width:auto;padding:2px 4px;${needsCheck(p) ? "border-color:var(--warn)" : ""}">${ROLES.map((r) => `<option ${r === p.role ? "selected" : ""}>${r}</option>`).join("")}</select>${needsCheck(p) ? ' <span title="Ruolo Classic da verificare">⚠</span>' : p.roleManual ? ' <span class="note" title="Corretto a mano: resta finché il file non indica roleClassic">✎</span>' : ""}</td>
+    <td>${esc((p.roleMantra || []).join(", "))}</td>
+    <td class="num">${fmt(p.fmExp)}</td><td class="num">${fmt(p.fmSeason)}</td><td class="num">${fmt(p.fmLast5)}</td>
+    <td class="num">${p.titExp != null ? Math.round(p.titExp) + "%" : "–"}</td>
+    <td><button class="btn secondary" data-edit="${esc(p.id)}">Modifica</button> <button class="btn danger" data-del="${esc(p.id)}">×</button></td></tr>`).join("");
+}
+$("navAdmin").addEventListener("click", renderAdmin);
+$("adminFilter").addEventListener("input", renderAdmin);
+$("checkBox").addEventListener("change", (e) => { if (e.target.id === "onlyCheck") { onlyCheck = e.target.checked; renderAdmin(); } });
+
+$("adminRows").addEventListener("change", async (e) => {
+  const sel = e.target.closest("select[data-role]");
+  if (!sel) return;
+  try {
+    await setDoc(doc(db, "players", sel.dataset.role), { role: sel.value, roleManual: true, roleCheck: false, updatedAt: serverTimestamp() }, { merge: true });
+    await loadPlayers(); renderAdmin();
+  } catch (err) { msg("Modifica non consentita: " + err.message, "err"); renderAdmin(); }
+});
+$("adminRows").addEventListener("click", async (e) => {
+  const ed = e.target.closest("[data-edit]"), dl = e.target.closest("[data-del]");
+  if (ed) {
+    const p = state.players.find((x) => x.id === ed.dataset.edit);
+    $("pName").value = p.name; $("pTeam").value = p.team; $("pRole").value = p.role;
+    $("pMantra").value = (p.roleMantra || []).join(", ");
+    $("pExp").value = p.fmExp ?? ""; $("pSeason").value = p.fmSeason ?? ""; $("pLast5").value = p.fmLast5 ?? "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  if (dl) {
+    const p = state.players.find((x) => x.id === dl.dataset.del);
+    if (confirm(`Eliminare ${p.name} (${p.team}) dal database?`)) {
+      try { await deleteDoc(doc(db, "players", p.id)); await loadPlayers(); renderAdmin(); msg("Giocatore eliminato."); }
+      catch (err) { msg("Operazione non consentita: " + err.message, "err"); }
+    }
+  }
+});
+$("btnPClear").addEventListener("click", () => ["pName", "pTeam", "pMantra", "pExp", "pSeason", "pLast5"].forEach((i) => ($(i).value = "")));
+$("btnPSave").addEventListener("click", async () => {
+  try {
+    const name = $("pName").value.trim(), team = $("pTeam").value.trim();
+    if (!name || !team) throw new Error("nome e squadra sono obbligatori");
+    const roleMantra = parseMantra($("pMantra").value);
+    if (!roleMantra.length) throw new Error("indica almeno un ruolo Mantra (es. Dc oppure M, C)");
+    const unknown = roleMantra.filter((r) => !MANTRA_ROLES.includes(r));
+    if (unknown.length) throw new Error(`ruolo Mantra sconosciuto: ${unknown.join(", ")} (validi: ${MANTRA_ROLES.join(", ")})`);
+    const data = {
+      name, team, role: $("pRole").value, roleMantra, roleManual: true, roleCheck: false,
+      fmExp: toNum($("pExp").value), fmSeason: toNum($("pSeason").value), fmLast5: toNum($("pLast5").value),
+      updatedAt: serverTimestamp(),
+    };
+    await setDoc(doc(db, "players", pid({ name, team })), data, { merge: true });
+    await loadPlayers(); renderAdmin(); msg(`${name} salvato.`);
+  } catch (e) { msg("Salvataggio non riuscito: " + e.message, "err"); }
+});
+
+// ---- Import del Listone_FC.xlsx ----
+$("xlsxIn").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  pending = null;
+  if (!f) return renderPreview();
+  try {
+    if (!window.XLSX) throw new Error("libreria Excel non caricata: controlla la connessione e ricarica la pagina");
+    const wb = XLSX.read(await f.arrayBuffer(), { type: "array" });
+    const sheet = wb.SheetNames.includes("ALL") ? "ALL" : wb.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheet], { defval: null });
+    if (!rows.length) throw new Error(`il foglio "${sheet}" è vuoto`);
+    const missing = missingColumns(rows);
+    if (missing.length) throw new Error(`nel foglio "${sheet}" mancano le colonne: ${missing.join(", ")}`);
+    const warnings = [];
+    const rec = missingColumns(rows, RECOMMENDED_COLUMNS);
+    if (rec.includes("roleClassic")) warnings.push("Manca la colonna roleClassic: il ruolo Classic sarà dedotto dai ruoli Mantra e alcuni casi andranno verificati a mano.");
+    const recOther = rec.filter((c) => c !== "roleClassic");
+    if (recOther.length) warnings.push(`Mancano le colonne ${recOther.join(", ")}: le fantamedie saranno considerate ugualmente affidabili e la disponibilità sarà meno precisa.`);
+    pending = { plan: planImport(rows, state.players), updatedAt: latestUpdate(rows), fileName: f.name, warnings };
+    renderPreview();
+  } catch (err) {
+    $("importPreview").innerHTML = `<div class="banner err" style="margin-top:12px">Impossibile leggere il file: ${esc(err.message)}</div>`;
+  }
+});
+function renderPreview() {
+  if (!pending) { $("importPreview").innerHTML = ""; return; }
+  const { plan, updatedAt, warnings } = pending;
+  const changes = plan.added.length + plan.updated.length;
+  const newCheck = [...plan.added, ...plan.updated].filter((p) => p.roleCheck).length;
+  $("importPreview").innerHTML = `
+    <div class="kv" style="margin-top:12px">
+      <div><span>Righe valide</span><b>${plan.total}</b></div>
+      <div><span>Nuovi</span><b>${plan.added.length}</b></div>
+      <div><span>Aggiornati</span><b>${plan.updated.length}</b></div>
+      <div><span>Invariati</span><b>${plan.unchanged.length}</b></div>
+      <div><span>Non più nel file</span><b>${plan.removed.length}</b></div>
+      <div><span>Listone del</span><b>${fmtDate(updatedAt)}</b></div>
+    </div>
+    ${warnings.map((w) => `<div class="banner warn">${esc(w)}</div>`).join("")}
+    ${plan.errors.length ? `<div class="banner warn">${plan.errors.length} righe scartate:<br>${plan.errors.slice(0, 8).map(esc).join("<br>")}${plan.errors.length > 8 ? "<br>…" : ""}</div>` : ""}
+    ${newCheck ? `<div class="note">${newCheck} giocatori da importare hanno un ruolo Classic da verificare (li trovi segnalati dopo l'import).</div>` : ""}
+    ${plan.removed.length ? `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="chkDelete" style="width:auto"> Elimina dal database i ${plan.removed.length} giocatori non più nel file (es. ${esc(plan.removed.slice(0, 3).map((p) => p.name).join(", "))}). Le rose che li contengono li segnaleranno come mancanti.</label>` : ""}
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="btnApply" ${changes === 0 && !plan.removed.length ? "disabled" : ""}>Applica importazione</button>
+      <button class="btn secondary" id="btnCancelImport">Annulla</button>
+    </div>`;
+}
+$("importPreview").addEventListener("click", (e) => {
+  if (e.target.id === "btnCancelImport") { pending = null; $("xlsxIn").value = ""; renderPreview(); }
+  if (e.target.id === "btnApply") applyImport();
+});
+async function applyImport() {
+  const { plan, updatedAt, fileName } = pending;
+  const del = !!($("chkDelete") && $("chkDelete").checked);
+  if (state.players.length > 50 && plan.total < state.players.length * 0.5
+      && !confirm(`Il file contiene ${plan.total} giocatori ma il database ne ha ${state.players.length}. Procedere comunque?`)) return;
+  const btn = $("btnApply"); btn.disabled = true; btn.textContent = "Importo…";
+  try {
+    const ops = [...plan.added, ...plan.updated].map((p) => ({ del: false, p }));
+    if (del) plan.removed.forEach((p) => ops.push({ del: true, p }));
+    for (let i = 0; i < ops.length; i += 400) {
+      const batch = writeBatch(db);
+      ops.slice(i, i + 400).forEach(({ del: isDel, p }) => {
+        const ref = doc(db, "players", p.id);
+        if (isDel) { batch.delete(ref); return; }
+        const { id, ...data } = p;
+        batch.set(ref, { ...data, updatedAt: serverTimestamp() });
+      });
+      await batch.commit();
+    }
+    await setDoc(doc(db, "meta", "listone"), {
+      updatedAt, importedAt: serverTimestamp(), importedBy: state.user.email || state.user.uid, fileName, count: plan.total,
+    });
+    const summary = `Importazione completata: ${plan.added.length} nuovi, ${plan.updated.length} aggiornati${del ? `, ${plan.removed.length} eliminati` : ""}.`;
+    pending = null; $("xlsxIn").value = ""; renderPreview();
+    await loadPlayers(); renderAdmin();
+    msg(summary, "ok", 0);
+  } catch (err) {
+    msg("Importazione non riuscita: " + err.message, "err", 0);
+    renderPreview();
+  }
+}
+</script>
+</body>
+</html>
