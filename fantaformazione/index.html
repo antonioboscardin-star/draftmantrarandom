@@ -356,11 +356,15 @@ const Listone = (() => {
       titSeason: pct(r["currentseasontitolarity"]),
       titLast5: pct(r["lastfivematchestitolarity"]),
       unavailableUntilRound: numOrNull(r["unavailableuntilround"]),
+      // rigori (0 = non è rigorista, quindi dato valido) e prezzi del Listone (fanta a 10 squadre, 500 crediti)
+      penProb: pct(r["penaltyprobability"]),
+      pma: numOrNull(r["pma"]),
+      pfc: numOrNull(r["pfc"]),
       status: r["playerstatus"] ? String(r["playerstatus"]).trim().toUpperCase().slice(0, 2) : null,
     };
   }
 
-  const FIELDS = ["team", "role", "roleManual", "roleCheck", "fmExp", "fmSeason", "fmLast5", "titExp", "titSeason", "titLast5", "unavailableUntilRound", "status"];
+  const FIELDS = ["team", "role", "roleManual", "roleCheck", "fmExp", "fmSeason", "fmLast5", "titExp", "titSeason", "titLast5", "unavailableUntilRound", "penProb", "pma", "pfc", "status"];
   const same = (a, b) => (a == null && b == null) || (typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < 1e-9 : a === b);
 
   function samePlayer(a, b) {
@@ -1308,6 +1312,9 @@ const ST_COLS = [
   { k: "fmExp", l: "FM att.", t: "num", get: (r) => r.p.fmExp, show: (r) => fmt(r.p.fmExp), title: "Fantamedia attesa" },
   { k: "fmSeason", l: "FM stag.", t: "num", get: (r) => r.p.fmSeason, show: (r) => fmt(r.p.fmSeason), title: "Fantamedia stagione corrente" },
   { k: "fmLast5", l: "FM ult.5", t: "num", get: (r) => r.p.fmLast5, show: (r) => fmt(r.p.fmLast5), title: "Fantamedia ultime 5 giornate" },
+  { k: "penProb", l: "% rig.", t: "num", get: (r) => r.p.penProb, show: (r) => pct(r.p.penProb), title: "Probabilità di tirare i rigori (Listone)" },
+  { k: "pma", l: "PMA", t: "num", get: (r) => r.p.pma, show: (r) => (r.p.pma == null ? "–" : Math.round(r.p.pma)), tip: "<b>PMA</b> (Listone): riferito a un fanta a <b>10 squadre</b> con <b>500 crediti</b>" },
+  { k: "pfc", l: "PFC", t: "num", get: (r) => r.p.pfc, show: (r) => (r.p.pfc == null ? "–" : Math.round(r.p.pfc)), tip: "<b>PFC</b> (Listone): riferito a un fanta a <b>10 squadre</b> con <b>500 crediti</b>" },
   { k: "form", l: "Forma", t: "num", get: (r) => r.s.form, show: (r) => `<b>${fmt(r.s.form)}</b> ${trendIcon(r.s.trend)}`, title: "Stato di forma: media pesata delle tre fantamedie" },
   { k: "titExp", l: "Tit. att.", t: "num", get: (r) => r.p.titExp, show: (r) => pct(r.p.titExp), title: "Titolarità attesa (Listone)" },
   { k: "titSeason", l: "Tit. stag.", t: "num", get: (r) => r.p.titSeason, show: (r) => pct(r.p.titSeason), title: "Titolarità stagione corrente (Listone)" },
@@ -1377,7 +1384,7 @@ function statsSorted(rows) {
 
 function renderStatsTable() {
   const rows = statsSorted(statsFiltered(stState.cache.rows));
-  $("statsHead").innerHTML = `<tr>${ST_COLS.map((c) => `<th class="sortable ${c.t === "num" ? "num" : ""} ${c.k === stState.sort ? "sorted" : ""}" data-k="${c.k}" title="${esc((c.title || c.l) + " — clic per ordinare")}">${esc(c.l)}${c.k === stState.sort ? (stState.dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>`;
+  $("statsHead").innerHTML = `<tr>${ST_COLS.map((c) => `<th class="sortable ${c.t === "num" ? "num" : ""} ${c.k === stState.sort ? "sorted" : ""}" data-k="${c.k}" ${c.tip ? `data-tip="${esc(c.tip)}"` : `title="${esc((c.title || c.l) + " — clic per ordinare")}"`}>${esc(c.l)}${c.k === stState.sort ? (stState.dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>`;
   $("statsRows").innerHTML = rows.map((r) => `<tr class="${r.s.available ? "" : "unavail"}">${ST_COLS.map((c) => `<td class="${c.t === "num" ? "num" : ""} ${c.cls || ""}">${c.show(r)}</td>`).join("")}</tr>`).join("")
     || `<tr><td colspan="${ST_COLS.length}" class="muted">Nessun giocatore con questi filtri.</td></tr>`;
   $("statsCount").textContent = `(${rows.length} di ${stState.cache.rows.length})`;
