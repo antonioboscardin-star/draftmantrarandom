@@ -166,6 +166,9 @@
         <div><label>Tipologia lega</label>
           <select id="fType"><option>Classic</option><option>Mantra</option></select></div>
         <div><label>Nome squadra</label><input id="fTeam" maxlength="80" placeholder="es. FC Esempio"></div>
+        <div><label>D-factor</label>
+          <label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:400"><input type="checkbox" id="fDFactor" style="width:auto"> attivo in questa lega</label>
+          <div class="note" style="margin:2px 0 0">Se attivo, i moduli con almeno 4 difensori ricevono un bonus sul totale (predefinito 0,5 punti).</div></div>
       </div>
 
       <label>Aggiungi giocatori (scrivi il nome e premi Invio, oppure incolla un elenco: un giocatore per riga)</label>
@@ -574,6 +577,7 @@ const Engine = (() => {
     diffMax: 1.1,
     homeFactor: 1.01,       // fattore campo: in casa
     awayFactor: 0.99,       // fattore campo: in trasferta
+    dFactorPts: 0.5,        // D-factor (opzione per lega): punti aggiunti al totale dei moduli con almeno 4 difensori
     priorityProb: 0.6,      // i giocatori con titolarità prevista >= 60% hanno sempre la precedenza nella formazione
     minProb: 0,             // titolarità sotto questa soglia = non schierabile (0 = nessuna soglia: contano solo indisponibili/squalificati)
     // Correzione xG/xA: (attesi - realizzati) per giornata giocata x punti fantacalcio x peso, con tetto
@@ -757,7 +761,7 @@ const Engine = (() => {
   function bySel(a, b) { return b.sel - a.sel || b.score - a.score; }
 
   function proposeClassic(scored, opts) {
-    const o = { benchD: 2, benchC: 2, benchA: 2, ...(opts || {}) };
+    const o = { ...DEFAULTS, benchD: 2, benchC: 2, benchA: 2, ...(opts || {}) };
     const roles = { P: [], D: [], C: [], A: [] };
     scored.forEach((p) => roles[p.role] && roles[p.role].push(p));
     Object.values(roles).forEach((l) => l.sort(bySel));
@@ -769,7 +773,8 @@ const Engine = (() => {
       const lineup = [
         ...roles.P.slice(0, 1), ...roles.D.slice(0, d), ...roles.C.slice(0, c), ...roles.A.slice(0, a),
       ];
-      results.push({ module: m, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)), totalSel: lineup.reduce((s, p) => s + p.sel, 0) });
+      const dB = o.dFactor && d >= 4 ? o.dFactorPts : 0; // D-factor: bonus ai moduli con almeno 4 difensori
+      results.push({ module: m, lineup, dBonus: dB, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0) + dB), totalSel: lineup.reduce((s, p) => s + p.sel, 0) + dB });
     }
     if (!results.length) return { error: 'Rosa insufficiente per comporre un modulo Classic (servono almeno 1 P, 3 D, 3 C, 1 A).' };
     results.sort((x, y) => y.totalSel - x.totalSel || y.totalEv - x.totalEv);
@@ -838,7 +843,7 @@ const Engine = (() => {
   }
 
   function proposeMantra(scored, opts) {
-    const o = { benchSize: 7, ...(opts || {}) };
+    const o = { ...DEFAULTS, benchSize: 7, ...(opts || {}) };
     const BIG = 1e6;
     const results = [];
     for (const [module, slots] of Object.entries(MANTRA_MODULES)) {
@@ -848,7 +853,9 @@ const Engine = (() => {
       const assign = hungarian(cost);
       if (assign.some((j, i) => j < 0 || cost[i][j] >= BIG)) continue; // modulo non realizzabile
       const lineup = assign.map((j, i) => ({ ...scored[j], slot: slots[i].join('/') }));
-      results.push({ module, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)), totalSel: lineup.reduce((s, p) => s + p.sel, 0) });
+      const nDef = slots.filter((sl) => sl === S.DC || sl === S.DD || sl === S.DS).length;
+      const dB = o.dFactor && nDef >= 4 ? o.dFactorPts : 0; // D-factor: bonus ai moduli con almeno 4 difensori
+      results.push({ module, lineup, dBonus: dB, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0) + dB), totalSel: lineup.reduce((s, p) => s + p.sel, 0) + dB });
     }
     if (!results.length) {
       return { error: 'Nessun modulo Mantra realizzabile con i ruoli Mantra presenti in rosa. Controlla i ruoli Mantra dei giocatori nel database.' };
@@ -883,7 +890,8 @@ const Engine = (() => {
       bench,
       captain: captain ? { id: captain.id, name: captain.name } : null,
       totalEv: best.totalEv,
-      alternatives: results.slice(0, 5).map((r) => ({ module: r.module, totalEv: r.totalEv })),
+      dBonus: best.dBonus || 0,
+      alternatives: results.slice(0, 5).map((r) => ({ module: r.module, totalEv: r.totalEv, dBonus: r.dBonus || 0 })),
       warnings,
     };
   }
@@ -1035,6 +1043,7 @@ const PARAM_GROUPS = [
     { k: "awayFactor", l: "Fattore campo in trasferta", min: 0.8, max: 1.2, step: 0.005 },
   ] },
   { t: "Scelta della formazione", p: [
+    { k: "dFactorPts", l: "Bonus D-factor (punti sul totale)", min: 0, max: 5, step: 0.1, h: "Si applica solo alle leghe con D-factor attivo, ai moduli con almeno 4 difensori" },
     { k: "priorityProb", l: "Soglia di precedenza (titolarità prevista)", pct: 1, min: 0, max: 100, step: 1, u: "%", h: "Chi ha almeno questa titolarità viene scelto prima degli altri" },
     { k: "minProb", l: "Soglia minima per essere schierabile", pct: 1, min: 0, max: 100, step: 1, u: "%", h: "0% = conta solo chi è indisponibile o squalificato" },
   ] },
@@ -1116,7 +1125,7 @@ function renderTeams() {
   $("teamsList").innerHTML = state.teams.map((t) => {
     const lp = t.lastProposal;
     return `<div class="card">
-      <div class="row"><strong class="grow">${esc(t.teamName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span></div>
+      <div class="row"><strong class="grow">${esc(t.teamName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.dFactor ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
       <div class="muted small">${esc(t.leagueName)} · ${t.players.length} giocatori</div>
       ${lp ? `<div class="small" style="margin-top:8px">Ultima proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…</div>` : ""}
       <div class="row" style="margin-top:12px">
@@ -1166,6 +1175,7 @@ function startEdit(team) {
   $("fLeague").value = team ? team.leagueName : "";
   $("fType").value = team ? team.leagueType : "Classic";
   $("fTeam").value = team ? team.teamName : "";
+  $("fDFactor").checked = !!(team && team.dFactor);
   state.roster = [];
   if (team) team.players.forEach((p) => {
     const found = state.players.find((x) => x.id === p.id);
@@ -1201,7 +1211,7 @@ $("btnCancelEdit").addEventListener("click", () => show("teams"));
 $("btnSaveTeam").addEventListener("click", async () => {
   const players = state.roster.map((r) => ({ id: r.player.id, name: r.player.name }));
   const data = {
-    leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, teamName: $("fTeam").value.trim(),
+    leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, teamName: $("fTeam").value.trim(), dFactor: $("fDFactor").checked,
     players, updatedAt: serverTimestamp(),
   };
   try {
@@ -1249,7 +1259,7 @@ async function propose(team, refresh) {
 
     const signals = await getSignals(!!refresh);
 
-    const result = proposeLineup(team.leagueType, roster, signals, fvOpts());
+    const result = proposeLineup(team.leagueType, roster, signals, { ...fvOpts(), dFactor: !!team.dFactor });
     if (result.error) throw new Error(result.error);
     const ageH = signals.fetchedAt ? (Date.now() - signals.fetchedAt) / 3600000 : null;
     const meta = {
@@ -1397,7 +1407,7 @@ function renderProposal(team, { result, meta }) {
     <div class="card">
       <div class="kv">
         <div><span>Modulo consigliato</span><div class="big">${esc(result.module)}</div></div>
-        <div><span>FV totale titolari</span><div class="big">${fmt(result.totalEv, 1)}</div></div>
+        <div><span>FV totale titolari${result.dBonus ? ` <span class="muted" title="Include il bonus D-factor">(+${fmt(result.dBonus, 1)} D-factor)</span>` : ""}</span><div class="big">${fmt(result.totalEv, 1)}</div></div>
         <div><span>Capitano</span><div class="big" style="font-size:20px">${esc(result.captain ? result.captain.name : "–")}</div></div>
       </div>
       <div class="src">${pill("lineups", "Probabili formazioni", meta.counts.lineups)}${pill("xg", "xG/xA (FotMob)", meta.counts.xg)}${pill("table", "Classifica (FotMob)", meta.counts.table)}${pill("matches", "Partite", meta.counts.matches)}</div>
@@ -1409,7 +1419,7 @@ function renderProposal(team, { result, meta }) {
     <div class="tablewrap"><table class="compact">${THEAD}<tbody>${result.bench.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
     <h3>Altri moduli valutati</h3>
     <div class="card"><table><thead><tr><th>Modulo</th><th class="num">FV totale</th><th class="num">Δ vs migliore</th></tr></thead><tbody>
-      ${result.alternatives.map((a) => `<tr><td>${esc(a.module)}</td><td class="num">${fmt(a.totalEv, 1)}</td><td class="num">${fmt(a.totalEv - result.totalEv, 1)}</td></tr>`).join("")}
+      ${result.alternatives.map((a) => `<tr><td>${esc(a.module)}</td><td class="num">${fmt(a.totalEv, 1)}${a.dBonus ? ' <span class="muted" title="Include il bonus D-factor (almeno 4 difensori)">D</span>' : ""}</td><td class="num">${fmt(a.totalEv - result.totalEv, 1)}</td></tr>`).join("")}
     </tbody></table></div>
     <details class="card"><summary>Tutta la rosa ordinata per FV</summary>
       <div class="tablewrap" style="margin-top:10px"><table class="compact">${THEAD}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
