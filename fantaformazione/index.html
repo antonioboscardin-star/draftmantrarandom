@@ -166,7 +166,7 @@
         <div><label>Tipologia lega</label>
           <select id="fType"><option>Classic</option><option>Mantra</option></select></div>
         <div><label>Nome squadra</label><input id="fTeam" maxlength="80" placeholder="es. FC Esempio"></div>
-        <div><label>D-factor</label>
+        <div id="dFactorBox"><label>D-factor (solo leghe Classic)</label>
           <label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:400"><input type="checkbox" id="fDFactor" style="width:auto"> attivo in questa lega</label>
           <div class="note" style="margin:2px 0 0">Se attivo, i moduli con almeno 4 difensori ricevono un bonus sul totale (predefinito 0,5 punti).</div></div>
       </div>
@@ -577,7 +577,7 @@ const Engine = (() => {
     diffMax: 1.1,
     homeFactor: 1.01,       // fattore campo: in casa
     awayFactor: 0.99,       // fattore campo: in trasferta
-    dFactorPts: 0.5,        // D-factor (opzione per lega): punti aggiunti al totale dei moduli con almeno 4 difensori
+    dFactorPts: 0.5,        // D-factor (solo leghe Classic, opzione per lega): punti aggiunti al totale dei moduli con almeno 4 difensori
     priorityProb: 0.6,      // i giocatori con titolarità prevista >= 60% hanno sempre la precedenza nella formazione
     minProb: 0,             // titolarità sotto questa soglia = non schierabile (0 = nessuna soglia: contano solo indisponibili/squalificati)
     // Correzione xG/xA: (attesi - realizzati) per giornata giocata x punti fantacalcio x peso, con tetto
@@ -853,8 +853,7 @@ const Engine = (() => {
       const assign = hungarian(cost);
       if (assign.some((j, i) => j < 0 || cost[i][j] >= BIG)) continue; // modulo non realizzabile
       const lineup = assign.map((j, i) => ({ ...scored[j], slot: slots[i].join('/') }));
-      const nDef = slots.filter((sl) => sl === S.DC || sl === S.DD || sl === S.DS).length;
-      const dB = o.dFactor && nDef >= 4 ? o.dFactorPts : 0; // D-factor: bonus ai moduli con almeno 4 difensori
+      const dB = 0; // il D-factor vale solo per le leghe Classic
       results.push({ module, lineup, dBonus: dB, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0) + dB), totalSel: lineup.reduce((s, p) => s + p.sel, 0) + dB });
     }
     if (!results.length) {
@@ -1043,7 +1042,7 @@ const PARAM_GROUPS = [
     { k: "awayFactor", l: "Fattore campo in trasferta", min: 0.8, max: 1.2, step: 0.005 },
   ] },
   { t: "Scelta della formazione", p: [
-    { k: "dFactorPts", l: "Bonus D-factor (punti sul totale)", min: 0, max: 5, step: 0.1, h: "Si applica solo alle leghe con D-factor attivo, ai moduli con almeno 4 difensori" },
+    { k: "dFactorPts", l: "Bonus D-factor (punti sul totale)", min: 0, max: 5, step: 0.1, h: "Si applica solo alle leghe con D-factor attivo, ai moduli Classic con almeno 4 difensori" },
     { k: "priorityProb", l: "Soglia di precedenza (titolarità prevista)", pct: 1, min: 0, max: 100, step: 1, u: "%", h: "Chi ha almeno questa titolarità viene scelto prima degli altri" },
     { k: "minProb", l: "Soglia minima per essere schierabile", pct: 1, min: 0, max: 100, step: 1, u: "%", h: "0% = conta solo chi è indisponibile o squalificato" },
   ] },
@@ -1125,7 +1124,7 @@ function renderTeams() {
   $("teamsList").innerHTML = state.teams.map((t) => {
     const lp = t.lastProposal;
     return `<div class="card">
-      <div class="row"><strong class="grow">${esc(t.teamName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.dFactor ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
+      <div class="row"><strong class="grow">${esc(t.teamName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
       <div class="muted small">${esc(t.leagueName)} · ${t.players.length} giocatori</div>
       ${lp ? `<div class="small" style="margin-top:8px">Ultima proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…</div>` : ""}
       <div class="row" style="margin-top:12px">
@@ -1169,13 +1168,20 @@ function addToRoster(raw) {
   if (!player && state.roster.some((r) => !r.player && norm(r.raw) === norm(raw))) return;
   state.roster.push({ raw, player });
 }
+function syncDFactor() {
+  const classic = $("fType").value === "Classic";
+  $("dFactorBox").classList.toggle("hidden", !classic);
+  if (!classic) $("fDFactor").checked = false;
+}
+$("fType").addEventListener("change", syncDFactor);
 function startEdit(team) {
   state.editingId = team ? team.id : null;
   $("editTitle").textContent = team ? "Modifica squadra" : "Nuova squadra";
   $("fLeague").value = team ? team.leagueName : "";
   $("fType").value = team ? team.leagueType : "Classic";
   $("fTeam").value = team ? team.teamName : "";
-  $("fDFactor").checked = !!(team && team.dFactor);
+  $("fDFactor").checked = !!(team && team.dFactor && team.leagueType !== "Mantra");
+  syncDFactor();
   state.roster = [];
   if (team) team.players.forEach((p) => {
     const found = state.players.find((x) => x.id === p.id);
@@ -1211,7 +1217,7 @@ $("btnCancelEdit").addEventListener("click", () => show("teams"));
 $("btnSaveTeam").addEventListener("click", async () => {
   const players = state.roster.map((r) => ({ id: r.player.id, name: r.player.name }));
   const data = {
-    leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, teamName: $("fTeam").value.trim(), dFactor: $("fDFactor").checked,
+    leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, teamName: $("fTeam").value.trim(), dFactor: $("fType").value === "Classic" && $("fDFactor").checked,
     players, updatedAt: serverTimestamp(),
   };
   try {
@@ -1259,7 +1265,7 @@ async function propose(team, refresh) {
 
     const signals = await getSignals(!!refresh);
 
-    const result = proposeLineup(team.leagueType, roster, signals, { ...fvOpts(), dFactor: !!team.dFactor });
+    const result = proposeLineup(team.leagueType, roster, signals, { ...fvOpts(), dFactor: team.leagueType === "Classic" && !!team.dFactor });
     if (result.error) throw new Error(result.error);
     const ageH = signals.fetchedAt ? (Date.now() - signals.fetchedAt) / 3600000 : null;
     const meta = {
