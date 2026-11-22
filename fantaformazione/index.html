@@ -24,6 +24,20 @@
   .badge.admin { color: var(--accent2); border-color: var(--accent2); }
   .badge.Classic { color: var(--accent); border-color: var(--accent); }
   .badge.Mantra { color: var(--accent2); border-color: var(--accent2); }
+  /* Schermi stretti: intestazione compatta (titolo + utente sulla prima riga, menu scorrevole sulla seconda) */
+  @media (max-width: 700px) {
+    header { padding: 6px 12px; gap: 4px 8px; flex-wrap: wrap; }
+    header h1 { font-size: 16px; order: 1; }
+    .spacer { order: 2; }
+    .user { order: 3; gap: 6px; font-size: 12px; }
+    .user #userName { display: none; }
+    .user .btn { padding: 4px 10px; font-size: 13px; }
+    .badge { font-size: 10px; padding: 1px 6px; }
+    nav { order: 4; flex: 0 0 100%; margin-left: 0; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding-bottom: 2px; scrollbar-width: none; }
+    nav::-webkit-scrollbar { display: none; }
+    nav button { padding: 4px 10px; font-size: 13px; white-space: nowrap; flex: 0 0 auto; }
+    main { padding: 12px; }
+  }
   main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   h2 { font-size: 20px; margin: 0 0 14px; }
   h3 { font-size: 15px; margin: 18px 0 8px; color: var(--accent); text-transform: uppercase; letter-spacing: .6px; }
@@ -216,6 +230,13 @@
         Il ruolo Classic si legge dalla colonna <code>roleClassic</code>; se manca lo ricavo dai ruoli Mantra e segnalo i casi dubbi, che puoi correggere qui sotto.</p>
       <input type="file" id="xlsxIn" accept=".xlsx,.xls">
       <div id="importPreview"></div>
+    </div>
+    <div class="card" id="paramsCard">
+      <h3 style="margin-top:0">Parametri di calcolo del FV</h3>
+      <p class="note">Modificano il calcolo del FV e della formazione per <b>tutti gli utenti</b>. Sono salvati nel database (documento <code>meta/fvParams</code>) e restano finché non li cambi. I valori predefiniti sono quelli indicati sotto ogni campo.</p>
+      <div id="paramsForm"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="btnParamsSave">Salva parametri</button><button class="btn secondary" id="btnParamsReset">Ripristina predefiniti</button></div>
+      <div id="paramsInfo" class="note" style="margin-top:8px"></div>
     </div>
     <div id="listoneInfo" class="note" style="margin-bottom:10px"></div>
     <div id="checkBox"></div>
@@ -553,6 +574,7 @@ const Engine = (() => {
     diffMax: 1.1,
     homeFactor: 1.01,       // fattore campo: in casa
     awayFactor: 0.99,       // fattore campo: in trasferta
+    priorityProb: 0.6,      // i giocatori con titolarità prevista >= 60% hanno sempre la precedenza nella formazione
     minProb: 0,             // titolarità sotto questa soglia = non schierabile (0 = nessuna soglia: contano solo indisponibili/squalificati)
     // Correzione xG/xA: (attesi - realizzati) per giornata giocata x punti fantacalcio x peso, con tetto
     goalPts: 3,             // un gol vale ~3 punti
@@ -707,6 +729,8 @@ const Engine = (() => {
       const fv = score * diffFactor * fieldFactor;
       const available = prob > 0 && prob >= o.minProb;
       const ev = available ? fv : 0; // valore usato per scegliere la formazione
+      const pref = available && prob >= o.priorityProb - 1e-9; // titolarità prevista sufficiente: precedenza assoluta
+      const sel = ev + (pref ? PRIORITY_BONUS : 0);          // valore di selezione (il FV mostrato resta ev)
 
       return {
         id: p.id, name: p.name, team: p.team, role: p.role, roleMantra: p.roleMantra || [],
@@ -714,7 +738,7 @@ const Engine = (() => {
         form: round2(form), trend,
         prob: round2(prob), status, xg, goals, xa, assists,
         xgAdj: round2(xgAdj), xaAdj: round2(xaAdj), xBonus: round2(xBonus),
-        score: round2(score), fv: round2(fv), ev: round2(ev), notes,
+        score: round2(score), fv: round2(fv), ev: round2(ev), pref, sel, notes,
         available, opp: mi ? mi.opp : null, home: mi ? mi.home : null,
         diffPts: mi ? mi.diffPts : null, diffFactor: round3(diffFactor), fieldFactor: round3(fieldFactor),
         ownPts: mi ? mi.ownPts : null, oppPts: mi ? mi.oppPts : null, tableRange: mi ? mi.range : null,
@@ -723,17 +747,20 @@ const Engine = (() => {
   }
 
   const round2 = (x) => Math.round(x * 100) / 100;
+  const PRIORITY_BONUS = 1000; // molto più grande di qualsiasi FV: i giocatori >= soglia di titolarità vengono scelti prima
 
   // ---------- Classic ----------
   const CLASSIC_MODULES = ['3-4-3', '3-5-2', '4-3-3', '4-4-2', '4-5-1', '5-3-2', '5-4-1'];
 
   function byEv(a, b) { return b.ev - a.ev || b.score - a.score; }
+  // Ordine di scelta: prima chi ha titolarità >= 60%, poi a parità di fascia il FV più alto
+  function bySel(a, b) { return b.sel - a.sel || b.score - a.score; }
 
   function proposeClassic(scored, opts) {
     const o = { benchD: 2, benchC: 2, benchA: 2, ...(opts || {}) };
     const roles = { P: [], D: [], C: [], A: [] };
     scored.forEach((p) => roles[p.role] && roles[p.role].push(p));
-    Object.values(roles).forEach((l) => l.sort(byEv));
+    Object.values(roles).forEach((l) => l.sort(bySel));
 
     const results = [];
     for (const m of CLASSIC_MODULES) {
@@ -742,10 +769,10 @@ const Engine = (() => {
       const lineup = [
         ...roles.P.slice(0, 1), ...roles.D.slice(0, d), ...roles.C.slice(0, c), ...roles.A.slice(0, a),
       ];
-      results.push({ module: m, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)) });
+      results.push({ module: m, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)), totalSel: lineup.reduce((s, p) => s + p.sel, 0) });
     }
     if (!results.length) return { error: 'Rosa insufficiente per comporre un modulo Classic (servono almeno 1 P, 3 D, 3 C, 1 A).' };
-    results.sort((x, y) => y.totalEv - x.totalEv);
+    results.sort((x, y) => y.totalSel - x.totalSel || y.totalEv - x.totalEv);
     const best = results[0];
     const used = new Set(best.lineup.map((p) => p.id));
     const rest = (r, n) => roles[r].filter((p) => !used.has(p.id)).slice(0, n);
@@ -817,19 +844,19 @@ const Engine = (() => {
     for (const [module, slots] of Object.entries(MANTRA_MODULES)) {
       if (scored.length < slots.length) continue;
       const cost = slots.map((allowed) =>
-        scored.map((p) => (p.roleMantra.some((r) => allowed.includes(r)) ? -p.ev : BIG)));
+        scored.map((p) => (p.roleMantra.some((r) => allowed.includes(r)) ? -p.sel : BIG)));
       const assign = hungarian(cost);
       if (assign.some((j, i) => j < 0 || cost[i][j] >= BIG)) continue; // modulo non realizzabile
       const lineup = assign.map((j, i) => ({ ...scored[j], slot: slots[i].join('/') }));
-      results.push({ module, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)) });
+      results.push({ module, lineup, totalEv: round2(lineup.reduce((s, p) => s + p.ev, 0)), totalSel: lineup.reduce((s, p) => s + p.sel, 0) });
     }
     if (!results.length) {
       return { error: 'Nessun modulo Mantra realizzabile con i ruoli Mantra presenti in rosa. Controlla i ruoli Mantra dei giocatori nel database.' };
     }
-    results.sort((x, y) => y.totalEv - x.totalEv);
+    results.sort((x, y) => y.totalSel - x.totalSel || y.totalEv - x.totalEv);
     const best = results[0];
     const used = new Set(best.lineup.map((p) => p.id));
-    const rest = scored.filter((p) => !used.has(p.id)).sort(byEv);
+    const rest = scored.filter((p) => !used.has(p.id)).sort(bySel);
     const gk = rest.find((p) => p.role === 'P');
     const bench = [];
     if (gk) bench.push(gk);
@@ -843,9 +870,12 @@ const Engine = (() => {
   // ---------- Esito ----------
   function finish(type, best, bench, results) {
     const outfield = best.lineup.filter((p) => p.role !== 'P');
-    const captain = outfield.slice().sort(byEv)[0] || null;
+    const captain = outfield.slice().sort(bySel)[0] || null;
     const warnings = [];
-    best.lineup.forEach((p) => { if (p.prob <= 0.35) warnings.push(`${p.name}: rischio alto di non giocare (${Math.round(p.prob * 100)}%)`); });
+    best.lineup.forEach((p) => { 
+      if (p.prob <= 0.35) warnings.push(`${p.name}: rischio alto di non giocare (${Math.round(p.prob * 100)}%)`);
+      else if (!p.pref) warnings.push(`${p.name}: titolarità prevista ${Math.round(p.prob * 100)}% (sotto la soglia di precedenza), schierato perché manca un'alternativa migliore in rosa`);
+    });
     return {
       type,
       module: best.module,
@@ -861,7 +891,7 @@ const Engine = (() => {
   function proposeLineup(type, roster, signals, opts) {
     const scored = scorePlayers(roster, signals, opts);
     const res = type === 'Mantra' ? proposeMantra(scored, opts) : proposeClassic(scored, opts);
-    res.all = scored.slice().sort(byEv);
+    res.all = scored.slice().sort(bySel);
     return res;
   }
   return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
@@ -908,6 +938,7 @@ if (configured) {
 const state = {
   user: null, isAdmin: false,
   players: [],            // database giocatori
+  params: {},             // parametri FV modificati dall'admin (sopra i predefiniti)
   teams: [],              // squadre dell'utente
   editingId: null,        // id squadra in modifica
   roster: [],             // [{raw, player|null}]
@@ -976,6 +1007,96 @@ async function loadPlayers() {
   $("playerNames").innerHTML = state.players.map((p) => `<option value="${esc(p.name)}">${esc(p.team)} · ${esc(p.role)}</option>`).join("");
   try { const m = await getDoc(doc(db, "meta", "listone")); state.listone = m.exists() ? m.data() : null; }
   catch { state.listone = null; }
+  await loadParams();
+}
+
+// ---- Parametri di calcolo del FV (persistenti, modificabili dall'admin) ----
+// unit "pct": salvato come frazione (0,30), mostrato in % (30)
+const PARAM_GROUPS = [
+  { t: "Forma (media pesata delle fantamedie del Listone)", p: [
+    { k: "wExp", l: "Peso FM attesa", pct: 1, min: 0, max: 100, step: 1, u: "%" },
+    { k: "wSeason", l: "Peso FM stagione", pct: 1, min: 0, max: 100, step: 1, u: "%" },
+    { k: "wLast5", l: "Peso FM ultime 5", pct: 1, min: 0, max: 100, step: 1, u: "%" },
+    { k: "kSeason", l: "Partite fantasma FM attesa (k stagione)", min: 0, max: 30, step: 0.5, h: "Più è alto, più la FM stagione resta vicina alla FM attesa con poche presenze" },
+    { k: "k5", l: "Partite fantasma FM stagione (k ultime 5)", min: 0, max: 30, step: 0.5, h: "Più è alto, più la FM ultime 5 resta vicina alla FM stagione con poche presenze" },
+  ] },
+  { t: "Correzione xG / xA", p: [
+    { k: "wXg", l: "Peso correzione xG", min: 0, max: 2, step: 0.01 },
+    { k: "goalPts", l: "Punti per un gol", min: 0, max: 10, step: 0.5 },
+    { k: "xgCap", l: "Tetto ± correzione xG (punti)", min: 0, max: 3, step: 0.05 },
+    { k: "wXa", l: "Peso correzione xA", min: 0, max: 2, step: 0.01 },
+    { k: "assistPts", l: "Punti per un assist", min: 0, max: 10, step: 0.5 },
+    { k: "xaCap", l: "Tetto ± correzione xA (punti)", min: 0, max: 3, step: 0.05 },
+  ] },
+  { t: "Partita", p: [
+    { k: "diffMin", l: "Difficoltà minima (ultima contro prima)", min: 0.5, max: 1, step: 0.01 },
+    { k: "diffMax", l: "Difficoltà massima (prima contro ultima)", min: 1, max: 1.5, step: 0.01 },
+    { k: "homeFactor", l: "Fattore campo in casa", min: 0.8, max: 1.2, step: 0.005 },
+    { k: "awayFactor", l: "Fattore campo in trasferta", min: 0.8, max: 1.2, step: 0.005 },
+  ] },
+  { t: "Scelta della formazione", p: [
+    { k: "priorityProb", l: "Soglia di precedenza (titolarità prevista)", pct: 1, min: 0, max: 100, step: 1, u: "%", h: "Chi ha almeno questa titolarità viene scelto prima degli altri" },
+    { k: "minProb", l: "Soglia minima per essere schierabile", pct: 1, min: 0, max: 100, step: 1, u: "%", h: "0% = conta solo chi è indisponibile o squalificato" },
+  ] },
+];
+const PARAM_DEFS = PARAM_GROUPS.flatMap((g) => g.p);
+const fvOpts = () => state.params;
+const effParams = () => ({ ...DEFAULTS, ...state.params });
+function sanitizeParams(v) {
+  const out = {};
+  for (const d of PARAM_DEFS) {
+    const x = v && v[d.k];
+    if (typeof x !== "number" || !Number.isFinite(x)) continue;
+    const lo = d.pct ? d.min / 100 : d.min, hi = d.pct ? d.max / 100 : d.max;
+    if (x >= lo - 1e-9 && x <= hi + 1e-9 && Math.abs(x - DEFAULTS[d.k]) > 1e-9) out[d.k] = x;
+  }
+  return out;
+}
+async function loadParams() {
+  try {
+    const m = await getDoc(doc(db, "meta", "fvParams"));
+    state.params = m.exists() ? sanitizeParams(m.data().values) : {};
+    state.paramsMeta = m.exists() ? m.data() : null;
+  } catch { state.params = {}; state.paramsMeta = null; }
+  stState.cache = null;
+}
+const pFmt = (d, x) => { const v = d.pct ? x * 100 : x; return String(Math.round(v * 1000) / 1000).replace(".", ","); };
+function renderParams() {
+  if (!$("paramsForm")) return;
+  const P = effParams();
+  $("paramsForm").innerHTML = PARAM_GROUPS.map((g) => `<h4 style="margin:14px 0 6px">${esc(g.t)}</h4><div class="grid">${g.p.map((d) => {
+    const changed = Math.abs(P[d.k] - DEFAULTS[d.k]) > 1e-9;
+    return `<div><label>${esc(d.l)}${d.u ? " (" + d.u + ")" : ""}${changed ? ' <span class="note">· modificato</span>' : ""}</label>
+      <input data-param="${d.k}" inputmode="decimal" value="${esc(pFmt(d, P[d.k]))}">
+      <div class="note" style="margin:2px 0 0">Predefinito: ${esc(pFmt(d, DEFAULTS[d.k]))}${d.u || ""} · ammesso ${esc(String(d.min).replace(".", ","))}–${esc(String(d.max).replace(".", ","))}${d.h ? " · " + esc(d.h) : ""}</div></div>`;
+  }).join("")}</div>`).join("");
+  const m = state.paramsMeta;
+  $("paramsInfo").textContent = Object.keys(state.params).length
+    ? `Parametri personalizzati attivi (${Object.keys(state.params).length})${m && m.updatedAt ? " · ultimo salvataggio " + fmtDate(m.updatedAt) : ""}.`
+    : "Tutti i parametri sono ai valori predefiniti.";
+}
+async function saveParams(reset) {
+  try {
+    const values = {};
+    if (!reset) {
+      for (const d of PARAM_DEFS) {
+        const el = document.querySelector(`[data-param="${d.k}"]`);
+        const raw = String(el.value).trim().replace(",", ".");
+        const x = Number(raw);
+        if (raw === "" || !Number.isFinite(x)) throw new Error(`"${d.l}": valore non valido.`);
+        if (x < d.min - 1e-9 || x > d.max + 1e-9) throw new Error(`"${d.l}": deve essere fra ${d.min} e ${d.max}.`);
+        values[d.k] = d.pct ? x / 100 : x;
+      }
+      const w = values.wExp + values.wSeason + values.wLast5;
+      if (Math.abs(w - 1) > 0.005) throw new Error(`I tre pesi della forma devono sommare 100% (ora ${Math.round(w * 1000) / 10}%).`);
+      if (values.diffMin > 1 || values.diffMax < 1) throw new Error("La difficoltà minima deve essere ≤ 1 e la massima ≥ 1.");
+    }
+    const changed = reset ? {} : sanitizeParams(values);
+    await setDoc(doc(db, "meta", "fvParams"), { values: changed, updatedAt: new Date().toISOString(), updatedBy: state.user.email || state.user.uid });
+    await loadParams();
+    renderParams();
+    msg(reset ? "Parametri ripristinati ai valori predefiniti." : "Parametri salvati: valgono da subito per tutti gli utenti.");
+  } catch (err) { msg(err.message, "err"); }
 }
 function listoneAge() {
   const l = state.listone;
@@ -1128,7 +1249,7 @@ async function propose(team, refresh) {
 
     const signals = await getSignals(!!refresh);
 
-    const result = proposeLineup(team.leagueType, roster, signals);
+    const result = proposeLineup(team.leagueType, roster, signals, fvOpts());
     if (result.error) throw new Error(result.error);
     const ageH = signals.fetchedAt ? (Date.now() - signals.fetchedAt) / 3600000 : null;
     const meta = {
@@ -1253,6 +1374,9 @@ const THEAD = `<thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R
 
 function renderProposal(team, { result, meta }) {
   const capId = result.captain ? result.captain.id : null;
+  const P = effParams();
+  const PP = (x) => Math.round(x * 100) + "%";
+  const fx = (x) => (Math.round(x * 1000) / 1000).toFixed(Math.abs(x * 100 - Math.round(x * 100)) > 1e-6 ? 3 : 2).replace(".", ",");
   const upd = meta.fetchedAt ? new Date(meta.fetchedAt).toLocaleString("it-IT") : "–";
   const pill = (key, label, count) => key === "xg" && !(meta.errors && meta.errors.xg) && meta.errors && meta.errors.xgPartial
     ? `<span class="pill errp" title="${esc(meta.errors.xgPartial)}">${label}: parziale (${count})</span>`
@@ -1290,9 +1414,10 @@ function renderProposal(team, { result, meta }) {
     <details class="card"><summary>Tutta la rosa ordinata per FV</summary>
       <div class="tablewrap" style="margin-top:10px"><table class="compact">${THEAD}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
     <p class="note"><b>Come si calcola il FV (Fanta Valore).</b> FV = (forma + correzione xG/xA) × difficoltà della partita × campo. Passa il mouse sul FV (o toccalo da mobile) per vedere il dettaglio di ogni giocatore; sul nome per le note.
-      Forma = media pesata di FM attesa (30%), FM stagione (30%) e FM ultime 5 (40%) del Listone: uno 0 vale "nessun dato" e le medie costruite su poche presenze vengono avvicinate alla precedente.
+      Forma = media pesata di FM attesa (${PP(P.wExp)}), FM stagione (${PP(P.wSeason)}) e FM ultime 5 (${PP(P.wLast5)}) del Listone: uno 0 vale "nessun dato" e le medie costruite su poche presenze vengono avvicinate alla precedente.
       Correzione xG/xA: positiva se un giocatore ha segnato meno dei gol attesi (xG), negativa se ha segnato di più; stesso ragionamento, con peso ancora minore, per gli assist (xA).
-      Difficoltà: da 0,90 a 1,10 in base alla differenza di punti in classifica FotMob rispetto all'ampiezza della classifica (prima contro ultima = 1,10; ultima contro prima = 0,90; pari punti = 1,00). Campo: 1,01 in casa, 0,99 in trasferta.
+      Difficoltà: da ${fx(P.diffMin)} a ${fx(P.diffMax)} in base alla differenza di punti in classifica FotMob rispetto all'ampiezza della classifica (prima contro ultima = ${fx(P.diffMax)}; ultima contro prima = ${fx(P.diffMin)}; pari punti = 1,00). Campo: ${fx(P.homeFactor)} in casa, ${fx(P.awayFactor)} in trasferta.
+      Nella scelta della formazione hanno la precedenza i giocatori con titolarità prevista di almeno ${PP(P.priorityProb)}.
       La titolarità non entra nel FV: serve a escludere indisponibili e squalificati dalla formazione e a segnalare i rischi.
       È un supporto alla decisione, non una garanzia di punteggio.</p>`;
   $("btnRefresh").addEventListener("click", () => propose(team, true));
@@ -1313,8 +1438,8 @@ const ST_COLS = [
   { k: "fmSeason", l: "FM stag.", t: "num", get: (r) => r.p.fmSeason, show: (r) => fmt(r.p.fmSeason), title: "Fantamedia stagione corrente" },
   { k: "fmLast5", l: "FM ult.5", t: "num", get: (r) => r.p.fmLast5, show: (r) => fmt(r.p.fmLast5), title: "Fantamedia ultime 5 giornate" },
   { k: "penProb", l: "% rig.", t: "num", get: (r) => r.p.penProb, show: (r) => pct(r.p.penProb), title: "Probabilità di tirare i rigori (Listone)" },
-  { k: "pma", l: "PMA", t: "num", get: (r) => r.p.pma, show: (r) => (r.p.pma == null ? "–" : Math.round(r.p.pma)), tip: "<b>PMA</b> (Listone): riferito a un fanta a <b>10 squadre</b> con <b>500 crediti</b>" },
-  { k: "pfc", l: "PFC", t: "num", get: (r) => r.p.pfc, show: (r) => (r.p.pfc == null ? "–" : Math.round(r.p.pfc)), tip: "<b>PFC</b> (Listone): riferito a un fanta a <b>10 squadre</b> con <b>500 crediti</b>" },
+  { k: "pma", l: "PMA", t: "num", get: (r) => r.p.pma, show: (r) => (r.p.pma == null ? "–" : Math.round(r.p.pma)), tip: "<b>PMA</b> = Prezzo Medio Asta (Listone), riferito a un fanta a <b>10 squadre</b> con <b>500 crediti</b>" },
+  { k: "pfc", l: "PFC", t: "num", get: (r) => r.p.pfc, show: (r) => (r.p.pfc == null ? "–" : Math.round(r.p.pfc)), tip: "<b>PFC</b> = Prezzo consigliato (Listone), riferito a un fanta a <b>10 squadre</b> con <b>500 crediti</b>" },
   { k: "form", l: "Forma", t: "num", get: (r) => r.s.form, show: (r) => `<b>${fmt(r.s.form)}</b> ${trendIcon(r.s.trend)}`, title: "Stato di forma: media pesata delle tre fantamedie" },
   { k: "titExp", l: "Tit. att.", t: "num", get: (r) => r.p.titExp, show: (r) => pct(r.p.titExp), title: "Titolarità attesa (Listone)" },
   { k: "titSeason", l: "Tit. stag.", t: "num", get: (r) => r.p.titSeason, show: (r) => pct(r.p.titSeason), title: "Titolarità stagione corrente (Listone)" },
@@ -1322,8 +1447,8 @@ const ST_COLS = [
   { k: "prob", l: "Tit. prev.", t: "num", get: (r) => r.s.prob * 100, show: (r) => `<span class="prob ${probCls(r.s.prob)}">${Math.round(r.s.prob * 100)}%</span>`, title: "Titolarità prevista per la prossima giornata (probabili formazioni)" },
   { k: "status", l: "Stato", t: "str", get: (r) => STATUS_TXT[r.s.status] || "", show: (r) => esc(STATUS_TXT[r.s.status] || "–"), title: "Stato nelle probabili formazioni" },
   { k: "match", l: "Partita", t: "str", get: (r) => (r.s.opp ? teamAbbr(r.s.opp, knownTeams()) : ""), show: (r) => matchHtml(r.s, knownTeams()), title: "Prossima partita: squadra del giocatore - avversaria; C = in casa, T = in trasferta" },
-  { k: "diff", l: "Diff.", t: "num", get: (r) => (r.s.opp ? r.s.diffFactor : null), show: (r) => (r.s.opp ? "×" + fmt(r.s.diffFactor) : "–"), title: "Fattore difficoltà partita (0,90–1,10) dai punti in classifica" },
-  { k: "field", l: "Campo", t: "num", get: (r) => (r.s.opp ? r.s.fieldFactor : null), show: (r) => (r.s.opp ? "×" + fmt(r.s.fieldFactor) : "–"), title: "Fattore campo: 1,01 in casa, 0,99 in trasferta" },
+  { k: "diff", l: "Diff.", t: "num", get: (r) => (r.s.opp ? r.s.diffFactor : null), show: (r) => (r.s.opp ? "×" + fmt(r.s.diffFactor) : "–"), title: "Fattore difficoltà partita dai punti in classifica" },
+  { k: "field", l: "Campo", t: "num", get: (r) => (r.s.opp ? r.s.fieldFactor : null), show: (r) => (r.s.opp ? "×" + fmt(r.s.fieldFactor) : "–"), title: "Fattore campo (in casa / in trasferta)" },
   { k: "xg", l: "xG", t: "num", get: (r) => r.s.xg, show: (r) => fmt(r.s.xg, 1), title: "Gol attesi (FotMob)" },
   { k: "goals", l: "Gol", t: "num", get: (r) => r.s.goals, show: (r) => (r.s.goals == null ? "–" : r.s.goals), title: "Gol segnati (FotMob)" },
   { k: "xgd", l: "xG−Gol", t: "num", get: (r) => r.xgd, show: (r) => `<span class="${r.xgd > 0 ? "up" : r.xgd < 0 ? "down" : ""}">${signed(r.xgd)}</span>`, title: "Positivo = ha segnato meno del previsto" },
@@ -1345,7 +1470,7 @@ async function statsRowsFor(signals) {
   stState.cache = { players: state.players, signals, rows };
   return rows;
 }
-const scorePlayersAll = (players, signals) => Engine.scorePlayers(players, signals);
+const scorePlayersAll = (players, signals) => Engine.scorePlayers(players, signals, fvOpts());
 
 function statsFiltered(rows) {
   const q = norm($("stSearch").value), team = $("stTeam").value, role = $("stRole").value, mantra = $("stMantra").value;
@@ -1441,6 +1566,7 @@ let onlyCheck = false;   // filtro "solo ruoli da verificare"
 const needsCheck = (p) => p.roleCheck && !p.roleManual;
 
 function renderAdmin() {
+  renderParams();
   const toCheck = state.players.filter(needsCheck);
   $("adminCount").textContent = `(${state.players.length} giocatori)`;
   const l = state.listone;
@@ -1465,6 +1591,8 @@ function renderAdmin() {
     <td><button class="btn secondary" data-edit="${esc(p.id)}">Modifica</button> <button class="btn danger" data-del="${esc(p.id)}">×</button></td></tr>`).join("");
 }
 $("navAdmin").addEventListener("click", renderAdmin);
+$("btnParamsSave").addEventListener("click", () => saveParams(false));
+$("btnParamsReset").addEventListener("click", () => { if (confirm("Ripristinare tutti i parametri ai valori predefiniti?")) saveParams(true); });
 $("adminFilter").addEventListener("input", renderAdmin);
 $("checkBox").addEventListener("change", (e) => { if (e.target.id === "onlyCheck") { onlyCheck = e.target.checked; renderAdmin(); } });
 
