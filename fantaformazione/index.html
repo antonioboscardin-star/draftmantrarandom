@@ -128,7 +128,7 @@
     <button data-view="edit">Nuova squadra</button>
     <button data-view="proposal" class="hidden" id="navProposal">Formazione</button>
     <button data-view="stats" class="hidden" id="navStats">Statistiche</button>
-    <button data-view="admin" class="hidden" id="navAdmin">Admin database</button>
+    <button data-view="admin" class="hidden" id="navAdmin">Admin</button>
   </nav>
   <div class="spacer"></div>
   <div class="user hidden" id="userBox">
@@ -224,7 +224,15 @@
 
   <!-- ADMIN -->
   <section id="v-admin" class="hidden">
-    <h2>Database giocatori <span class="muted small" id="adminCount"></span></h2>
+    <h2>Admin <span class="muted small" id="adminCount"></span></h2>
+    <details class="card" id="paramsCard">
+      <summary style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-size:15px">Parametri di calcolo del FV</summary>
+      <div style="margin-top:10px"></div>
+      <p class="note">Modificano il calcolo del FV e della formazione per <b>tutti gli utenti</b>. Sono salvati nel database (documento <code>meta/fvParams</code>) e restano finché non li cambi. I valori predefiniti sono quelli indicati sotto ogni campo.</p>
+      <div id="paramsForm"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="btnParamsSave">Salva parametri</button><button class="btn secondary" id="btnParamsReset">Ripristina predefiniti</button></div>
+      <div id="paramsInfo" class="note" style="margin-top:8px"></div>
+    </details>
     <div class="card">
       <h3 style="margin-top:0">Aggiorna dal Listone (.xlsx)</h3>
       <p class="note">Carica il file <b>Listone_FC.xlsx</b> (foglio "ALL"). Uso: <code>name, team, roleMantra</code>, le tre fantamedie
@@ -233,13 +241,6 @@
         Il ruolo Classic si legge dalla colonna <code>roleClassic</code>; se manca lo ricavo dai ruoli Mantra e segnalo i casi dubbi, che puoi correggere qui sotto.</p>
       <input type="file" id="xlsxIn" accept=".xlsx,.xls">
       <div id="importPreview"></div>
-    </div>
-    <div class="card" id="paramsCard">
-      <h3 style="margin-top:0">Parametri di calcolo del FV</h3>
-      <p class="note">Modificano il calcolo del FV e della formazione per <b>tutti gli utenti</b>. Sono salvati nel database (documento <code>meta/fvParams</code>) e restano finché non li cambi. I valori predefiniti sono quelli indicati sotto ogni campo.</p>
-      <div id="paramsForm"></div>
-      <div class="row" style="margin-top:12px"><button class="btn" id="btnParamsSave">Salva parametri</button><button class="btn secondary" id="btnParamsReset">Ripristina predefiniti</button></div>
-      <div id="paramsInfo" class="note" style="margin-top:8px"></div>
     </div>
     <div id="listoneInfo" class="note" style="margin-bottom:10px"></div>
     <div id="checkBox"></div>
