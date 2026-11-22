@@ -4,7 +4,7 @@ name: FantaFormazione - aggiorna dati online
 
 on:
   schedule:
-    - cron: '0 8 * * *'          # ogni giorno alle 9:00 italiane (ora solare)
+    - cron: '0 8,20 * * *'       # ogni giorno alle 9:00 e alle 21:00 italiane (ora solare)
     - cron: '0 11,14,17 * * 5'   # solo il venerdì alle 12:00, 15:00 e 18:00 italiane (ora so
   workflow_dispatch:             # avvio manuale da Actions -> Run workflow
 
