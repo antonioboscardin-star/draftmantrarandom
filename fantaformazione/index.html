@@ -795,24 +795,26 @@ const Engine = (() => {
    * modificati qui: ogni slot è la lista dei ruoli Mantra ammessi (Por, Dd, Ds, Dc, B, E, M, C, W, T, A, Pc).
    */
   const S = {
-    POR: ['Por'], DC: ['Dc', 'B'], DD: ['Dd'], DS: ['Ds'],
-    E: ['E'], M: ['M'], C: ['C'], MC: ['M', 'C'], EW: ['E', 'W'], MCW: ['M', 'C', 'W'],
-    W: ['W'], WA: ['W', 'A'], WT: ['W', 'T'], T: ['T'], TA: ['T', 'A'],
-    A: ['A'], APC: ['A', 'Pc'], PC: ['Pc'],
+    POR: ['Por'], DC: ['Dc'], DCB: ['Dc', 'B'], DD: ['Dd'], DS: ['Ds'],
+    E: ['E'], M: ['M'], C: ['C'], MC: ['M', 'C'], EW: ['E', 'W'], CT: ['C', 'T'],
+    W: ['W'], WA: ['W', 'A'], WT: ['W', 'T'], T: ['T'], TA: ['T', 'A'], TAPC: ['T', 'A', 'Pc'],
+    APC: ['A', 'Pc'],
   };
   const D4 = [S.DD, S.DC, S.DC, S.DS];
-  const D3 = [S.DC, S.DC, S.DC];
+  const D3 = [S.DC, S.DC, S.DCB];
+  // Moduli ammessi (Mantra Experience 2026/2027): 11 slot ciascuno
   const MANTRA_MODULES = {
-    '3-4-3':   [S.POR, ...D3, S.E, S.MC, S.MC, S.E, S.WA, S.APC, S.WA],
-    '3-4-2-1': [S.POR, ...D3, S.E, S.MC, S.MC, S.E, S.WT, S.WT, S.APC],
-    '3-4-1-2': [S.POR, ...D3, S.E, S.MC, S.MC, S.E, S.T, S.APC, S.APC],
-    '3-5-2':   [S.POR, ...D3, S.E, S.M, S.MC, S.C, S.E, S.APC, S.APC],
-    '4-3-3':   [S.POR, ...D4, S.M, S.C, S.MC, S.WA, S.APC, S.WA],
-    '4-4-2':   [S.POR, ...D4, S.EW, S.M, S.C, S.EW, S.APC, S.APC],
-    '4-3-1-2': [S.POR, ...D4, S.M, S.C, S.MC, S.T, S.APC, S.APC],
-    '4-3-2-1': [S.POR, ...D4, S.M, S.C, S.MC, S.WT, S.WT, S.APC],
-    '4-2-3-1': [S.POR, ...D4, S.M, S.MC, S.WT, S.T, S.WT, S.APC],
-    '4-5-1':   [S.POR, ...D4, S.EW, S.M, S.MC, S.C, S.EW, S.APC],
+    '3-4-3':   [S.POR, ...D3, S.E, S.MC, S.C, S.E, S.WA, S.APC, S.WA],
+    '3-4-1-2': [S.POR, ...D3, S.E, S.MC, S.C, S.E, S.T, S.APC, S.APC],
+    '3-4-2-1': [S.POR, ...D3, S.EW, S.M, S.MC, S.E, S.T, S.TA, S.APC],
+    '3-5-2':   [S.POR, ...D3, S.EW, S.M, S.MC, S.C, S.E, S.APC, S.APC],
+    '3-5-1-1': [S.POR, ...D3, S.M, S.M, S.C, S.EW, S.EW, S.TA, S.APC],
+    '4-3-3':   [S.POR, ...D4, S.MC, S.M, S.C, S.WA, S.APC, S.WA],
+    '4-3-1-2': [S.POR, ...D4, S.MC, S.M, S.C, S.T, S.TAPC, S.APC],
+    '4-4-2':   [S.POR, ...D4, S.MC, S.C, S.E, S.EW, S.APC, S.APC],
+    '4-1-4-1': [S.POR, ...D4, S.M, S.CT, S.T, S.EW, S.W, S.APC],
+    '4-4-1-1': [S.POR, ...D4, S.M, S.C, S.EW, S.EW, S.TA, S.APC],
+    '4-2-3-1': [S.POR, ...D4, S.M, S.MC, S.WT, S.T, S.WA, S.APC],
   };
 
   function hungarian(cost) {
