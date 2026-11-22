@@ -233,19 +233,21 @@
       <div class="row" style="margin-top:12px"><button class="btn" id="btnParamsSave">Salva parametri</button><button class="btn secondary" id="btnParamsReset">Ripristina predefiniti</button></div>
       <div id="paramsInfo" class="note" style="margin-top:8px"></div>
     </details>
-    <div class="card">
-      <h3 style="margin-top:0">Aggiorna dal Listone (.xlsx)</h3>
+    <details class="card" id="importCard">
+      <summary style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-size:15px">Aggiorna dal Listone (.xlsx)</summary>
+      <div style="margin-top:10px"></div>
       <p class="note">Carica il file <b>Listone_FC.xlsx</b> (foglio "ALL"). Uso: <code>name, team, roleMantra</code>, le tre fantamedie
         (<code>expectedFantamedia</code>, <code>currentSeasonFantamedia</code>, <code>lastFiveMatchesFantamedia</code>), le relative titolarità,
         <code>unavailableUntilRound</code> e <code>playerStatus</code>. Nelle fantamedie uno 0 significa "nessun dato". Prima di scrivere vedrai un'anteprima delle differenze.
         Il ruolo Classic si legge dalla colonna <code>roleClassic</code>; se manca lo ricavo dai ruoli Mantra e segnalo i casi dubbi, che puoi correggere qui sotto.</p>
       <input type="file" id="xlsxIn" accept=".xlsx,.xls">
       <div id="importPreview"></div>
-    </div>
+    </details>
     <div id="listoneInfo" class="note" style="margin-bottom:10px"></div>
     <div id="checkBox"></div>
-    <div class="card">
-      <h3 style="margin-top:0">Modifica singolo giocatore</h3>
+    <details class="card" id="playerCard">
+      <summary style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-size:15px">Modifica singolo giocatore</summary>
+      <div style="margin-top:10px"></div>
       <div class="grid">
         <div><label>Nome (come nel listone, es. Paz N.)</label><input id="pName"></div>
         <div><label>Squadra</label><input id="pTeam"></div>
@@ -256,7 +258,7 @@
         <div><label>FM ultime 5</label><input id="pLast5" inputmode="decimal"></div>
       </div>
       <div class="row" style="margin-top:12px"><button class="btn" id="btnPSave">Salva giocatore</button><button class="btn secondary" id="btnPClear">Pulisci</button></div>
-    </div>
+    </details>
     <input id="adminFilter" placeholder="Filtra per nome, squadra o ruolo…" style="margin-bottom:10px">
     <div class="tablewrap"><table>
       <thead><tr><th>Nome</th><th>Squadra</th><th title="Ruolo Classic">R</th><th>Mantra</th><th class="num">FM att.</th><th class="num">FM stag.</th><th class="num">FM ult.5</th><th class="num">Tit. att.</th><th></th></tr></thead>
@@ -1628,7 +1630,8 @@ $("adminRows").addEventListener("click", async (e) => {
     $("pName").value = p.name; $("pTeam").value = p.team; $("pRole").value = p.role;
     $("pMantra").value = (p.roleMantra || []).join(", ");
     $("pExp").value = p.fmExp ?? ""; $("pSeason").value = p.fmSeason ?? ""; $("pLast5").value = p.fmLast5 ?? "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    $("playerCard").open = true;
+    $("playerCard").scrollIntoView({ behavior: "smooth", block: "start" });
   }
   if (dl) {
     const p = state.players.find((x) => x.id === dl.dataset.del);
