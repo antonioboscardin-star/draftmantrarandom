@@ -64,6 +64,23 @@
   .rc.W { border-color: var(--win); background: rgba(52,211,153,.10); } .rc.D { border-color: var(--draw); background: rgba(250,204,21,.09); } .rc.L { border-color: var(--loss); background: rgba(248,113,113,.10); }
   .rc .sr { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
   .rc input.sc { width: 100%; min-width: 0; padding: 4px; text-align: center; }
+  input.ip { width: 3.4em; padding: 4px 6px; text-align: center; }
+  .sc2 { display: inline-flex; align-items: center; gap: 3px; padding: 2px 4px; border-radius: 8px; border: 1px solid transparent; }
+  .sc2 input { width: 2.6em; padding: 4px 2px; text-align: center; }
+  .sc2.W { border-color: var(--win); background: rgba(52,211,153,.12); } .sc2.D { border-color: var(--draw); background: rgba(250,204,21,.10); } .sc2.L { border-color: var(--loss); background: rgba(248,113,113,.12); }
+  button.mv { display: block; background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 5px; font-size: 10px; line-height: 1; padding: 3px 6px; cursor: pointer; }
+  button.mv + button.mv { margin-top: 3px; }
+  button.mv:disabled { opacity: .3; cursor: default; }
+  .saved { color: var(--win); }
+  @media (max-width: 700px) {
+    .c-last { display: none; }
+    #v-results table.compact th, #v-results table.compact td { padding: 6px 3px; font-size: 13px; }
+    #v-results td:nth-child(2) { max-width: 92px; word-break: break-word; white-space: normal; }
+    #v-results td:nth-child(2) .badge { display: none; }
+    #v-results input.ip { width: 2.5em; padding: 4px 2px; }
+    #v-results .sc2 input { width: 2.2em; }
+    #v-results button.icon { padding: 4px 7px; }
+  }
   tr.edrow > td { background: var(--panel2); }
   main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   h2 { font-size: 20px; margin: 0 0 14px; }
@@ -195,10 +212,11 @@
     </div>
     <div class="sumbar" id="resSummary"></div>
     <div class="tablewrap"><table class="compact">
-      <thead><tr><th>Lega</th><th class="num" title="Posizione in classifica">Pos.</th><th class="num" title="Punti di distanza dal podio">Dist. podio</th><th class="num" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th>Ultimi risultati</th><th id="rRoundHead">Giornata</th><th></th></tr></thead>
+      <thead><tr><th title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th>Lega</th><th class="num" title="Posizione in classifica (modificabile)">Pos.</th><th class="num" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="num" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="c-last">Ultimi risultati</th><th id="rRoundHead" title="Risultato della giornata selezionata: gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
       <tbody id="resRows"></tbody>
     </table></div>
     <p class="note" id="resNote"></p>
+    <p class="note" id="resSaved"></p>
   </section>
 
   <!-- CREA / MODIFICA SQUADRA -->
@@ -1011,7 +1029,32 @@ const Results = (() => {
     const n = Number(t);
     return n >= lo && n <= hi ? n : NaN;
   }
-  return { MAX_ROUND, OUT_TXT, outcome, startOf, leagueRound, clean, summarize, latestRound, countsForRound, parseIntIn };
+  /** Ordine preferito dall'utente (campo sortOrder); chi non ce l'ha va in fondo, poi ordine alfabetico. */
+  const orderKey = (t) => (t && typeof t.sortOrder === 'number' && Number.isFinite(t.sortOrder) ? t.sortOrder : Infinity);
+  function sortTeams(teams) {
+    return teams.slice().sort((a, b) => {
+      const x = orderKey(a), y = orderKey(b);
+      if (x !== y) return x < y ? -1 : 1;
+      return (a.leagueName + a.teamName).localeCompare(b.leagueName + b.teamName, 'it');
+    });
+  }
+  /** Sposta id di una posizione fra le righe visibili (visibleIds, nell'ordine mostrato); ritorna il nuovo ordine completo. */
+  function moveInOrder(allIds, visibleIds, id, dir) {
+    const i = visibleIds.indexOf(id), j = i + dir;
+    if (i < 0 || j < 0 || j >= visibleIds.length) return allIds.slice();
+    const neighbor = visibleIds[j];
+    const arr = allIds.filter((x) => x !== id);
+    const k = arr.indexOf(neighbor);
+    arr.splice(dir < 0 ? k : k + 1, 0, id);
+    return arr;
+  }
+  /** Giornata mostrata di default: l'ultima con risultati; se non ce ne sono, la più avanzata fra le giornate di inizio. */
+  function defaultRound(teams) {
+    const l = latestRound(teams);
+    if (l !== null) return l;
+    return teams.reduce((m, t) => Math.max(m, startOf(t)), 1);
+  }
+  return { MAX_ROUND, OUT_TXT, outcome, startOf, leagueRound, clean, summarize, latestRound, countsForRound, parseIntIn, sortTeams, moveInOrder, defaultRound };
 })();
 /* ==== RESULTS:END ==== */
 
@@ -1226,7 +1269,7 @@ function listoneAge() {
 async function loadTeams() {
   const snap = await getDocs(collection(db, "users", state.user.uid, "teams"));
   state.teams = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  state.teams.sort((a, b) => (a.leagueName + a.teamName).localeCompare(b.leagueName + b.teamName, "it"));
+  state.teams = Results.sortTeams(state.teams);
 }
 
 // ------------------------------- Squadre -------------------------------
@@ -1346,9 +1389,9 @@ $("btnSaveTeam").addEventListener("click", async () => {
     if (state.editingId) {
       const old = state.teams.find((t) => t.id === state.editingId);
       // classifica e risultati restano quelli già salvati
-      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, position: old.position ?? null, podiumGap: old.podiumGap ?? null, results: old.results || [], createdAt: old.createdAt || serverTimestamp() });
+      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, position: old.position ?? null, podiumGap: old.podiumGap ?? null, results: old.results || [], sortOrder: old.sortOrder ?? null, createdAt: old.createdAt || serverTimestamp() });
     } else {
-      await addDoc(collection(db, "users", state.user.uid, "teams"), { ...data, position: null, podiumGap: null, results: [], createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", state.user.uid, "teams"), { ...data, position: null, podiumGap: null, results: [], sortOrder: state.teams.length, createdAt: serverTimestamp() });
     }
     await loadTeams(); renderTeams(); show("teams"); msg("Squadra salvata.");
   } catch (e) { msg("Salvataggio non riuscito: " + e.message, "err", 0); }
@@ -1564,7 +1607,8 @@ function renderProposal(team, { result, meta }) {
 }
 
 // ------------------------------- Risultati -------------------------------
-const rs = { league: "", type: "", pos: "", round: "last", outcome: null, editing: null };
+const rs = { league: "", type: "", pos: "", round: null, outcome: null, editing: null, vis: [] };
+const resRound = () => (rs.round != null ? rs.round : Results.defaultRound(state.teams)); // di default l'ultima giornata valorizzata
 function resFiltered() {
   const q = norm(rs.league);
   return state.teams.filter((t) => {
@@ -1583,85 +1627,148 @@ function resEditorHtml(t) {
     cells.push(`<div class="rc ${r ? r.o : ""}" data-rc="${n}"><span class="muted small">G${Results.leagueRound(t, n)} · SA ${n}</span>
       <div class="sr"><input class="sc" data-r="${n}" data-k="my" inputmode="numeric" maxlength="2" value="${r ? r.my : ""}" aria-label="Miei gol giornata ${n}"><span>-</span><input class="sc" data-r="${n}" data-k="opp" inputmode="numeric" maxlength="2" value="${r ? r.opp : ""}" aria-label="Gol avversario giornata ${n}"></div></div>`);
   }
-  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
-      <div><label>Posizione in classifica</label><input id="eePos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="es. 3"></div>
-      <div><label>Distanza dal podio (punti)</label><input id="eeGap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="0 se sul podio"></div>
-      <div class="note" style="align-self:end">Prima giornata di lega: Serie A ${st} (si cambia da Modifica squadra). Punti calcolati: <b>${sm.points}</b> (${sm.W}V ${sm.D}P ${sm.L}S).</div></div>
-    <label style="margin-top:10px">Risultati: gol miei - gol dell'avversario (lascia vuoto se non giocata)</label>
+  return `<div class="note">Tutte le giornate di <b>${esc(t.leagueName)}</b>: gol miei - gol dell'avversario (vuoto = non giocata). Prima giornata di lega: Serie A ${st} (si cambia da Modifica squadra). Punti calcolati: <b>${sm.points}</b> (${sm.W}V ${sm.D}P ${sm.L}S).</div>
     <div class="rgrid">${cells.join("")}</div>
     <div class="row"><button class="btn" data-ee="save">Salva</button><button class="btn secondary" data-ee="cancel">Annulla</button></div>`;
 }
-function renderResults() {
-  const all = state.teams;
-  const latest = Results.latestRound(all);
-  // filtri: aggiorno le opzioni mantenendo la scelta
-  const poss = [...new Set(all.map((t) => t.position).filter((p) => p != null))].sort((a, b) => a - b);
+function fillPosOptions() {
+  const poss = [...new Set(state.teams.map((t) => t.position).filter((p) => p != null))].sort((a, b) => a - b);
   $("rPos").innerHTML = `<option value="">Tutte</option><option value="podio">Podio (1°–3°)</option>${poss.map((p) => `<option value="${p}">${p}°</option>`).join("")}`;
   $("rPos").value = rs.pos;
   if ($("rPos").value !== rs.pos) { rs.pos = ""; $("rPos").value = ""; }
-  let ro = `<option value="last">Ultima valorizzata${latest ? " (SA " + latest + ")" : ""}</option>`;
-  for (let n = 1; n <= Results.MAX_ROUND; n++) ro += `<option value="${n}">Giornata ${n}</option>`;
-  $("rRound").innerHTML = ro; $("rRound").value = rs.round;
-  const round = rs.round === "last" ? latest : Number(rs.round);
-
+}
+function resSummaryHtml(round) {
   const base = resFiltered();
-  const c = round ? Results.countsForRound(base, round) : { W: 0, D: 0, L: 0, total: 0 };
+  const c = Results.countsForRound(base, round);
   const chip = (o, label) => `<button class="sumchip ${o} ${rs.outcome === o ? "on" : ""}" data-o="${o}" title="Mostra solo le leghe con ${label.toLowerCase()} in questa giornata">${label}<b>${c[o]}</b></button>`;
-  $("resSummary").innerHTML = round
-    ? `<span class="muted">Giornata Serie A <b>${round}</b>${rs.round === "last" ? " (ultima valorizzata)" : ""} · ${c.total} ${c.total === 1 ? "risultato" : "risultati"}:</span>${chip("W", "Vinte")}${chip("D", "Pareggiate")}${chip("L", "Perse")}${rs.outcome ? '<button class="btn secondary sm" data-o="">Mostra tutte</button>' : ""}`
-    : '<span class="muted">Nessun risultato inserito: usa la matita su una lega per aggiungerli.</span>';
-  $("rRoundHead").textContent = round ? "Giornata " + round : "Giornata";
+  const latest = Results.latestRound(state.teams);
+  return `<span class="muted">Giornata Serie A <b>${round}</b>${round === latest ? " (ultima valorizzata)" : ""} · ${c.total} ${c.total === 1 ? "risultato" : "risultati"}:</span>${chip("W", "Vinte")}${chip("D", "Pareggiate")}${chip("L", "Perse")}${rs.outcome ? '<button class="btn secondary sm" data-o="">Mostra tutte</button>' : ""}`;
+}
+function scoreInputs(t, round, r) {
+  if (round < Results.startOf(t)) return `<span class="muted" title="Giornata precedente all'inizio della lega (SA ${Results.startOf(t)})">n.d.</span>`;
+  return `<span class="sc2 ${r ? r.o : ""}" title="Gol miei - gol avversario"><input data-id="${esc(t.id)}" data-f="my" inputmode="numeric" maxlength="2" value="${r ? r.my : ""}" aria-label="Miei gol"><span>-</span><input data-id="${esc(t.id)}" data-f="opp" inputmode="numeric" maxlength="2" value="${r ? r.opp : ""}" aria-label="Gol avversario"></span>`;
+}
+function renderResults() {
+  const all = state.teams;
+  const round = resRound();
+  fillPosOptions();
+  let ro = "";
+  for (let n = 1; n <= Results.MAX_ROUND; n++) ro += `<option value="${n}">Giornata ${n}</option>`;
+  $("rRound").innerHTML = ro; $("rRound").value = String(round);
+  $("resSummary").innerHTML = resSummaryHtml(round);
+  $("rRoundHead").textContent = "Giornata " + round;
 
-  const rows = base.filter((t) => {
-    if (!rs.outcome || !round) return true;
+  const rows = resFiltered().filter((t) => {
+    if (!rs.outcome) return true;
     const r = Results.summarize(t).byRound.get(round);
     return r && r.o === rs.outcome;
   });
-  $("resRows").innerHTML = rows.map((t) => {
-    const sm = Results.summarize(t), r = round ? sm.byRound.get(round) : null;
+  rs.vis = rows.map((t) => t.id);
+  $("resRows").innerHTML = rows.map((t, i) => {
+    const sm = Results.summarize(t), r = sm.byRound.get(round);
     const editing = rs.editing === t.id;
-    return `<tr data-id="${esc(t.id)}"><td><b>${esc(t.leagueName)}</b> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
-      <td class="num">${t.position != null ? `<span class="pos">${ordPos(t.position)}</span>` : "–"}</td>
-      <td class="num">${t.podiumGap != null ? t.podiumGap : "–"}</td>
-      <td class="num"><b>${sm.played ? sm.points : "–"}</b></td>
-      <td>${sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>'}</td>
-      <td>${r ? resChip(r, t) : '<span class="muted">–</span>'}</td>
-      <td class="num"><button class="btn secondary icon" data-edit="${esc(t.id)}" title="${editing ? "Chiudi" : "Modifica risultati"}" aria-label="Modifica risultati">${editing ? "×" : "✎"}</button></td></tr>
-      ${editing ? `<tr class="edrow"><td colspan="7">${resEditorHtml(t)}</td></tr>` : ""}`;
-  }).join("") || `<tr><td colspan="7" class="muted">${all.length ? "Nessuna lega con questi filtri." : "Nessuna squadra: aggiungila da Le mie squadre."}</td></tr>`;
-  $("resNote").textContent = "Punti = 3 per vittoria, 1 per pareggio, calcolati sui risultati inseriti dalla giornata di inizio della lega. Posizione e distanza dal podio si inseriscono a mano.";
+    return `<tr data-id="${esc(t.id)}">
+      <td><button class="mv" data-mv="-1" data-id="${esc(t.id)}" title="Sposta su" aria-label="Sposta su" ${i === 0 ? "disabled" : ""}>▲</button><button class="mv" data-mv="1" data-id="${esc(t.id)}" title="Sposta giù" aria-label="Sposta giù" ${i === rows.length - 1 ? "disabled" : ""}>▼</button></td>
+      <td><b>${esc(t.leagueName)}</b> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
+      <td class="num"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
+      <td class="num"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
+      <td class="num pts"><b>${sm.played ? sm.points : "–"}</b></td>
+      <td class="c-last lastc">${sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>'}</td>
+      <td>${scoreInputs(t, round, r)}</td>
+      <td class="num"><button class="btn secondary icon" data-edit="${esc(t.id)}" title="${editing ? "Chiudi" : "Modifica tutte le giornate"}" aria-label="Modifica tutte le giornate">${editing ? "×" : "✎"}</button></td></tr>
+      ${editing ? `<tr class="edrow"><td colspan="8">${resEditorHtml(t)}</td></tr>` : ""}`;
+  }).join("") || `<tr><td colspan="8" class="muted">${all.length ? "Nessuna lega con questi filtri." : "Nessuna squadra: aggiungila da Le mie squadre."}</td></tr>`;
+  $("resNote").textContent = "Posizione, distanza dal podio e risultato della giornata si modificano direttamente nella tabella (si salvano da soli). Punti = 3 per vittoria, 1 per pareggio, dalla giornata di inizio della lega. Le frecce ▲▼ cambiano l'ordine delle leghe, che viene ricordato.";
 }
 function resRefresh() { rs.editing = null; renderResults(); }
 $("navResults").addEventListener("click", () => { rs.editing = null; renderResults(); });
 $("rLeague").addEventListener("input", (e) => { rs.league = e.target.value; resRefresh(); });
 $("rType").addEventListener("change", (e) => { rs.type = e.target.value; resRefresh(); });
 $("rPos").addEventListener("change", (e) => { rs.pos = e.target.value; resRefresh(); });
-$("rRound").addEventListener("change", (e) => { rs.round = e.target.value; resRefresh(); });
+$("rRound").addEventListener("change", (e) => { rs.round = Number(e.target.value); resRefresh(); });
 $("resSummary").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-o]");
   if (!b) return;
   rs.outcome = b.dataset.o && rs.outcome !== b.dataset.o ? b.dataset.o : null;
   resRefresh();
 });
-$("resRows").addEventListener("input", (e) => {
-  const inp = e.target.closest("input.sc");
+
+// modifica diretta dalla lista: salvataggio automatico, senza ridisegnare la tabella (così il Tab non perde il campo)
+const hhmm = () => new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+function refreshResRow(t) {
+  const tr = document.querySelector(`#resRows tr[data-id="${CSS.escape(t.id)}"]`);
+  if (tr) {
+    const sm = Results.summarize(t), r = sm.byRound.get(resRound());
+    tr.querySelector(".pts").innerHTML = `<b>${sm.played ? sm.points : "–"}</b>`;
+    tr.querySelector(".lastc").innerHTML = sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>';
+    const w = tr.querySelector(".sc2");
+    if (w) w.className = "sc2" + (r ? " " + r.o : "");
+  }
+  $("resSummary").innerHTML = resSummaryHtml(resRound());
+  const keep = $("rPos").value; fillPosOptions(); if (keep && $("rPos").value !== keep) rs.pos = $("rPos").value;
+}
+async function persistTeam(t, patch) {
+  try {
+    await updateDoc(doc(db, "users", state.user.uid, "teams", t.id), { ...patch, updatedAt: serverTimestamp() });
+    $("resSaved").innerHTML = `<span class="saved">✓ Salvato alle ${hhmm()}</span>`;
+    renderTeams();
+  } catch (err) {
+    msg("Salvataggio non riuscito: " + err.message, "err");
+    await loadTeams(); renderResults(); renderTeams();
+  }
+}
+$("resRows").addEventListener("change", async (e) => {
+  const inp = e.target.closest("input[data-f]");
   if (!inp) return;
-  const box = inp.closest(".rc");
-  const my = Results.parseIntIn(box.querySelector('[data-k="my"]').value, 0, 99), opp = Results.parseIntIn(box.querySelector('[data-k="opp"]').value, 0, 99);
-  box.className = "rc" + (my !== null && opp !== null && !Number.isNaN(my) && !Number.isNaN(opp) ? " " + Results.outcome(my, opp) : "");
+  const t = state.teams.find((x) => x.id === inp.dataset.id);
+  if (!t) return;
+  const f = inp.dataset.f;
+  if (f === "pos" || f === "gap") {
+    const v = Results.parseIntIn(inp.value, f === "pos" ? 1 : 0, f === "pos" ? 99 : 999);
+    if (Number.isNaN(v)) {
+      msg(f === "pos" ? "La posizione deve essere un numero da 1 a 99." : "La distanza dal podio deve essere un numero intero di punti (0 o più).", "err");
+      inp.value = (f === "pos" ? t.position : t.podiumGap) ?? "";
+      return;
+    }
+    if (f === "pos") t.position = v; else t.podiumGap = v;
+    refreshResRow(t);
+    await persistTeam(t, f === "pos" ? { position: v } : { podiumGap: v });
+    return;
+  }
+  // risultato della giornata selezionata: servono entrambi i gol
+  const tr = inp.closest("tr"), round = resRound();
+  const my = Results.parseIntIn(tr.querySelector('[data-f="my"]').value, 0, 99), opp = Results.parseIntIn(tr.querySelector('[data-f="opp"]').value, 0, 99);
+  if (Number.isNaN(my) || Number.isNaN(opp)) { msg("I gol devono essere numeri da 0 a 99.", "err"); return; }
+  if ((my === null) !== (opp === null)) { $("resSaved").textContent = "Inserisci sia i tuoi gol sia quelli dell'avversario per salvare il risultato."; return; }
+  const rest = (t.results || []).filter((r) => r && r.round !== round);
+  t.results = my === null ? rest : [...rest, { round, my, opp }];
+  refreshResRow(t);
+  await persistTeam(t, { results: t.results });
 });
+$("resRows").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches("input[data-f]")) e.target.blur(); });
+
 $("resRows").addEventListener("click", async (e) => {
-  const ed = e.target.closest("button[data-edit]"), act = e.target.closest("button[data-ee]");
+  const mv = e.target.closest("button[data-mv]"), ed = e.target.closest("button[data-edit]"), act = e.target.closest("button[data-ee]");
+  if (mv) {
+    const order = Results.moveInOrder(state.teams.map((t) => t.id), rs.vis, mv.dataset.id, Number(mv.dataset.mv));
+    const changed = [];
+    order.forEach((id, i) => { const t = state.teams.find((x) => x.id === id); if (t.sortOrder !== i) { t.sortOrder = i; changed.push(t); } });
+    state.teams = Results.sortTeams(state.teams);
+    renderResults(); renderTeams();
+    try {
+      const batch = writeBatch(db);
+      changed.forEach((t) => batch.update(doc(db, "users", state.user.uid, "teams", t.id), { sortOrder: t.sortOrder }));
+      await batch.commit();
+      $("resSaved").innerHTML = `<span class="saved">✓ Ordine salvato alle ${hhmm()}</span>`;
+    } catch (err) { msg("Ordine non salvato: " + err.message, "err"); await loadTeams(); renderResults(); renderTeams(); }
+    return;
+  }
   if (ed) { rs.editing = rs.editing === ed.dataset.edit ? null : ed.dataset.edit; renderResults(); return; }
   if (!act) return;
   if (act.dataset.ee === "cancel") { rs.editing = null; renderResults(); return; }
   const t = state.teams.find((x) => x.id === rs.editing);
   if (!t) return;
   try {
-    const position = Results.parseIntIn($("eePos").value, 1, 99);
-    const podiumGap = Results.parseIntIn($("eeGap").value, 0, 999);
-    if (Number.isNaN(position)) throw new Error("La posizione deve essere un numero da 1 a 99.");
-    if (Number.isNaN(podiumGap)) throw new Error("La distanza dal podio deve essere un numero intero di punti (0 o più).");
     const st = Results.startOf(t), fresh = [];
     for (let n = st; n <= Results.MAX_ROUND; n++) {
       const my = Results.parseIntIn(document.querySelector(`input.sc[data-r="${n}"][data-k="my"]`).value, 0, 99);
@@ -1672,10 +1779,17 @@ $("resRows").addEventListener("click", async (e) => {
       fresh.push({ round: n, my, opp });
     }
     const kept = (t.results || []).filter((r) => r && r.round < st); // risultati prima della giornata di inizio: restano salvati
-    await updateDoc(doc(db, "users", state.user.uid, "teams", t.id), { position, podiumGap, results: [...kept, ...fresh], updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, "users", state.user.uid, "teams", t.id), { results: [...kept, ...fresh], updatedAt: serverTimestamp() });
     await loadTeams(); rs.editing = null; renderResults(); renderTeams();
     msg("Risultati salvati.");
   } catch (err) { msg(err.message, "err"); }
+});
+$("resRows").addEventListener("input", (e) => {
+  const inp = e.target.closest("input.sc");
+  if (!inp) return;
+  const box = inp.closest(".rc");
+  const my = Results.parseIntIn(box.querySelector('[data-k="my"]').value, 0, 99), opp = Results.parseIntIn(box.querySelector('[data-k="opp"]').value, 0, 99);
+  box.className = "rc" + (my !== null && opp !== null && !Number.isNaN(my) && !Number.isNaN(opp) ? " " + Results.outcome(my, opp) : "");
 });
 
 // ------------------------------- Statistiche -------------------------------
