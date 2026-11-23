@@ -287,6 +287,7 @@
         <div><label for="stMinTit">Titolarità att. min. %</label><input id="stMinTit" inputmode="decimal" placeholder="es. 70"></div>
         <div><label for="stAvail">Disponibilità</label><select id="stAvail"><option value="">Tutti</option><option value="ok">Solo disponibili</option><option value="out">Solo indisponibili</option></select></div>
         <div><label for="stXg">xG/xA</label><select id="stXg"><option value="">Tutti</option><option value="has">Solo con dati FotMob</option><option value="credit">xG sopra i gol (in credito)</option><option value="debt">Gol sopra xG (in debito)</option></select></div>
+        <div><label for="stLeague">Lega in cui è in rosa</label><select id="stLeague"><option value="">Tutte</option></select></div>
         <div><button class="btn secondary" id="stReset">Azzera filtri</button></div>
       </div>
     </div>
@@ -1292,8 +1293,8 @@ function renderTeams() {
   $("teamsList").innerHTML = state.teams.map((t) => {
     const lp = t.lastProposal, sm = Results.summarize(t);
     return `<div class="card">
-      <div class="row"><strong class="grow">${esc(t.teamName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
-      <div class="muted small">${esc(t.leagueName)} · ${t.players.length} giocatori</div>
+      <div class="row"><strong class="grow">${esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
+      <div class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</div>
       <div class="tres"><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
         <span class="muted small" title="3 punti a vittoria, 1 a pareggio">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
         ${sm.last5.length ? `<span class="reslist" title="Ultimi risultati">${sm.last5.map((r) => resChip(r, t)).join("")}</span>` : ""}</div>
@@ -1683,7 +1684,7 @@ function renderResults() {
     const editing = rs.editing === t.id;
     return `<tr data-id="${esc(t.id)}">
       <td><button class="mv" data-mv="-1" data-id="${esc(t.id)}" title="Sposta su" aria-label="Sposta su" ${i === 0 ? "disabled" : ""}>▲</button><button class="mv" data-mv="1" data-id="${esc(t.id)}" title="Sposta giù" aria-label="Sposta giù" ${i === rows.length - 1 ? "disabled" : ""}>▼</button></td>
-      <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
+      <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
       <td class="ctr pts"><b>${sm.played ? sm.points : "–"}</b></td>
@@ -1819,10 +1820,23 @@ const STATUS_TXT = { lineup: "Titolare", bench: "Panchina", out: "Indisp.", susp
 const signed = (x, d = 1) => (x == null ? "–" : (x > 0 ? "+" : "") + Number(x).toFixed(d));
 const pct = (x) => (x == null || Number.isNaN(x) ? "–" : Math.round(x) + "%");
 // k = chiave di ordinamento, t = tipo (str/num), get = valore, show = testo mostrato
+// leghe/squadre (dell'utente) in cui ogni giocatore è in rosa
+function leaguesByPlayer() {
+  const m = new Map();
+  for (const t of state.teams) for (const p of t.players || []) {
+    if (!m.has(p.id)) m.set(p.id, []);
+    m.get(p.id).push({ id: t.id, leagueName: t.leagueName, teamName: t.teamName, leagueType: t.leagueType });
+  }
+  return m;
+}
+const leaguesTip = (r) => r.lg.length
+  ? `<div class="tip-h">${esc(r.p.name)} · in ${r.lg.length} ${r.lg.length === 1 ? "lega" : "leghe"}</div>` + r.lg.map((x) => `<div><b>${esc(x.leagueName)}</b> <span class="muted">· ${esc(x.teamName)} · ${esc(x.leagueType)}</span></div>`).join("")
+  : `<div class="tip-h">${esc(r.p.name)}</div><div class="muted">Non è in nessuna delle tue rose</div>`;
 const ST_COLS = [
-  { k: "name", l: "Giocatore", t: "str", get: (r) => r.p.name, show: (r) => `<span class="role ${esc(r.p.role)}">${esc(r.p.role)}</span> <b>${esc(r.p.name)}</b>`, cls: "name" },
+  { k: "name", l: "Giocatore", t: "str", get: (r) => r.p.name, show: (r) => `<span class="role ${esc(r.p.role)}">${esc(r.p.role)}</span> ${r.s.available ? `<b>${esc(r.p.name)}</b>` : `<b class="pname" data-tip="${esc(nameTip(r.s))}" tabindex="0">${esc(r.p.name)}</b>`}`, cls: "name" },
   { k: "team", l: "Sq.", t: "str", get: (r) => r.p.team, show: (r) => esc(teamAbbr(r.p.team, knownTeams())), title: "Squadra (prime 3 lettere)" },
   { k: "role", l: "R", t: "str", get: (r) => r.p.role, show: (r) => esc(r.p.role), title: "Ruolo Classic" },
+  { k: "leagues", l: "Leghe", t: "num", get: (r) => r.lg.length, show: (r) => `<span class="fvv" data-tip="${esc(leaguesTip(r))}" tabindex="0">${r.lg.length ? `<b>${r.lg.length}</b>` : "–"}</span>`, title: "In quante delle tue leghe il giocatore è in rosa (passa sul numero per vedere quali)" },
   { k: "mantra", l: "Mantra", t: "str", get: (r) => (r.p.roleMantra || []).join(", "), show: (r) => esc((r.p.roleMantra || []).join(", ")) },
   { k: "fmExp", l: "FM att.", t: "num", get: (r) => r.p.fmExp, show: (r) => fmt(r.p.fmExp), title: "Fantamedia attesa" },
   { k: "fmSeason", l: "FM stag.", t: "num", get: (r) => r.p.fmSeason, show: (r) => fmt(r.p.fmSeason), title: "Fantamedia stagione corrente" },
@@ -1866,7 +1880,7 @@ function statsFiltered(rows) {
   const q = norm($("stSearch").value), team = $("stTeam").value, role = $("stRole").value, mantra = $("stMantra").value;
   const num = (id) => { const v = Number(String($(id).value).replace(",", ".")); return String($(id).value).trim() && Number.isFinite(v) ? v : null; };
   const minS = num("stMinSeason"), min5 = num("stMinLast5"), minT = num("stMinTit");
-  const av = $("stAvail").value, xf = $("stXg").value;
+  const av = $("stAvail").value, xf = $("stXg").value, lg = $("stLeague").value;
   return rows.filter((r) => {
     const p = r.p;
     if (q && !(norm(p.name).includes(q) || norm(p.team).includes(q))) return false;
@@ -1876,6 +1890,8 @@ function statsFiltered(rows) {
     if (minS != null && !(p.fmSeason != null && p.fmSeason >= minS)) return false;
     if (min5 != null && !(p.fmLast5 != null && p.fmLast5 >= min5)) return false;
     if (minT != null && !(p.titExp != null && p.titExp >= minT)) return false;
+    if (lg === "none" && r.lg.length) return false;
+    if (lg && lg !== "none" && !r.lg.some((x) => x.id === lg)) return false;
     if (av === "ok" && !r.s.available) return false;
     if (av === "out" && r.s.available) return false;
     if (xf === "has" && r.s.xg == null && r.s.xa == null) return false;
@@ -1898,6 +1914,8 @@ function statsSorted(rows) {
 }
 
 function renderStatsTable() {
+  const lgMap = leaguesByPlayer();
+  stState.cache.rows.forEach((r) => { r.lg = lgMap.get(r.p.id) || []; });
   const rows = statsSorted(statsFiltered(stState.cache.rows));
   $("statsHead").innerHTML = `<tr>${ST_COLS.map((c) => `<th class="sortable ${c.t === "num" ? "num" : ""} ${c.k === stState.sort ? "sorted" : ""}" data-k="${c.k}" ${c.tip ? `data-tip="${esc(c.tip)}"` : `title="${esc((c.title || c.l) + " — clic per ordinare")}"`}>${esc(c.l)}${c.k === stState.sort ? (stState.dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>`;
   $("statsRows").innerHTML = rows.map((r) => `<tr class="${r.s.available ? "" : "unavail"}">${ST_COLS.map((c) => `<td class="${c.t === "num" ? "num" : ""} ${c.cls || ""}">${c.show(r)}</td>`).join("")}</tr>`).join("")
@@ -1914,10 +1932,10 @@ function wireStats() {
   if (stState.wired) return;
   stState.wired = true;
   ["stSearch", "stMinSeason", "stMinLast5", "stMinTit"].forEach((id) => $(id).addEventListener("input", renderStatsTable));
-  ["stTeam", "stRole", "stMantra", "stAvail", "stXg"].forEach((id) => $(id).addEventListener("change", renderStatsTable));
+  ["stTeam", "stRole", "stMantra", "stAvail", "stXg", "stLeague"].forEach((id) => $(id).addEventListener("change", renderStatsTable));
   $("stReset").addEventListener("click", () => {
     ["stSearch", "stMinSeason", "stMinLast5", "stMinTit"].forEach((id) => ($(id).value = ""));
-    ["stTeam", "stRole", "stMantra", "stAvail", "stXg"].forEach((id) => ($(id).value = ""));
+    ["stTeam", "stRole", "stMantra", "stAvail", "stXg", "stLeague"].forEach((id) => ($(id).value = ""));
     renderStatsTable();
   });
 }
@@ -1927,6 +1945,9 @@ async function renderStats() {
   const teamSel = $("stTeam"), cur = teamSel.value;
   teamSel.innerHTML = '<option value="">Tutte</option>' + knownTeams().sort((a, b) => a.localeCompare(b, "it")).map((t) => `<option>${esc(t)}</option>`).join("");
   teamSel.value = cur;
+  const lgSel = $("stLeague"), lgCur = lgSel.value;
+  lgSel.innerHTML = '<option value="">Tutte</option><option value="none">Non in nessuna lega</option>' + state.teams.map((t) => `<option value="${esc(t.id)}">${esc(t.leagueName)} · ${esc(t.teamName)}</option>`).join("");
+  lgSel.value = lgCur; if (lgSel.value !== lgCur) lgSel.value = "";
   if (!$("stMantra").options.length || $("stMantra").options.length === 1) $("stMantra").innerHTML = '<option value="">Tutti</option>' + MANTRA_ROLES.map((r) => `<option>${esc(r)}</option>`).join("");
   if (!state.players.length) {
     $("statsBanner").innerHTML = `<div class="banner warn">Il database giocatori è vuoto: l'admin deve caricare il Listone.</div>`;
