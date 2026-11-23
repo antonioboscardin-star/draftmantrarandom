@@ -38,12 +38,24 @@ function parseLineups(html) {
   let lastTeam = null;
   const modules = {};
   const map = new Map(); // key = teamSlug|id
+  const starters = new Map(); // titolari già contati per squadra
+
+  // Titoletti di sezione (testo semplice, in qualunque tag: anche <li>, <b>, <th>, o testo accanto a una lista)
+  const SECTION_HEADS = [[/^panchina$/i, 'bench'], [/^ballottaggi$/i, 'ballot'], [/^squalificati$/i, 'suspended'], [/^diffidati$/i, 'diffidati'], [/^in dubbio$/i, 'doubt']];
+  const headSection = (t) => { const h = SECTION_HEADS.find(([re]) => re.test(t)); return h ? h[1] : null; };
 
   $('body *').each((_, el) => {
     const $el = $(el);
     const tag = (el.tagName || '').toLowerCase();
 
     if (tag === 'h2') section = 'lineup';
+    if (tag !== 'a') {
+      for (const n of el.children || []) {
+        if (n.type !== 'text') continue;
+        const hs = headSection(String(n.data || '').replace(/\s+/g, ' ').trim());
+        if (hs) section = hs;
+      }
+    }
 
     if (tag === 'a') {
       const href = $el.attr('href') || '';
@@ -61,7 +73,13 @@ function parseLineups(html) {
 
       if (section === 'lineup' || section === 'bench') {
         if (pct == null) return; // elenco "campioncini" in testata partita, senza percentuale
-        if (!map.has(key)) map.set(key, { name, team: teamSlug, id, pct, status: section === 'bench' ? 'bench' : 'lineup' });
+        if (!map.has(key)) {
+          // I titolari sono 11 per squadra: dal 12° giocatore con percentuale in poi è panchina, anche se il titoletto non è stato riconosciuto
+          const n = starters.get(teamSlug) || 0;
+          const isBench = section === 'bench' || (section === 'lineup' && n >= 11);
+          if (!isBench) starters.set(teamSlug, n + 1);
+          map.set(key, { name, team: teamSlug, id, pct, status: isBench ? 'bench' : 'lineup' });
+        }
       } else if (section === 'injured' || section === 'doubt' || section === 'suspended') {
         const note = liText.replace(name, '').trim();
         let status = section === 'suspended' ? 'suspended' : section === 'doubt' ? 'doubt' : 'out';
