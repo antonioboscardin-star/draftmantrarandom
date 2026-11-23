@@ -72,13 +72,23 @@
   button.mv + button.mv { margin-top: 3px; }
   button.mv:disabled { opacity: .3; cursor: default; }
   .saved { color: var(--win); }
+  #v-results .ctr { text-align: center; }
+  #v-results th.ocol { width: 30px; padding-left: 6px; padding-right: 0; }
+  #v-results td:first-child { padding-left: 6px; padding-right: 0; }
+  #v-results th.lgh, #v-results td.lg { width: 190px; padding-left: 4px; }
+  #v-results th.c-last, #v-results td.lastc { padding-left: 48px; }
+  #v-results th.gcol { width: 96px; }
+  #v-results .sc2 input { width: 2.2em; }
+  .lgn { cursor: help; }
   @media (max-width: 700px) {
     .c-last { display: none; }
     #v-results table.compact th, #v-results table.compact td { padding: 6px 3px; font-size: 13px; }
     #v-results td:nth-child(2) { max-width: 92px; word-break: break-word; white-space: normal; }
-    #v-results td:nth-child(2) .badge { display: none; }
+    #v-results td:nth-child(2) .badge, #v-results .teamsub { display: none; }
+    #v-results th.lgh, #v-results td.lg { width: auto; }
+    #v-results th.gcol { width: auto; }
     #v-results input.ip { width: 2.5em; padding: 4px 2px; }
-    #v-results .sc2 input { width: 2.2em; }
+    #v-results .sc2 input { width: 2em; }
     #v-results button.icon { padding: 4px 7px; }
   }
   tr.edrow > td { background: var(--panel2); }
@@ -208,11 +218,13 @@
       <div><label>Lega o squadra</label><input id="rLeague" placeholder="Cerca per nome…"></div>
       <div><label>Tipologia lega</label><select id="rType"><option value="">Tutte</option><option>Classic</option><option>Mantra</option></select></div>
       <div><label>Posizione</label><select id="rPos"></select></div>
+      <div><label>Dalla posizione</label><input id="rPosFrom" inputmode="numeric" maxlength="2" placeholder="es. 1"></div>
+      <div><label>Alla posizione</label><input id="rPosTo" inputmode="numeric" maxlength="2" placeholder="es. 5"></div>
       <div><label>Giornata di Serie A</label><select id="rRound"></select></div>
     </div>
     <div class="sumbar" id="resSummary"></div>
     <div class="tablewrap"><table class="compact">
-      <thead><tr><th title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th>Lega</th><th class="num" title="Posizione in classifica (modificabile)">Pos.</th><th class="num" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="num" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="c-last">Ultimi risultati</th><th id="rRoundHead" title="Risultato della giornata selezionata: gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
+      <thead><tr><th class="ocol" title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th class="lgh">Lega</th><th class="ctr" title="Posizione in classifica (modificabile)">Pos.</th><th class="ctr" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="ctr" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="c-last ctr" title="Ultimi 5 risultati">Ultimi risultati</th><th class="ctr gcol" id="rRoundHead" title="Risultato della giornata selezionata: gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
       <tbody id="resRows"></tbody>
     </table></div>
     <p class="note" id="resNote"></p>
@@ -1607,13 +1619,15 @@ function renderProposal(team, { result, meta }) {
 }
 
 // ------------------------------- Risultati -------------------------------
-const rs = { league: "", type: "", pos: "", round: null, outcome: null, editing: null, vis: [] };
+const rs = { league: "", type: "", pos: "", posFrom: null, posTo: null, round: null, outcome: null, editing: null, vis: [] };
 const resRound = () => (rs.round != null ? rs.round : Results.defaultRound(state.teams)); // di default l'ultima giornata valorizzata
 function resFiltered() {
   const q = norm(rs.league);
   return state.teams.filter((t) => {
     if (q && !norm(`${t.leagueName} ${t.teamName}`).includes(q)) return false;
     if (rs.type && t.leagueType !== rs.type) return false;
+    if (rs.posFrom != null && !(t.position != null && t.position >= rs.posFrom)) return false;
+    if (rs.posTo != null && !(t.position != null && t.position <= rs.posTo)) return false;
     if (rs.pos === "podio") return t.position != null && t.position <= 3;
     if (rs.pos) return t.position === Number(rs.pos);
     return true;
@@ -1669,13 +1683,13 @@ function renderResults() {
     const editing = rs.editing === t.id;
     return `<tr data-id="${esc(t.id)}">
       <td><button class="mv" data-mv="-1" data-id="${esc(t.id)}" title="Sposta su" aria-label="Sposta su" ${i === 0 ? "disabled" : ""}>▲</button><button class="mv" data-mv="1" data-id="${esc(t.id)}" title="Sposta giù" aria-label="Sposta giù" ${i === rows.length - 1 ? "disabled" : ""}>▼</button></td>
-      <td><b>${esc(t.leagueName)}</b> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
-      <td class="num"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
-      <td class="num"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
-      <td class="num pts"><b>${sm.played ? sm.points : "–"}</b></td>
-      <td class="c-last lastc">${sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>'}</td>
-      <td>${scoreInputs(t, round, r)}</td>
-      <td class="num"><button class="btn secondary icon" data-edit="${esc(t.id)}" title="${editing ? "Chiudi" : "Modifica tutte le giornate"}" aria-label="Modifica tutte le giornate">${editing ? "×" : "✎"}</button></td></tr>
+      <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
+      <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
+      <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
+      <td class="ctr pts"><b>${sm.played ? sm.points : "–"}</b></td>
+      <td class="c-last lastc ctr">${sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>'}</td>
+      <td class="ctr">${scoreInputs(t, round, r)}</td>
+      <td class="ctr"><button class="btn secondary icon" data-edit="${esc(t.id)}" title="${editing ? "Chiudi" : "Modifica tutte le giornate"}" aria-label="Modifica tutte le giornate">${editing ? "×" : "✎"}</button></td></tr>
       ${editing ? `<tr class="edrow"><td colspan="8">${resEditorHtml(t)}</td></tr>` : ""}`;
   }).join("") || `<tr><td colspan="8" class="muted">${all.length ? "Nessuna lega con questi filtri." : "Nessuna squadra: aggiungila da Le mie squadre."}</td></tr>`;
   $("resNote").textContent = "Posizione, distanza dal podio e risultato della giornata si modificano direttamente nella tabella (si salvano da soli). Punti = 3 per vittoria, 1 per pareggio, dalla giornata di inizio della lega. Le frecce ▲▼ cambiano l'ordine delle leghe, che viene ricordato.";
@@ -1686,6 +1700,14 @@ $("rLeague").addEventListener("input", (e) => { rs.league = e.target.value; resR
 $("rType").addEventListener("change", (e) => { rs.type = e.target.value; resRefresh(); });
 $("rPos").addEventListener("change", (e) => { rs.pos = e.target.value; resRefresh(); });
 $("rRound").addEventListener("change", (e) => { rs.round = Number(e.target.value); resRefresh(); });
+for (const [id, key] of [["rPosFrom", "posFrom"], ["rPosTo", "posTo"]]) {
+  $(id).addEventListener("input", (e) => {
+    const v = Results.parseIntIn(e.target.value, 1, 99);
+    e.target.style.borderColor = Number.isNaN(v) ? "var(--bad)" : "";
+    if (Number.isNaN(v)) return;
+    rs[key] = v; resRefresh();
+  });
+}
 $("resSummary").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-o]");
   if (!b) return;
