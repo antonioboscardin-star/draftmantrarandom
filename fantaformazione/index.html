@@ -38,6 +38,33 @@
     nav button { padding: 4px 10px; font-size: 13px; white-space: nowrap; flex: 0 0 auto; }
     main { padding: 12px; }
   }
+  /* Risultati: vittoria verde, pareggio giallo, sconfitta rossa */
+  :root { --win: #34d399; --draw: #facc15; --loss: #f87171; }
+  .res { display: inline-block; min-width: 38px; text-align: center; font-weight: 700; font-size: 12px; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .res.W { background: rgba(52,211,153,.16); border-color: var(--win); color: var(--win); }
+  .res.D { background: rgba(250,204,21,.14); border-color: var(--draw); color: var(--draw); }
+  .res.L { background: rgba(248,113,113,.15); border-color: var(--loss); color: var(--loss); }
+  .reslist { display: inline-flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .tres { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .pos { font-weight: 700; font-size: 13px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); }
+  .tbar { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  button.btn.sm { padding: 6px 12px; font-size: 14px; }
+  button.btn.icon { padding: 5px 9px; font-size: 15px; line-height: 1; }
+  .pagehead { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .pagehead h2 { margin: 0; flex: 1; }
+  .sumbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 4px 0 12px; }
+  button.sumchip { font: inherit; cursor: pointer; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--text); }
+  button.sumchip b { margin-left: 4px; }
+  button.sumchip.W { border-color: var(--win); color: var(--win); } button.sumchip.D { border-color: var(--draw); color: var(--draw); } button.sumchip.L { border-color: var(--loss); color: var(--loss); }
+  button.sumchip.on.W { background: rgba(52,211,153,.22); } button.sumchip.on.D { background: rgba(250,204,21,.2); } button.sumchip.on.L { background: rgba(248,113,113,.22); }
+  button.sumchip.on { box-shadow: 0 0 0 2px currentColor inset; }
+  .filters { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 10px; }
+  .rgrid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); margin: 6px 0 12px; }
+  .rc { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+  .rc.W { border-color: var(--win); background: rgba(52,211,153,.10); } .rc.D { border-color: var(--draw); background: rgba(250,204,21,.09); } .rc.L { border-color: var(--loss); background: rgba(248,113,113,.10); }
+  .rc .sr { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+  .rc input.sc { width: 100%; min-width: 0; padding: 4px; text-align: center; }
+  tr.edrow > td { background: var(--panel2); }
   main { max-width: 1100px; margin: 0 auto; padding: 20px; }
   h2 { font-size: 20px; margin: 0 0 14px; }
   h3 { font-size: 15px; margin: 18px 0 8px; color: var(--accent); text-transform: uppercase; letter-spacing: .6px; }
@@ -125,8 +152,8 @@
   <h1>Fanta<span>Formazione</span></h1>
   <nav id="nav" class="hidden">
     <button data-view="teams" class="active">Le mie squadre</button>
-    <button data-view="edit">Nuova squadra</button>
     <button data-view="proposal" class="hidden" id="navProposal">Formazione</button>
+    <button data-view="results" class="hidden" id="navResults">Risultati</button>
     <button data-view="stats" class="hidden" id="navStats">Statistiche</button>
     <button data-view="admin" class="hidden" id="navAdmin">Admin</button>
   </nav>
@@ -152,9 +179,26 @@
 
   <!-- LE MIE SQUADRE -->
   <section id="v-teams" class="hidden">
-    <h2>Le mie squadre</h2>
+    <div class="pagehead"><h2>Le mie squadre</h2><button class="btn" id="btnAddTeam" title="Aggiungi squadra">+ Aggiungi squadra</button></div>
     <div id="teamsList" class="grid"></div>
-    <p id="teamsEmpty" class="muted hidden">Nessuna squadra caricata. Crea la prima da "Nuova squadra".</p>
+    <p id="teamsEmpty" class="muted hidden">Nessuna squadra caricata. Crea la prima con "+ Aggiungi squadra".</p>
+  </section>
+
+  <!-- RISULTATI -->
+  <section id="v-results" class="hidden">
+    <h2>Risultati</h2>
+    <div class="filters">
+      <div><label>Lega o squadra</label><input id="rLeague" placeholder="Cerca per nome…"></div>
+      <div><label>Tipologia lega</label><select id="rType"><option value="">Tutte</option><option>Classic</option><option>Mantra</option></select></div>
+      <div><label>Posizione</label><select id="rPos"></select></div>
+      <div><label>Giornata di Serie A</label><select id="rRound"></select></div>
+    </div>
+    <div class="sumbar" id="resSummary"></div>
+    <div class="tablewrap"><table class="compact">
+      <thead><tr><th>Lega</th><th class="num" title="Posizione in classifica">Pos.</th><th class="num" title="Punti di distanza dal podio">Dist. podio</th><th class="num" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th>Ultimi risultati</th><th id="rRoundHead">Giornata</th><th></th></tr></thead>
+      <tbody id="resRows"></tbody>
+    </table></div>
+    <p class="note" id="resNote"></p>
   </section>
 
   <!-- CREA / MODIFICA SQUADRA -->
@@ -166,6 +210,8 @@
         <div><label>Tipologia lega</label>
           <select id="fType"><option>Classic</option><option>Mantra</option></select></div>
         <div><label>Nome squadra</label><input id="fTeam" maxlength="80" placeholder="es. FC Esempio"></div>
+        <div><label>Giornata di inizio lega (1–38)</label><input id="fStart" inputmode="numeric" maxlength="2" value="1">
+          <div class="note" style="margin:2px 0 0">Giornata di Serie A che per questa lega è la 1ª giornata. I risultati si inseriscono da qui in poi.</div></div>
         <div id="dFactorBox"><label>D-factor (solo leghe Classic)</label>
           <label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:400"><input type="checkbox" id="fDFactor" style="width:auto"> attivo in questa lega</label>
           <div class="note" style="margin:2px 0 0">Se attivo, i moduli con almeno 4 difensori ricevono un bonus sul totale (predefinito 0,5 punti).</div></div>
@@ -910,6 +956,65 @@ const Engine = (() => {
 })();
 /* ==== ENGINE:END ==== */
 
+/* ==== RESULTS:START (i test leggono il codice fra questi marcatori) ==== */
+const Results = (() => {
+  // Risultati di campionato di una lega (squadra dell'utente): { round (giornata di Serie A 1-38), my, opp }.
+  // La giornata di inizio (startRound) è la 1ª giornata della lega: i risultati precedenti si ignorano.
+  const MAX_ROUND = 38;
+  const isInt = (x) => Number.isInteger(x);
+  const OUT_TXT = { W: 'Vittoria', D: 'Pareggio', L: 'Sconfitta' };
+  const outcome = (my, opp) => (my > opp ? 'W' : my < opp ? 'L' : 'D');
+  const startOf = (team) => { const s = Number(team && team.startRound); return isInt(s) && s >= 1 && s <= MAX_ROUND ? s : 1; };
+  const leagueRound = (team, round) => round - startOf(team) + 1;
+
+  /** Risultati validi, ordinati per giornata, una sola riga per giornata (vale l'ultima), solo da startRound in poi. */
+  function clean(team) {
+    const st = startOf(team), by = new Map();
+    for (const r of Array.isArray(team && team.results) ? team.results : []) {
+      if (!r || !isInt(r.round) || !isInt(r.my) || !isInt(r.opp)) continue;
+      if (r.round < st || r.round > MAX_ROUND || r.my < 0 || r.opp < 0) continue;
+      by.set(r.round, { round: r.round, my: r.my, opp: r.opp, o: outcome(r.my, r.opp) });
+    }
+    return [...by.values()].sort((a, b) => a.round - b.round);
+  }
+
+  function summarize(team) {
+    const list = clean(team);
+    const c = { W: 0, D: 0, L: 0 };
+    list.forEach((r) => { c[r.o]++; });
+    const byRound = new Map(list.map((r) => [r.round, r]));
+    return { list, byRound, W: c.W, D: c.D, L: c.L, played: list.length, points: 3 * c.W + c.D, last5: list.slice(-5) };
+  }
+
+  /** Ultima giornata di Serie A con almeno un risultato fra tutte le leghe (null se non ce ne sono). */
+  function latestRound(teams) {
+    let best = null;
+    for (const t of teams) for (const r of clean(t)) if (best === null || r.round > best) best = r.round;
+    return best;
+  }
+
+  /** Vinte/pareggiate/perse in una giornata di Serie A fra le leghe indicate. */
+  function countsForRound(teams, round) {
+    const c = { W: 0, D: 0, L: 0, total: 0 };
+    for (const t of teams) {
+      const r = summarize(t).byRound.get(round);
+      if (r) { c[r.o]++; c.total++; }
+    }
+    return c;
+  }
+
+  /** Legge un intero in un intervallo; vuoto = null; altrimenti NaN se non valido. */
+  function parseIntIn(v, lo, hi) {
+    const t = String(v ?? '').trim();
+    if (t === '') return null;
+    if (!/^\d+$/.test(t)) return NaN;
+    const n = Number(t);
+    return n >= lo && n <= hi ? n : NaN;
+  }
+  return { MAX_ROUND, OUT_TXT, outcome, startOf, leagueRound, clean, summarize, latestRound, countsForRound, parseIntIn };
+})();
+/* ==== RESULTS:END ==== */
+
 const { planImport, playerId, parseMantra, missingColumns, latestUpdate, RECOMMENDED_COLUMNS, MANTRA_ROLES } = Listone;
 const { proposeLineup, DEFAULTS, teamAbbr, lookupMatch, lookupXg } = Engine;
 
@@ -967,7 +1072,7 @@ function msg(text, kind = "ok", ms = 6000) {
 const clearMsg = () => ($("msg").innerHTML = "");
 
 // ------------------------------- Navigazione -------------------------------
-const VIEWS = ["login", "teams", "edit", "proposal", "stats", "admin"];
+const VIEWS = ["login", "teams", "edit", "proposal", "results", "stats", "admin"];
 function show(view) {
   VIEWS.forEach((v) => $("v-" + v).classList.toggle("hidden", v !== view));
   document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
@@ -1003,6 +1108,7 @@ if (configured) {
     $("adminBadge").classList.toggle("hidden", !state.isAdmin);
     $("navAdmin").classList.toggle("hidden", !state.isAdmin);
     $("navStats").classList.remove("hidden");
+    $("navResults").classList.remove("hidden");
     try {
       await Promise.all([loadPlayers(), loadTeams()]);
       renderTeams();
@@ -1124,21 +1230,28 @@ async function loadTeams() {
 }
 
 // ------------------------------- Squadre -------------------------------
+const ordPos = (n) => (n == null ? "–" : n + "°");
+const resChip = (r, team) => `<span class="res ${r.o}" title="Giornata ${Results.leagueRound(team, r.round)} di lega (Serie A ${r.round}): ${Results.OUT_TXT[r.o]} ${r.my}-${r.opp}">${r.my}-${r.opp}</span>`;
 function renderTeams() {
   $("teamsEmpty").classList.toggle("hidden", state.teams.length > 0);
   $("teamsList").innerHTML = state.teams.map((t) => {
-    const lp = t.lastProposal;
+    const lp = t.lastProposal, sm = Results.summarize(t);
     return `<div class="card">
       <div class="row"><strong class="grow">${esc(t.teamName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
       <div class="muted small">${esc(t.leagueName)} · ${t.players.length} giocatori</div>
+      <div class="tres"><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
+        <span class="muted small" title="3 punti a vittoria, 1 a pareggio">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
+        ${sm.last5.length ? `<span class="reslist" title="Ultimi risultati">${sm.last5.map((r) => resChip(r, t)).join("")}</span>` : ""}</div>
       ${lp ? `<div class="small" style="margin-top:8px">Ultima proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…</div>` : ""}
-      <div class="row" style="margin-top:12px">
-        <button class="btn" data-act="propose" data-id="${esc(t.id)}">Proponi formazione migliore</button>
-        <button class="btn secondary" data-act="edit" data-id="${esc(t.id)}">Modifica</button>
-        <button class="btn danger" data-act="del" data-id="${esc(t.id)}">Elimina</button>
+      <div class="tbar">
+        <button class="btn sm" data-act="propose" data-id="${esc(t.id)}">Proponi formazione</button>
+        <span class="grow"></span>
+        <button class="btn secondary icon" data-act="edit" data-id="${esc(t.id)}" title="Modifica" aria-label="Modifica">✎</button>
+        <button class="btn danger icon" data-act="del" data-id="${esc(t.id)}" title="Elimina" aria-label="Elimina">🗑</button>
       </div></div>`;
   }).join("");
 }
+$("btnAddTeam").addEventListener("click", () => { clearMsg(); startEdit(null); });
 $("teamsList").addEventListener("click", async (e) => {
   const b = e.target.closest("button[data-act]");
   if (!b) return;
@@ -1185,6 +1298,7 @@ function startEdit(team) {
   $("fLeague").value = team ? team.leagueName : "";
   $("fType").value = team ? team.leagueType : "Classic";
   $("fTeam").value = team ? team.teamName : "";
+  $("fStart").value = team ? Results.startOf(team) : 1;
   $("fDFactor").checked = !!(team && team.dFactor && team.leagueType !== "Mantra");
   syncDFactor();
   state.roster = [];
@@ -1225,12 +1339,16 @@ $("btnSaveTeam").addEventListener("click", async () => {
     leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, teamName: $("fTeam").value.trim(), dFactor: $("fType").value === "Classic" && $("fDFactor").checked,
     players, updatedAt: serverTimestamp(),
   };
+  const start = Results.parseIntIn($("fStart").value, 1, 38);
+  if (start === null || Number.isNaN(start)) return msg("La giornata di inizio deve essere un numero da 1 a 38.", "err");
+  data.startRound = start;
   try {
     if (state.editingId) {
       const old = state.teams.find((t) => t.id === state.editingId);
-      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, createdAt: old.createdAt || serverTimestamp() });
+      // classifica e risultati restano quelli già salvati
+      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, position: old.position ?? null, podiumGap: old.podiumGap ?? null, results: old.results || [], createdAt: old.createdAt || serverTimestamp() });
     } else {
-      await addDoc(collection(db, "users", state.user.uid, "teams"), { ...data, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", state.user.uid, "teams"), { ...data, position: null, podiumGap: null, results: [], createdAt: serverTimestamp() });
     }
     await loadTeams(); renderTeams(); show("teams"); msg("Squadra salvata.");
   } catch (e) { msg("Salvataggio non riuscito: " + e.message, "err", 0); }
@@ -1444,6 +1562,121 @@ function renderProposal(team, { result, meta }) {
   $("btnRefresh").addEventListener("click", () => propose(team, true));
   $("btnBack").addEventListener("click", () => show("teams"));
 }
+
+// ------------------------------- Risultati -------------------------------
+const rs = { league: "", type: "", pos: "", round: "last", outcome: null, editing: null };
+function resFiltered() {
+  const q = norm(rs.league);
+  return state.teams.filter((t) => {
+    if (q && !norm(`${t.leagueName} ${t.teamName}`).includes(q)) return false;
+    if (rs.type && t.leagueType !== rs.type) return false;
+    if (rs.pos === "podio") return t.position != null && t.position <= 3;
+    if (rs.pos) return t.position === Number(rs.pos);
+    return true;
+  });
+}
+function resEditorHtml(t) {
+  const st = Results.startOf(t), sm = Results.summarize(t);
+  const cells = [];
+  for (let n = st; n <= Results.MAX_ROUND; n++) {
+    const r = sm.byRound.get(n);
+    cells.push(`<div class="rc ${r ? r.o : ""}" data-rc="${n}"><span class="muted small">G${Results.leagueRound(t, n)} · SA ${n}</span>
+      <div class="sr"><input class="sc" data-r="${n}" data-k="my" inputmode="numeric" maxlength="2" value="${r ? r.my : ""}" aria-label="Miei gol giornata ${n}"><span>-</span><input class="sc" data-r="${n}" data-k="opp" inputmode="numeric" maxlength="2" value="${r ? r.opp : ""}" aria-label="Gol avversario giornata ${n}"></div></div>`);
+  }
+  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div><label>Posizione in classifica</label><input id="eePos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="es. 3"></div>
+      <div><label>Distanza dal podio (punti)</label><input id="eeGap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="0 se sul podio"></div>
+      <div class="note" style="align-self:end">Prima giornata di lega: Serie A ${st} (si cambia da Modifica squadra). Punti calcolati: <b>${sm.points}</b> (${sm.W}V ${sm.D}P ${sm.L}S).</div></div>
+    <label style="margin-top:10px">Risultati: gol miei - gol dell'avversario (lascia vuoto se non giocata)</label>
+    <div class="rgrid">${cells.join("")}</div>
+    <div class="row"><button class="btn" data-ee="save">Salva</button><button class="btn secondary" data-ee="cancel">Annulla</button></div>`;
+}
+function renderResults() {
+  const all = state.teams;
+  const latest = Results.latestRound(all);
+  // filtri: aggiorno le opzioni mantenendo la scelta
+  const poss = [...new Set(all.map((t) => t.position).filter((p) => p != null))].sort((a, b) => a - b);
+  $("rPos").innerHTML = `<option value="">Tutte</option><option value="podio">Podio (1°–3°)</option>${poss.map((p) => `<option value="${p}">${p}°</option>`).join("")}`;
+  $("rPos").value = rs.pos;
+  if ($("rPos").value !== rs.pos) { rs.pos = ""; $("rPos").value = ""; }
+  let ro = `<option value="last">Ultima valorizzata${latest ? " (SA " + latest + ")" : ""}</option>`;
+  for (let n = 1; n <= Results.MAX_ROUND; n++) ro += `<option value="${n}">Giornata ${n}</option>`;
+  $("rRound").innerHTML = ro; $("rRound").value = rs.round;
+  const round = rs.round === "last" ? latest : Number(rs.round);
+
+  const base = resFiltered();
+  const c = round ? Results.countsForRound(base, round) : { W: 0, D: 0, L: 0, total: 0 };
+  const chip = (o, label) => `<button class="sumchip ${o} ${rs.outcome === o ? "on" : ""}" data-o="${o}" title="Mostra solo le leghe con ${label.toLowerCase()} in questa giornata">${label}<b>${c[o]}</b></button>`;
+  $("resSummary").innerHTML = round
+    ? `<span class="muted">Giornata Serie A <b>${round}</b>${rs.round === "last" ? " (ultima valorizzata)" : ""} · ${c.total} ${c.total === 1 ? "risultato" : "risultati"}:</span>${chip("W", "Vinte")}${chip("D", "Pareggiate")}${chip("L", "Perse")}${rs.outcome ? '<button class="btn secondary sm" data-o="">Mostra tutte</button>' : ""}`
+    : '<span class="muted">Nessun risultato inserito: usa la matita su una lega per aggiungerli.</span>';
+  $("rRoundHead").textContent = round ? "Giornata " + round : "Giornata";
+
+  const rows = base.filter((t) => {
+    if (!rs.outcome || !round) return true;
+    const r = Results.summarize(t).byRound.get(round);
+    return r && r.o === rs.outcome;
+  });
+  $("resRows").innerHTML = rows.map((t) => {
+    const sm = Results.summarize(t), r = round ? sm.byRound.get(round) : null;
+    const editing = rs.editing === t.id;
+    return `<tr data-id="${esc(t.id)}"><td><b>${esc(t.leagueName)}</b> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
+      <td class="num">${t.position != null ? `<span class="pos">${ordPos(t.position)}</span>` : "–"}</td>
+      <td class="num">${t.podiumGap != null ? t.podiumGap : "–"}</td>
+      <td class="num"><b>${sm.played ? sm.points : "–"}</b></td>
+      <td>${sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>'}</td>
+      <td>${r ? resChip(r, t) : '<span class="muted">–</span>'}</td>
+      <td class="num"><button class="btn secondary icon" data-edit="${esc(t.id)}" title="${editing ? "Chiudi" : "Modifica risultati"}" aria-label="Modifica risultati">${editing ? "×" : "✎"}</button></td></tr>
+      ${editing ? `<tr class="edrow"><td colspan="7">${resEditorHtml(t)}</td></tr>` : ""}`;
+  }).join("") || `<tr><td colspan="7" class="muted">${all.length ? "Nessuna lega con questi filtri." : "Nessuna squadra: aggiungila da Le mie squadre."}</td></tr>`;
+  $("resNote").textContent = "Punti = 3 per vittoria, 1 per pareggio, calcolati sui risultati inseriti dalla giornata di inizio della lega. Posizione e distanza dal podio si inseriscono a mano.";
+}
+function resRefresh() { rs.editing = null; renderResults(); }
+$("navResults").addEventListener("click", () => { rs.editing = null; renderResults(); });
+$("rLeague").addEventListener("input", (e) => { rs.league = e.target.value; resRefresh(); });
+$("rType").addEventListener("change", (e) => { rs.type = e.target.value; resRefresh(); });
+$("rPos").addEventListener("change", (e) => { rs.pos = e.target.value; resRefresh(); });
+$("rRound").addEventListener("change", (e) => { rs.round = e.target.value; resRefresh(); });
+$("resSummary").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-o]");
+  if (!b) return;
+  rs.outcome = b.dataset.o && rs.outcome !== b.dataset.o ? b.dataset.o : null;
+  resRefresh();
+});
+$("resRows").addEventListener("input", (e) => {
+  const inp = e.target.closest("input.sc");
+  if (!inp) return;
+  const box = inp.closest(".rc");
+  const my = Results.parseIntIn(box.querySelector('[data-k="my"]').value, 0, 99), opp = Results.parseIntIn(box.querySelector('[data-k="opp"]').value, 0, 99);
+  box.className = "rc" + (my !== null && opp !== null && !Number.isNaN(my) && !Number.isNaN(opp) ? " " + Results.outcome(my, opp) : "");
+});
+$("resRows").addEventListener("click", async (e) => {
+  const ed = e.target.closest("button[data-edit]"), act = e.target.closest("button[data-ee]");
+  if (ed) { rs.editing = rs.editing === ed.dataset.edit ? null : ed.dataset.edit; renderResults(); return; }
+  if (!act) return;
+  if (act.dataset.ee === "cancel") { rs.editing = null; renderResults(); return; }
+  const t = state.teams.find((x) => x.id === rs.editing);
+  if (!t) return;
+  try {
+    const position = Results.parseIntIn($("eePos").value, 1, 99);
+    const podiumGap = Results.parseIntIn($("eeGap").value, 0, 999);
+    if (Number.isNaN(position)) throw new Error("La posizione deve essere un numero da 1 a 99.");
+    if (Number.isNaN(podiumGap)) throw new Error("La distanza dal podio deve essere un numero intero di punti (0 o più).");
+    const st = Results.startOf(t), fresh = [];
+    for (let n = st; n <= Results.MAX_ROUND; n++) {
+      const my = Results.parseIntIn(document.querySelector(`input.sc[data-r="${n}"][data-k="my"]`).value, 0, 99);
+      const opp = Results.parseIntIn(document.querySelector(`input.sc[data-r="${n}"][data-k="opp"]`).value, 0, 99);
+      if (Number.isNaN(my) || Number.isNaN(opp)) throw new Error(`Giornata SA ${n}: i gol devono essere numeri da 0 a 99.`);
+      if (my === null && opp === null) continue;
+      if (my === null || opp === null) throw new Error(`Giornata SA ${n}: inserisci sia i tuoi gol sia quelli dell'avversario.`);
+      fresh.push({ round: n, my, opp });
+    }
+    const kept = (t.results || []).filter((r) => r && r.round < st); // risultati prima della giornata di inizio: restano salvati
+    await updateDoc(doc(db, "users", state.user.uid, "teams", t.id), { position, podiumGap, results: [...kept, ...fresh], updatedAt: serverTimestamp() });
+    await loadTeams(); rs.editing = null; renderResults(); renderTeams();
+    msg("Risultati salvati.");
+  } catch (err) { msg(err.message, "err"); }
+});
 
 // ------------------------------- Statistiche -------------------------------
 const STATUS_TXT = { lineup: "Titolare", bench: "Panchina", out: "Indisp.", suspended: "Squal.", doubt: "Dubbio", "non in lista": "Non in lista", "stima listone": "Stima Listone" };
