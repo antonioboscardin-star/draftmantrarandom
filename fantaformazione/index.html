@@ -35,8 +35,19 @@
   #v-edit label { margin-top: 16px; }
   #v-edit .row { margin: 6px 0 12px; }
   #v-edit textarea { margin-top: 8px; }
-  .tcard { padding: 12px 14px; }
-  .tcard .lp { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .tcard { padding: 12px 14px; display: flex; flex-direction: column; }
+  .tcard .lp { display: flex; align-items: flex-end; gap: 10px; margin-top: auto; padding-top: 8px; }
+  .tcard .lp .grow { flex: 1 1 auto; }
+  .tcard .lgn { cursor: help; border-bottom: 1px dotted var(--muted); }
+  .tsum { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 8px 12px; margin: 0 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  .tsum b { color: var(--text); }
+  table.compact.tight { width: max-content; max-width: 100%; min-width: 0; }
+  .tablewrap.fit { display: inline-block; max-width: 100%; vertical-align: top; }
+  table.compact.tight td.pn { width: auto; max-width: none; white-space: nowrap; overflow: visible; }
+  table.compact.tight td, table.compact.tight th { padding-right: 18px; }
+  table.compact.tight td.num:last-child, table.compact.tight th.num:last-child { padding-right: 8px; }
+  table.compact.tight .mfull { white-space: nowrap; }
+  details.info > summary { cursor: pointer; font-weight: 600; color: var(--accent); }
   .tcard .lp .grow { min-width: 0; }
   button.btn.two { padding: 4px 10px; font-size: 12px; line-height: 1.15; text-align: center; flex: 0 0 auto; }
   .pagehead { flex-wrap: wrap; }
@@ -234,6 +245,7 @@
   <section id="v-teams" class="hidden">
     <div class="pagehead"><h2>Le mie squadre</h2><button class="btn" id="btnAddTeam" title="Aggiungi squadra">+ Aggiungi squadra</button><button class="btn secondary" id="btnEditTeam" title="Scegli la squadra da modificare">✎ Modifica</button><button class="btn danger" id="btnDelTeam" title="Scegli la squadra da eliminare">🗑 Elimina</button><button class="btn secondary" id="btnClearProps" title="Cancella l'ultima formazione proposta di tutte le squadre">Pulisci formazioni proposte</button></div>
     <dialog id="pickDlg"><h3 id="pickTitle" style="margin-top:0"></h3><div id="pickList"></div><div class="row" style="margin-top:8px"><button class="btn secondary" id="pickCancel">Annulla</button></div></dialog>
+    <div id="teamsSummary" class="tsum hidden"></div>
     <div id="teamsList" class="grid"></div>
     <p id="teamsEmpty" class="muted hidden">Nessuna squadra caricata. Crea la prima con "+ Aggiungi squadra".</p>
   </section>
@@ -244,7 +256,7 @@
     <div class="filters one">
       <div><label>Lega o squadra</label><input id="rLeague" placeholder="Cerca…"></div>
       <div class="opt"><label>Tipologia</label><select id="rType"><option value="">Tutte</option><option>Classic</option><option>Mantra</option></select></div>
-      <div class="opt"><label>Euroleghe</label><select id="rEuro"><option value="">Tutte</option><option value="si">Sì</option><option value="no">No</option></select></div>
+      <div class="opt"><label>Campionato</label><select id="rEuro"><option value="">Tutti</option><option value="no">SerieA</option><option value="si">Euroleghe</option></select></div>
       <div class="opt"><label>Posizione</label><select id="rPos"></select></div>
       <div class="opt"><label>Da pos.</label><input id="rPosFrom" inputmode="numeric" maxlength="2" placeholder="1"></div>
       <div class="opt"><label>A pos.</label><input id="rPosTo" inputmode="numeric" maxlength="2" placeholder="5"></div>
@@ -268,8 +280,8 @@
         <div><label>Nome lega</label><input id="fLeague" maxlength="80" placeholder="es. Lega degli Amici"></div>
         <div><label>Tipologia lega</label>
           <select id="fType"><option>Classic</option><option>Mantra</option></select></div>
-        <div><label>Euroleghe</label>
-          <select id="fEuro"><option>No</option><option>Sì</option></select>
+        <div><label>Campionato</label>
+          <select id="fEuro"><option value="no">SerieA</option><option value="si">Euroleghe</option></select>
           <div class="note" style="margin:2px 0 0" id="fEuroNote">Si sceglie ora e non si può più cambiare dopo il primo salvataggio.</div></div>
         <div><label>Nome squadra</label><input id="fTeam" maxlength="80" placeholder="es. FC Esempio"></div>
         <div><label id="fStartLbl">Giornata di inizio lega (1–38)</label><input id="fStart" inputmode="numeric" maxlength="2" value="1">
@@ -278,6 +290,23 @@
           <label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:400"><input type="checkbox" id="fDFactor" style="width:auto"> attivo in questa lega</label>
           <div class="note" style="margin:2px 0 0">Se attivo, i moduli con almeno 4 difensori ricevono un bonus sul totale (predefinito 0,5 punti).</div></div>
       </div>
+
+      <details class="info" id="infoBox" style="margin-top:14px">
+        <summary>Dati della lega (facoltativi)</summary>
+        <div class="grid" style="margin-top:6px">
+          <div><label>Data asta</label><input type="date" id="iDate"></div>
+          <div><label>Numero partecipanti</label><input id="iPart" inputmode="numeric" maxlength="3"></div>
+          <div><label>Tipologia asta</label><select id="iType"><option value=""></option><option>Chiamata</option><option>Random</option><option>Draft</option><option>Sbusto</option><option>BusteChiuse</option><option>Listone</option></select></div>
+          <div><label>Modalità</label><select id="iMode"><option value=""></option><option>Per Ruolo</option><option>Totale</option></select></div>
+          <div><label>Crediti</label><input id="iCred" inputmode="numeric" maxlength="6"></div>
+          <div><label>Quota (€)</label><input id="iFee" inputmode="decimal" maxlength="8"></div>
+          <div><label>Premio 1° classificato (€)</label><input id="iP1" inputmode="decimal" maxlength="8"></div>
+          <div><label>Premio 2° classificato (€)</label><input id="iP2" inputmode="decimal" maxlength="8"></div>
+          <div><label>Premio 3° classificato (€)</label><input id="iP3" inputmode="decimal" maxlength="8"></div>
+          <div><label>Admin</label><input id="iAdmin" maxlength="80"></div>
+          <div style="grid-column: 1 / -1"><label>Note</label><input id="iNotes" maxlength="300"></div>
+        </div>
+      </details>
 
       <label>Aggiungi giocatori (scrivi il nome e premi Invio, oppure incolla un elenco: un giocatore per riga)</label>
       <div class="row">
@@ -352,6 +381,7 @@
       <input type="file" id="xlsxIn" accept=".xlsx,.xls">
       <div id="importPreview"></div>
     </details>
+    <div id="listoneInfo" class="note" style="margin:-6px 0 12px"></div>
     <details class="card" id="euroCard">
       <summary style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-size:15px">Aggiorna Listone Euroleghe (.xlsx)</summary>
       <div style="margin-top:10px"></div>
@@ -360,8 +390,7 @@
       <input type="file" id="euroIn" accept=".xlsx,.xls">
       <div id="euroPreview"></div>
     </details>
-    <div id="listoneInfo" class="note" style="margin-bottom:4px"></div>
-    <div id="euroInfo" class="note" style="margin-bottom:10px"></div>
+    <div id="euroInfo" class="note" style="margin:-6px 0 12px"></div>
     <div id="checkBox"></div>
     <details class="card" id="playerCard">
       <summary style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-size:15px">Modifica singolo giocatore</summary>
@@ -850,7 +879,10 @@ const Engine = (() => {
     return null;
   }
   /** Prossima partita della squadra: prima per nome identico, poi per nome compatibile. */
-  function findTeamMatch(team, matches) {
+  /** Toglie da un nome squadra numeri finali/iniziali (giornata, risultato, data) letti insieme al nome dalla pagina. */
+  const cleanTeamName = (n) => String(n || '').replace(/^\s*\d{1,2}\s+/, '').replace(/(?:[\s \-–:\/]+\d{1,2}(?:[\/:.\-–]\d{1,2})*)*[\s\-–:\/]*$/, '').replace(/\s+/g, ' ').trim();
+  function findTeamMatch(team, rawMatches) {
+    const matches = rawMatches.map((m) => ({ home: cleanTeamName(m.home), away: cleanTeamName(m.away) }));
     const k = teamKey(team);
     for (const m of matches) if (teamKey(m.home) === k || teamKey(m.away) === k) return m;
     for (const m of matches) if (teamsMatch(team, m.home) || teamsMatch(team, m.away)) return m;
@@ -1158,7 +1190,7 @@ const Engine = (() => {
     res.all = scored.slice().sort(bySel);
     return res;
   }
-  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, euroLeague, EURO_LEAGUES, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
+  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, euroLeague, EURO_LEAGUES, cleanTeamName, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
 })();
 /* ==== ENGINE:END ==== */
 
@@ -1487,12 +1519,43 @@ async function loadTeams() {
 // ------------------------------- Squadre -------------------------------
 const ordPos = (n) => (n == null ? "–" : n + "°");
 const resChip = (r, team) => `<span class="res ${r.o}" title="Giornata ${Results.leagueRound(team, r.round)} di lega (${team.euroleghe ? "Euroleghe" : "Serie A"} ${r.round}): ${Results.OUT_TXT[r.o]} ${r.my}-${r.opp}">${r.my}-${r.opp}</span>`;
+// ---- Dati facoltativi della lega (asta, quote, premi) ----
+const eur = (n) => "€ " + Number(n).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const INFO_KEYS = ["date", "part", "type", "mode", "cred", "fee", "p1", "p2", "p3", "admin", "notes"];
+const hasInfo = (t) => !!t.info && INFO_KEYS.some((k) => t.info[k] != null && t.info[k] !== "");
+function infoTip(t) {
+  const i = t.info || {};
+  const L = [];
+  const add = (l, v) => { if (v != null && v !== "") L.push(`<div><span class="muted">${l}:</span> <b>${esc(v)}</b></div>`); };
+  add("Data asta", i.date ? new Date(i.date + "T12:00:00").toLocaleDateString("it-IT") : null);
+  add("Partecipanti", i.part); add("Tipologia asta", i.type); add("Modalità", i.mode); add("Crediti", i.cred);
+  add("Quota", i.fee != null ? eur(i.fee) : null);
+  if (i.p1 != null || i.p2 != null || i.p3 != null) add("Premi", [["1°", i.p1], ["2°", i.p2], ["3°", i.p3]].map(([l, v]) => `${l} ${v != null ? eur(v) : "–"}`).join(" · "));
+  add("Admin", i.admin); add("Note", i.notes);
+  return L.length ? `<hr>${L.join("")}` : "";
+}
+function renderSummary() {
+  const box = $("teamsSummary"), ts = state.teams;
+  if (!ts.some(hasInfo)) { box.classList.add("hidden"); return; }
+  const cnt = (f) => { const m = new Map(); ts.forEach((t) => { const k = f(t); if (k) m.set(k, (m.get(k) || 0) + 1); }); return [...m].map(([k, n]) => `${esc(k)} ${n}`).join(" · ") || "–"; };
+  const fees = ts.reduce((s, t) => s + (t.info && t.info.fee != null ? t.info.fee : 0), 0);
+  let prizes = 0, podium = 0;
+  ts.forEach((t) => { const p = t.position, v = t.info && p >= 1 && p <= 3 ? t.info["p" + p] : null; if (v != null) { prizes += v; podium++; } });
+  box.innerHTML = `<span><b>${ts.length}</b> ${ts.length === 1 ? "lega" : "leghe"}</span>
+    <span>Tipologie: <b>${cnt((t) => t.leagueType)}</b></span>
+    <span>Campionato: <b>${cnt((t) => (t.euroleghe ? "Euroleghe" : "SerieA"))}</b></span>
+    <span>Aste: <b>${cnt((t) => t.info && t.info.type)}</b></span>
+    <span>Quote versate: <b>${eur(fees)}</b></span>
+    <span title="Somma dei premi delle leghe in cui sei attualmente 1°, 2° o 3°">Premi al momento: <b>${eur(prizes)}</b> (${podium} ${podium === 1 ? "lega a podio" : "leghe a podio"})</span>`;
+  box.classList.remove("hidden");
+}
 function renderTeams() {
+  renderSummary();
   $("teamsEmpty").classList.toggle("hidden", state.teams.length > 0);
   $("teamsList").innerHTML = state.teams.map((t) => {
     const lp = t.lastProposal, sm = Results.summarize(t);
     return `<div class="card tcard">
-      <div class="row" style="margin:0"><strong class="grow">${esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
+      <div class="row" style="margin:0"><strong class="grow">${hasInfo(t) ? `<span class="lgn" data-tip="${esc(`<b>${esc(t.leagueName)}</b>${infoTip(t)}`)}" tabindex="0">${esc(t.leagueName)}</span>` : esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
       <div class="tres" style="margin-top:4px"><span class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</span><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
         <span class="muted small" title="3 punti a vittoria, 1 a pareggio">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
         ${sm.last5.length ? `<span class="reslist" title="Ultimi risultati">${sm.last5.map((r) => resChip(r, t)).join("")}</span>` : ""}</div>
@@ -1584,9 +1647,9 @@ function syncEuro() {
   fillNames();
 }
 $("fEuro").addEventListener("change", () => {
-  const eu = $("fEuro").value === "Sì";
+  const eu = $("fEuro").value === "si";
   if (state.roster.length && !confirm("Cambiando Euroleghe la rosa già inserita verrà svuotata (i giocatori sono di due listoni diversi). Continuare?")) {
-    $("fEuro").value = state.editEuro ? "Sì" : "No"; return;
+    $("fEuro").value = state.editEuro ? "si" : "no"; return;
   }
   state.editEuro = eu; state.roster = []; syncEuro(); renderRoster();
 });
@@ -1600,10 +1663,15 @@ function startEdit(team) {
   $("fDFactor").checked = !!(team && team.dFactor && team.leagueType !== "Mantra");
   syncDFactor();
   state.editEuro = !!(team && team.euroleghe);
-  $("fEuro").value = state.editEuro ? "Sì" : "No";
+  $("fEuro").value = state.editEuro ? "si" : "no";
   $("fEuro").disabled = !!team; // non si può più cambiare dopo il primo salvataggio
   $("fEuroNote").textContent = team ? "Non modificabile dopo il primo salvataggio." : "Si sceglie ora e non si può più cambiare dopo il primo salvataggio.";
   syncEuro();
+  const i = (team && team.info) || {};
+  const sv = (id, v) => { $(id).value = v == null ? "" : ["iFee", "iP1", "iP2", "iP3"].includes(id) ? String(v).replace(".", ",") : String(v); };
+  sv("iDate", i.date); sv("iPart", i.part); sv("iType", i.type); sv("iMode", i.mode); sv("iCred", i.cred);
+  sv("iFee", i.fee); sv("iP1", i.p1); sv("iP2", i.p2); sv("iP3", i.p3); sv("iAdmin", i.admin); sv("iNotes", i.notes);
+  $("infoBox").open = false;
   state.roster = [];
   if (team) team.players.forEach((p) => {
     const found = rosterPool().find((x) => x.id === p.id);
@@ -1636,6 +1704,22 @@ $("btnBulk").addEventListener("click", () => {
   $("fBulk").value = ""; renderRoster();
 });
 $("btnCancelEdit").addEventListener("click", () => show("teams"));
+function readInfo() {
+  const num = (id, label, int) => {
+    const t = $(id).value.trim().replace(",", ".");
+    if (t === "") return null;
+    const n = Number(t);
+    if (!Number.isFinite(n) || n < 0 || (int && !Number.isInteger(n))) throw new Error(`${label}: inserisci ${int ? "un numero intero" : "un importo"} valido (0 o più).`);
+    return int ? n : Math.round(n * 100) / 100;
+  };
+  const info = {
+    date: $("iDate").value || null, part: num("iPart", "Numero partecipanti", true), type: $("iType").value || null, mode: $("iMode").value || null,
+    cred: num("iCred", "Crediti", true), fee: num("iFee", "Quota"), p1: num("iP1", "Premio 1°"), p2: num("iP2", "Premio 2°"), p3: num("iP3", "Premio 3°"),
+    admin: $("iAdmin").value.trim() || null, notes: $("iNotes").value.trim() || null,
+  };
+  Object.keys(info).forEach((k) => { if (info[k] === null) delete info[k]; });
+  return info;
+}
 $("btnSaveTeam").addEventListener("click", async () => {
   const players = state.roster.map((r) => ({ id: r.player.id, name: r.player.name }));
   const data = {
@@ -1646,11 +1730,12 @@ $("btnSaveTeam").addEventListener("click", async () => {
   const start = Results.parseIntIn($("fStart").value, 1, maxStart);
   if (start === null || Number.isNaN(start)) return msg(`La giornata di inizio deve essere un numero da 1 a ${maxStart}.`, "err");
   data.startRound = start;
+  try { data.info = readInfo(); } catch (e) { $("infoBox").open = true; return msg(e.message, "err"); }
   try {
     if (state.editingId) {
       const old = state.teams.find((t) => t.id === state.editingId);
       // classifica e risultati restano quelli già salvati
-      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, position: old.position ?? null, podiumGap: old.podiumGap ?? null, results: old.results || [], sortOrder: old.sortOrder ?? null, createdAt: old.createdAt || serverTimestamp() });
+      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, position: old.position ?? null, podiumGap: old.podiumGap ?? null, results: old.results || [], sortOrder: old.sortOrder ?? null, lastProposal: old.lastProposal ?? null, createdAt: old.createdAt || serverTimestamp() });
     } else {
       await addDoc(collection(db, "users", state.user.uid, "teams"), { ...data, position: null, podiumGap: null, results: [], sortOrder: state.teams.length, createdAt: serverTimestamp() });
     }
@@ -1864,15 +1949,15 @@ function renderProposal(team, { result, meta }) {
     </div>
     ${result.warnings.length ? `<div class="banner warn"><b>Attenzione:</b><br>${result.warnings.map(esc).join("<br>")}</div>` : ""}
     <h3>Titolari</h3>
-    <div class="tablewrap"><table class="compact">${THEAD}<tbody>${result.lineup.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
+    <div class="tablewrap fit"><table class="compact tight">${THEAD}<tbody>${result.lineup.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
     <h3>Panchina consigliata (in ordine)</h3>
-    <div class="tablewrap"><table class="compact">${THEAD}<tbody>${result.bench.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
+    <div class="tablewrap fit"><table class="compact tight">${THEAD}<tbody>${result.bench.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
     <h3>Altri moduli valutati</h3>
     <div class="card"><table><thead><tr><th>Modulo</th><th class="num">FV totale</th><th class="num">Δ vs migliore</th></tr></thead><tbody>
       ${result.alternatives.map((a) => `<tr><td>${esc(a.module)}</td><td class="num">${fmt(a.totalEv, 1)}${a.dBonus ? ' <span class="muted" title="Include il bonus D-factor (almeno 4 difensori)">D</span>' : ""}</td><td class="num">${fmt(a.totalEv - result.totalEv, 1)}</td></tr>`).join("")}
     </tbody></table></div>
     <details class="card"><summary>Tutta la rosa ordinata per FV</summary>
-      <div class="tablewrap" style="margin-top:10px"><table class="compact">${THEAD}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
+      <div class="tablewrap fit" style="margin-top:10px"><table class="compact tight">${THEAD}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
     ${meta.euro ? `<p class="note"><b>Come si calcola il FV in una lega Euroleghe.</b> FV = fantamedia (FM) del listone Euroleghe: nessuna correzione xG/xA, difficoltà della partita o fattore campo.
       La titolarità arriva dalle probabili formazioni Euro Leghe (fantacalcio.it) o, per le squadre di Serie A, da quelle di Serie A; serve a escludere indisponibili e squalificati e a dare la precedenza a chi ha almeno ${PP(P.priorityProb)}.
       Moduli e vincoli di formazione sono quelli della tipologia della lega (Classic o Mantra). È un supporto alla decisione, non una garanzia di punteggio.</p>` : `<p class="note"><b>Come si calcola il FV (Fanta Valore).</b> FV = (forma + correzione xG/xA) × difficoltà della partita × campo. Passa il mouse sul FV (o toccalo da mobile) per vedere il dettaglio di ogni giocatore; sul nome per le note.
@@ -1963,7 +2048,7 @@ function renderResults() {
     const editing = rs.editing === t.id;
     return `<tr data-id="${esc(t.id)}">
       <td><button class="mv" data-mv="-1" data-id="${esc(t.id)}" title="Sposta su" aria-label="Sposta su" ${i === 0 ? "disabled" : ""}>▲</button><button class="mv" data-mv="1" data-id="${esc(t.id)}" title="Sposta giù" aria-label="Sposta giù" ${i === rows.length - 1 ? "disabled" : ""}>▼</button></td>
-      <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}${t.euroleghe ? " · Euroleghe" : ""}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}<div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da " + (t.euroleghe ? "EL " : "SA ") + Results.startOf(t) : ""}</div></td>
+      <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}${t.euroleghe ? " · Euroleghe" : ""}${infoTip(t)}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}<div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da " + (t.euroleghe ? "EL " : "SA ") + Results.startOf(t) : ""}</div></td>
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
       <td class="ctr pts"><b>${sm.played ? sm.points : "–"}</b></td>

@@ -50,6 +50,7 @@ service cloud.firestore {
 
     function validTeam(d) {
       return d.get('euroleghe', false) is bool
+        && d.get('info', {}) is map
         && d.leagueName is string && d.leagueName.size() > 0 && d.leagueName.size() <= 80
         && d.teamName is string && d.teamName.size() > 0 && d.teamName.size() <= 80
         && d.leagueType in ['Classic', 'Mantra']
