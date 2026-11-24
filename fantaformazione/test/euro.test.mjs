@@ -108,3 +108,15 @@ test('Scraper: pagina Euro Leghe (link /euroleghe/squadre) con titolari, panchin
   const by = Object.fromEntries(r.players.map((p) => [p.id, p]));
   assert.equal(by['100'].status, 'lineup'); assert.equal(by['200'].status, 'bench'); assert.equal(by['300'].status, 'out');
 });
+
+test('Euroleghe: nomi partita puliti da numeri e squadra del giocatore riconosciuta', () => {
+  assert.equal(E.cleanTeamName('Lipsia 0'), 'Lipsia');
+  assert.equal(E.cleanTeamName('10 Bayern Monaco'), 'Bayern Monaco');
+  assert.equal(E.cleanTeamName('Lipsia 0 - 0 01/01 01:00'), 'Lipsia');
+  assert.equal(E.cleanTeamName('Paris Saint-Germain'), 'Paris Saint-Germain');
+  const roster = squad();
+  const sig = { lineups: { players: [] }, euroLineups: { players: [] }, euroMatches: [{ home: '10 Bayern Monaco 0', away: 'Lipsia 0 - 0' }] };
+  const p = E.scorePlayers(roster, sig, { euro: true }).find((x) => x.team === 'Bayern Monaco');
+  assert.deepEqual(p.match, { home: 'Bayern Monaco', away: 'Lipsia' });
+  assert.equal(p.matchTeam, 'Bayern Monaco'); assert.equal(p.league, 'Bundesliga');
+});
