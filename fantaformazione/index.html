@@ -24,8 +24,27 @@
   .badge.admin { color: var(--accent2); border-color: var(--accent2); }
   .badge.Classic { color: var(--accent); border-color: var(--accent); }
   .badge.Mantra { color: var(--accent2); border-color: var(--accent2); }
-  .badge.EL { color: var(--draw); border-color: var(--draw); }
-  .filters.one { display: grid; grid-template-columns: minmax(90px,1.5fr) repeat(7, minmax(54px,1fr)); gap: 6px; overflow-x: auto; align-items: end; }
+  :root { --el: #c084fc; }
+  .badge.EL { color: var(--el); border-color: var(--el); background: rgba(192,132,252,.12); }
+  .stats th:first-child, .stats td:first-child { position: sticky; left: 0; background: var(--bg); border-right: 1px solid var(--line); z-index: 1; }
+  .stats th:first-child { background: var(--panel); z-index: 3; }
+  .stats .unavail td:first-child { opacity: 1; }
+  .stats .unavail td:first-child .nmw { opacity: .5; }
+  .mfull { white-space: normal; font-size: 12px; line-height: 1.3; min-width: 110px; display: inline-block; }
+  .mfull b { color: var(--text); }
+  #v-edit label { margin-top: 16px; }
+  #v-edit .row { margin: 6px 0 12px; }
+  #v-edit textarea { margin-top: 8px; }
+  .tcard { padding: 12px 14px; }
+  .tcard .lp { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .tcard .lp .grow { min-width: 0; }
+  button.btn.two { padding: 4px 10px; font-size: 12px; line-height: 1.15; text-align: center; flex: 0 0 auto; }
+  .pagehead { flex-wrap: wrap; }
+  .pagehead h2 { flex: 1 1 auto; }
+  dialog#pickDlg { padding: 16px; }
+  dialog#pickDlg::backdrop { background: rgba(0,0,0,.6); }
+  dialog#pickDlg .pk { display: block; width: 100%; text-align: left; margin: 6px 0; }
+  .filters.one { display: grid; grid-template-columns: minmax(110px,1.7fr) repeat(7, minmax(66px,1fr)); gap: 8px; padding: 4px 6px 8px; margin: 0 -2px 10px; align-items: end; }
   .filters.one > div { min-width: 0; }
   .filters.one label { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 3px; }
   .filters.one input, .filters.one select { padding: 5px 4px; font-size: 13px; min-width: 0; width: 100%; }
@@ -42,6 +61,8 @@
     nav::-webkit-scrollbar { display: none; }
     nav button { padding: 4px 10px; font-size: 13px; white-space: nowrap; flex: 0 0 auto; }
     main { padding: 12px; }
+    .filters.one { grid-template-columns: 1.4fr 1fr 1fr; }
+    .filters.one > div.opt { display: none; }
   }
   /* Risultati: vittoria verde, pareggio giallo, sconfitta rossa */
   :root { --win: #34d399; --draw: #facc15; --loss: #f87171; }
@@ -211,7 +232,8 @@
 
   <!-- LE MIE SQUADRE -->
   <section id="v-teams" class="hidden">
-    <div class="pagehead"><h2>Le mie squadre</h2><button class="btn" id="btnAddTeam" title="Aggiungi squadra">+ Aggiungi squadra</button></div>
+    <div class="pagehead"><h2>Le mie squadre</h2><button class="btn" id="btnAddTeam" title="Aggiungi squadra">+ Aggiungi squadra</button><button class="btn secondary" id="btnEditTeam" title="Scegli la squadra da modificare">✎ Modifica</button><button class="btn danger" id="btnDelTeam" title="Scegli la squadra da eliminare">🗑 Elimina</button><button class="btn secondary" id="btnClearProps" title="Cancella l'ultima formazione proposta di tutte le squadre">Pulisci formazioni proposte</button></div>
+    <dialog id="pickDlg"><h3 id="pickTitle" style="margin-top:0"></h3><div id="pickList"></div><div class="row" style="margin-top:8px"><button class="btn secondary" id="pickCancel">Annulla</button></div></dialog>
     <div id="teamsList" class="grid"></div>
     <p id="teamsEmpty" class="muted hidden">Nessuna squadra caricata. Crea la prima con "+ Aggiungi squadra".</p>
   </section>
@@ -221,17 +243,17 @@
     <h2>Risultati</h2>
     <div class="filters one">
       <div><label>Lega o squadra</label><input id="rLeague" placeholder="Cerca…"></div>
-      <div><label>Tipologia</label><select id="rType"><option value="">Tutte</option><option>Classic</option><option>Mantra</option></select></div>
-      <div><label>Euroleghe</label><select id="rEuro"><option value="">Tutte</option><option value="si">Sì</option><option value="no">No</option></select></div>
-      <div><label>Posizione</label><select id="rPos"></select></div>
-      <div><label>Da pos.</label><input id="rPosFrom" inputmode="numeric" maxlength="2" placeholder="1"></div>
-      <div><label>A pos.</label><input id="rPosTo" inputmode="numeric" maxlength="2" placeholder="5"></div>
+      <div class="opt"><label>Tipologia</label><select id="rType"><option value="">Tutte</option><option>Classic</option><option>Mantra</option></select></div>
+      <div class="opt"><label>Euroleghe</label><select id="rEuro"><option value="">Tutte</option><option value="si">Sì</option><option value="no">No</option></select></div>
+      <div class="opt"><label>Posizione</label><select id="rPos"></select></div>
+      <div class="opt"><label>Da pos.</label><input id="rPosFrom" inputmode="numeric" maxlength="2" placeholder="1"></div>
+      <div class="opt"><label>A pos.</label><input id="rPosTo" inputmode="numeric" maxlength="2" placeholder="5"></div>
       <div><label title="Vale solo per le leghe non Euroleghe">Giornata Serie A</label><select id="rRound"></select></div>
       <div><label title="Vale solo per le leghe Euroleghe (30 giornate)">Giornata Euroleghe</label><select id="rRoundEl"></select></div>
     </div>
     <div class="sumbar" id="resSummary"></div>
     <div class="tablewrap"><table class="compact">
-      <thead><tr><th class="ocol" title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th class="lgh">Lega</th><th class="ctr" title="Posizione in classifica (modificabile)">Pos.</th><th class="ctr" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="ctr" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="c-last ctr" title="Ultimi 5 risultati">Ultimi risultati</th><th class="ctr gcol" id="rRoundHead" title="Risultato della giornata selezionata (Serie A per le leghe normali, Euroleghe per le Euroleghe): gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
+      <thead><tr><th class="ocol" title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th class="lgh">Lega</th><th class="ctr" title="Posizione in classifica (modificabile)">Pos.</th><th class="ctr" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="ctr" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="ctr" title="Partite giocate: numero di giornate con il risultato salvato">PG</th><th class="c-last ctr" title="Ultimi 5 risultati">Ultimi risultati</th><th class="ctr gcol" id="rRoundHead" title="Risultato della giornata selezionata (Serie A per le leghe normali, Euroleghe per le Euroleghe): gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
       <tbody id="resRows"></tbody>
     </table></div>
     <p class="note" id="resNote"></p>
@@ -335,11 +357,11 @@
       <div style="margin-top:10px"></div>
       <p class="note">Carica il file <b>ListoneEuroLeghe.xlsx</b>. Colonne usate: <code>#</code> (id del giocatore), <code>Nome</code>, <code>Sq.</code>, <code>R.</code> (ruolo Classic), <code>R.MANTRA</code>, <code>FM</code> (fantamedia) e, solo per informazione, <code>MV</code>, <code>PGv</code>, <code>FVM/1000</code>, <code>QUOT.</code>.
         I giocatori sono salvati in una collezione separata (<code>euroPlayers</code>) e <b>non compaiono in Statistiche</b>. Prima di scrivere vedrai un'anteprima.</p>
-      <div id="euroInfo" class="note"></div>
       <input type="file" id="euroIn" accept=".xlsx,.xls">
       <div id="euroPreview"></div>
     </details>
-    <div id="listoneInfo" class="note" style="margin-bottom:10px"></div>
+    <div id="listoneInfo" class="note" style="margin-bottom:4px"></div>
+    <div id="euroInfo" class="note" style="margin-bottom:10px"></div>
     <div id="checkBox"></div>
     <details class="card" id="playerCard">
       <summary style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-size:15px">Modifica singolo giocatore</summary>
@@ -813,6 +835,27 @@ const Engine = (() => {
    * La titolarità (probabili formazioni) serve solo a escludere chi non gioca e alla precedenza >= 60%.
    * I giocatori delle squadre di Serie A usano le probabili formazioni di Serie A, gli altri quelle Euro Leghe.
    */
+  // Campionato di appartenenza delle squadre del listone Euroleghe (nome come nel listone)
+  const EURO_LEAGUES = {
+    'Premier League': ['Arsenal', 'Aston Villa', 'Bournemouth', 'Brighton', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Newcastle', 'Tottenham'],
+    'LaLiga': ['Athletic Bilbao', 'Atletico Madrid', 'Barcellona', 'Betis', 'Real Madrid', 'Villarreal'],
+    'Bundesliga': ['Bayer Leverkusen', 'Bayern Monaco', 'Borussia Dortmund', 'Eintracht', 'Lipsia', 'Stoccarda'],
+    'Ligue 1': ['Monaco', 'Olympique Marsiglia', 'Paris Saint-Germain', 'Racing Strasburgo', 'Rennes'],
+    'Serie A': ['Atalanta', 'Bologna', 'Como', 'Fiorentina', 'Inter', 'Juventus', 'Lazio', 'Milan', 'Napoli', 'Roma'],
+  };
+  function euroLeague(team) {
+    const k = teamKey(team);
+    for (const [lg, list] of Object.entries(EURO_LEAGUES)) if (list.some((t) => teamKey(t) === k)) return lg;
+    for (const [lg, list] of Object.entries(EURO_LEAGUES)) if (list.some((t) => teamsMatch(t, team))) return lg;
+    return null;
+  }
+  /** Prossima partita della squadra: prima per nome identico, poi per nome compatibile. */
+  function findTeamMatch(team, matches) {
+    const k = teamKey(team);
+    for (const m of matches) if (teamKey(m.home) === k || teamKey(m.away) === k) return m;
+    for (const m of matches) if (teamsMatch(team, m.home) || teamsMatch(team, m.away)) return m;
+    return null;
+  }
   function scoreEuroPlayers(roster, sig, o) {
     const serie = (sig.lineups && sig.lineups.players) || [];
     const euro = (sig.euroLineups && sig.euroLineups.players) || [];
@@ -824,6 +867,8 @@ const Engine = (() => {
 
       const isSerieA = serie.some((e) => teamsMatch(p.team, e.team));
       const pool = isSerieA ? serie : euro;
+      const match = findTeamMatch(p.team, (isSerieA ? sig.matches : sig.euroMatches) || []);
+      const matchTeam = match ? (teamKey(match.home) === teamKey(p.team) || (teamKey(match.away) !== teamKey(p.team) && teamsMatch(p.team, match.home)) ? match.home : match.away) : null;
       let prob, status = 'n/d', note = '';
       if (pool.length) {
         const byId = p.id != null ? pool.find((e) => e.id != null && String(e.id) === String(p.id)) : null;
@@ -856,6 +901,7 @@ const Engine = (() => {
         score: round2(fv), fv: round2(fv), ev: round2(ev), pref, sel, notes,
         available, opp: null, home: null, diffPts: null, diffFactor: 1, fieldFactor: 1,
         ownPts: null, oppPts: null, tableRange: null,
+        league: euroLeague(p.team), match: match ? { home: match.home, away: match.away } : null, matchTeam,
       };
     });
   }
@@ -1112,7 +1158,7 @@ const Engine = (() => {
     res.all = scored.slice().sort(bySel);
     return res;
   }
-  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
+  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, euroLeague, EURO_LEAGUES, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
 })();
 /* ==== ENGINE:END ==== */
 
@@ -1445,19 +1491,13 @@ function renderTeams() {
   $("teamsEmpty").classList.toggle("hidden", state.teams.length > 0);
   $("teamsList").innerHTML = state.teams.map((t) => {
     const lp = t.lastProposal, sm = Results.summarize(t);
-    return `<div class="card">
-      <div class="row"><strong class="grow">${esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
-      <div class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</div>
-      <div class="tres"><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
+    return `<div class="card tcard">
+      <div class="row" style="margin:0"><strong class="grow">${esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
+      <div class="tres" style="margin-top:4px"><span class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</span><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
         <span class="muted small" title="3 punti a vittoria, 1 a pareggio">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
         ${sm.last5.length ? `<span class="reslist" title="Ultimi risultati">${sm.last5.map((r) => resChip(r, t)).join("")}</span>` : ""}</div>
-      ${lp ? `<div class="small" style="margin-top:8px">Ultima proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…</div>` : ""}
-      <div class="tbar">
-        <button class="btn sm" data-act="propose" data-id="${esc(t.id)}">Proponi formazione</button>
-        <span class="grow"></span>
-        <button class="btn secondary icon" data-act="edit" data-id="${esc(t.id)}" title="Modifica" aria-label="Modifica">✎</button>
-        <button class="btn danger icon" data-act="del" data-id="${esc(t.id)}" title="Elimina" aria-label="Elimina">🗑</button>
-      </div></div>`;
+      <div class="lp"><div class="small grow">${lp ? `Ultima formazione proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…` : '<span class="muted">Nessuna formazione proposta</span>'}</div>
+        <button class="btn two" data-act="propose" data-id="${esc(t.id)}">Ottimizza<br>formazione</button></div></div>`;
   }).join("");
 }
 $("btnAddTeam").addEventListener("click", () => { clearMsg(); startEdit(null); });
@@ -1466,12 +1506,42 @@ $("teamsList").addEventListener("click", async (e) => {
   if (!b) return;
   const t = state.teams.find((x) => x.id === b.dataset.id);
   if (!t) return;
-  if (b.dataset.act === "edit") startEdit(t);
   if (b.dataset.act === "propose") propose(t, false);
-  if (b.dataset.act === "del" && confirm(`Eliminare la squadra "${t.teamName}"?`)) {
+});
+// scelta della squadra da modificare / eliminare
+function pickTeam(title) {
+  return new Promise((resolve) => {
+    if (!state.teams.length) { msg("Non ci sono squadre.", "err"); return resolve(null); }
+    const dlg = $("pickDlg");
+    $("pickTitle").textContent = title;
+    $("pickList").innerHTML = state.teams.map((t) => `<button class="btn secondary pk" data-id="${esc(t.id)}"><b>${esc(t.leagueName)}</b> · ${esc(t.teamName)}${t.euroleghe ? " · Euroleghe" : ""}</button>`).join("");
+    const done = (v) => { dlg.removeEventListener("close", onClose); dlg.close(); resolve(v); };
+    const onClose = () => resolve(null);
+    dlg.addEventListener("close", onClose, { once: true });
+    $("pickList").onclick = (e) => { const b = e.target.closest("button[data-id]"); if (b) done(state.teams.find((x) => x.id === b.dataset.id) || null); };
+    $("pickCancel").onclick = () => done(null);
+    dlg.showModal();
+  });
+}
+$("btnEditTeam").addEventListener("click", async () => { const t = await pickTeam("Quale squadra vuoi modificare?"); if (t) startEdit(t); });
+$("btnDelTeam").addEventListener("click", async () => {
+  const t = await pickTeam("Quale squadra vuoi eliminare?");
+  if (!t || !confirm(`Eliminare la squadra "${t.teamName}" (${t.leagueName})? L'operazione non si può annullare.`)) return;
+  try {
     await deleteDoc(doc(db, "users", state.user.uid, "teams", t.id));
     await loadTeams(); renderTeams(); msg("Squadra eliminata.");
-  }
+  } catch (e) { msg("Eliminazione non riuscita: " + e.message, "err"); }
+});
+$("btnClearProps").addEventListener("click", async () => {
+  const withProp = state.teams.filter((t) => t.lastProposal);
+  if (!withProp.length) return msg("Nessuna formazione proposta da pulire.");
+  if (!confirm(`Cancellare l'ultima formazione proposta di ${withProp.length} ${withProp.length === 1 ? "squadra" : "squadre"}?`)) return;
+  try {
+    const batch = writeBatch(db);
+    withProp.forEach((t) => batch.update(doc(db, "users", state.user.uid, "teams", t.id), { lastProposal: null }));
+    await batch.commit();
+    await loadTeams(); renderTeams(); msg("Formazioni proposte cancellate.");
+  } catch (e) { msg("Operazione non riuscita: " + e.message, "err"); }
 });
 
 // ------------------------------- Editor rosa -------------------------------
@@ -1635,6 +1705,7 @@ async function propose(team, refresh) {
         table: (signals.table || []).length,
         matches: (signals.matches || []).length,
         euroLineups: (signals.euroLineups && signals.euroLineups.players && signals.euroLineups.players.length) || 0,
+        euroMatches: (signals.euroMatches || []).length,
       },
       euro,
       sourceTimes: signals.sourceTimes || {},
@@ -1739,6 +1810,11 @@ function roleBox(p, type) {
 
 /** Partita: squadra del giocatore - avversaria (3 lettere) e C/T = casa/trasferta. */
 function matchHtml(p, kt) {
+  if (p.euro) {
+    if (!p.match) return '<span class="muted" title="Partita non trovata nelle probabili formazioni">–</span>';
+    const m = p.match, mine = (n) => (n === p.matchTeam ? `<b>${esc(n)}</b>` : esc(n));
+    return `<span class="mfull" title="Prossima partita">${mine(m.home)} – ${mine(m.away)}</span>`;
+  }
   if (!p.opp) return '<span class="muted">–</span>';
   return `<span class="mt-l">${esc(teamAbbr(p.team, kt))}-${esc(teamAbbr(p.opp, kt))}</span><span class="ha" title="${p.home ? "In casa" : "In trasferta"}">${p.home ? "C" : "T"}</span>`;
 }
@@ -1747,7 +1823,7 @@ function rowHtml(p, captainId, type) {
   const kt = knownTeams();
   return `<tr class="${p.available === false ? "unavail" : ""}">
     <td class="rl">${roleBox(p, type)}</td>
-    <td class="pn"><span class="pname" data-tip="${esc(nameTip(p))}" tabindex="0">${esc(p.name)}</span>${p.id === captainId ? ' <span class="cap" title="Capitano consigliato">©</span>' : ""}</td>
+    <td class="pn"><span class="pname" data-tip="${esc(nameTip(p))}" tabindex="0">${esc(p.name)}</span>${p.id === captainId ? ' <span class="cap" title="Capitano consigliato">©</span>' : ""}${p.euro ? `<div class="muted small">${esc(p.league || "–")}</div>` : ""}</td>
     <td>${matchHtml(p, kt)}</td>
     <td class="num"><span class="prob ${probCls(p.prob)}">${Math.round(p.prob * 100)}%</span></td>
     <td class="num fv"><span class="fvv" data-tip="${esc(fvTip(p))}" tabindex="0">${fmt(p.fv)}</span></td></tr>`;
@@ -1765,7 +1841,7 @@ function renderProposal(team, { result, meta }) {
     : meta.errors && meta.errors[key]
     ? `<span class="pill errp" title="${esc(meta.errors[key])}">${label}: non disponibile</span>`
     : `<span class="pill okp">${label}: ${count}</span>`;
-  const degraded = meta.errors && (meta.euro ? (meta.errors.lineups || meta.errors.euro) : (meta.errors.lineups || meta.errors.xg || meta.errors.table || meta.errors.matches));
+  const degraded = meta.errors && (meta.euro ? (meta.errors.lineups || meta.errors.euro || meta.errors.euroMatches) : (meta.errors.lineups || meta.errors.xg || meta.errors.table || meta.errors.matches));
   const age = listoneAge(meta.euro);
   $("proposalBox").innerHTML = `
     <div class="row"><h2 class="grow" style="margin:0">${esc(team.teamName)} <span class="badge ${esc(team.leagueType)}">${esc(team.leagueType)}</span>${meta.euro ? ' <span class="badge EL">Euroleghe</span>' : ""}</h2>
@@ -1783,7 +1859,7 @@ function renderProposal(team, { result, meta }) {
         <div><span>Capitano</span><div class="big" style="font-size:20px">${esc(result.captain ? result.captain.name : "–")}</div></div>
       </div>
       <div class="src">${meta.euro
-        ? pill("lineups", "Probabili formazioni Serie A", meta.counts.lineups) + pill("euro", "Probabili formazioni Euro Leghe", meta.counts.euroLineups)
+        ? pill("lineups", "Probabili formazioni Serie A", meta.counts.lineups) + pill("euro", "Probabili formazioni Euro Leghe", meta.counts.euroLineups) + pill("euroMatches", "Partite Euro Leghe", meta.counts.euroMatches)
         : pill("lineups", "Probabili formazioni", meta.counts.lineups) + pill("xg", "xG/xA (FotMob)", meta.counts.xg) + pill("table", "Classifica (FotMob)", meta.counts.table) + pill("matches", "Partite", meta.counts.matches)}</div>
     </div>
     ${result.warnings.length ? `<div class="banner warn"><b>Attenzione:</b><br>${result.warnings.map(esc).join("<br>")}</div>` : ""}
@@ -1891,11 +1967,12 @@ function renderResults() {
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
       <td class="ctr pts"><b>${sm.played ? sm.points : "–"}</b></td>
+      <td class="ctr pg">${sm.played}</td>
       <td class="c-last lastc ctr">${sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>'}</td>
       <td class="ctr">${scoreInputs(t, round, r)}</td>
       <td class="ctr"><button class="btn secondary icon" data-edit="${esc(t.id)}" title="${editing ? "Chiudi" : "Modifica tutte le giornate"}" aria-label="Modifica tutte le giornate">${editing ? "×" : "✎"}</button></td></tr>
-      ${editing ? `<tr class="edrow"><td colspan="8">${resEditorHtml(t)}</td></tr>` : ""}`;
-  }).join("") || `<tr><td colspan="8" class="muted">${all.length ? "Nessuna lega con questi filtri." : "Nessuna squadra: aggiungila da Le mie squadre."}</td></tr>`;
+      ${editing ? `<tr class="edrow"><td colspan="9">${resEditorHtml(t)}</td></tr>` : ""}`;
+  }).join("") || `<tr><td colspan="9" class="muted">${all.length ? "Nessuna lega con questi filtri." : "Nessuna squadra: aggiungila da Le mie squadre."}</td></tr>`;
   $("resNote").textContent = "Posizione, distanza dal podio e risultato della giornata si modificano direttamente nella tabella (si salvano da soli). Punti = 3 per vittoria, 1 per pareggio, dalla giornata di inizio della lega. Le frecce ▲▼ cambiano l'ordine delle leghe, che viene ricordato.";
 }
 function resRefresh() { rs.editing = null; renderResults(); }
@@ -1928,6 +2005,7 @@ function refreshResRow(t) {
   if (tr) {
     const sm = Results.summarize(t), r = sm.byRound.get(teamRound(t));
     tr.querySelector(".pts").innerHTML = `<b>${sm.played ? sm.points : "–"}</b>`;
+    tr.querySelector(".pg").textContent = sm.played;
     tr.querySelector(".lastc").innerHTML = sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>';
     const w = tr.querySelector(".sc2");
     if (w) w.className = "sc2" + (r ? " " + r.o : "");
@@ -2038,7 +2116,7 @@ const leaguesTip = (r) => r.lg.length
   ? `<div class="tip-h">${esc(r.p.name)} · in ${r.lg.length} ${r.lg.length === 1 ? "lega" : "leghe"}</div>` + r.lg.map((x) => `<div><b>${esc(x.leagueName)}</b> <span class="muted">· ${esc(x.teamName)} · ${esc(x.leagueType)}</span></div>`).join("")
   : `<div class="tip-h">${esc(r.p.name)}</div><div class="muted">Non è in nessuna delle tue rose</div>`;
 const ST_COLS = [
-  { k: "name", l: "Giocatore", t: "str", get: (r) => r.p.name, show: (r) => `<span class="role ${esc(r.p.role)}">${esc(r.p.role)}</span> ${r.s.available ? `<b>${esc(r.p.name)}</b>` : `<b class="pname" data-tip="${esc(nameTip(r.s))}" tabindex="0">${esc(r.p.name)}</b>`}`, cls: "name" },
+  { k: "name", l: "Giocatore", t: "str", get: (r) => r.p.name, show: (r) => `<span class="nmw"><span class="role ${esc(r.p.role)}">${esc(r.p.role)}</span> ${r.s.available ? `<b>${esc(r.p.name)}</b>` : `<b class="pname" data-tip="${esc(nameTip(r.s))}" tabindex="0">${esc(r.p.name)}</b>`}</span>`, cls: "name" },
   { k: "team", l: "Sq.", t: "str", get: (r) => r.p.team, show: (r) => esc(teamAbbr(r.p.team, knownTeams())), title: "Squadra (prime 3 lettere)" },
   { k: "role", l: "R", t: "str", get: (r) => r.p.role, show: (r) => esc(r.p.role), title: "Ruolo Classic" },
   { k: "leagues", l: "Leghe", t: "num", get: (r) => r.lg.length, show: (r) => `<span class="fvv" data-tip="${esc(leaguesTip(r))}" tabindex="0">${r.lg.length ? `<b>${r.lg.length}</b>` : "–"}</span>`, title: "In quante delle tue leghe il giocatore è in rosa (passa sul numero per vedere quali)" },
@@ -2176,6 +2254,10 @@ $("navStats").addEventListener("click", renderStats);
 // ------------------------------- Admin DB -------------------------------
 const ROLES = ["P", "D", "C", "A"];
 const toNum = (v) => { const t = String(v ?? "").trim().replace(",", "."); if (!t) return null; const n = Number(t); return Number.isFinite(n) && n > 0 ? n : null; };
+const fmtDT = (v) => {
+  const d = v && typeof v.toDate === "function" ? v.toDate() : v ? new Date(v) : null;
+  return d && !Number.isNaN(d.getTime()) ? d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : "–";
+};
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("it-IT") : "–");
 let pending = null;      // import in anteprima: { plan, updatedAt, fileName, warnings }
 let onlyCheck = false;   // filtro "solo ruoli da verificare"
@@ -2188,8 +2270,8 @@ function renderAdmin() {
   $("adminCount").textContent = `(${state.players.length} giocatori)`;
   const l = state.listone;
   $("listoneInfo").innerHTML = l
-    ? `Ultimo import: Listone del <b>${fmtDate(l.updatedAt)}</b> · ${esc(l.fileName || "")} · ${l.count} giocatori`
-    : "Nessun Listone importato: carica il file .xlsx qui sopra.";
+    ? `<b>Listone FC</b>: caricato il <b>${fmtDT(l.importedAt)}</b> · file del ${fmtDate(l.updatedAt)} · ${esc(l.fileName || "")} · ${l.count} giocatori`
+    : "<b>Listone FC</b>: nessun Listone importato, carica il file .xlsx qui sopra.";
   $("checkBox").innerHTML = toCheck.length
     ? `<div class="banner warn"><b>${toCheck.length} giocatori con ruolo Classic da verificare.</b> Per loro il Listone importato non indicava il ruolo Classic (colonna <code>roleClassic</code>) e l'ho dedotto dai ruoli Mantra (⚠). Correggilo dal menu nella colonna R, oppure importa un Listone che contiene <code>roleClassic</code>.
         <label style="display:inline;margin-left:8px"><input type="checkbox" id="onlyCheck" style="width:auto" ${onlyCheck ? "checked" : ""}> mostra solo questi</label></div>`
@@ -2346,8 +2428,8 @@ let euroPending = null;
 function renderEuroInfo() {
   const i = state.euroInfo;
   $("euroInfo").innerHTML = i
-    ? `Ultimo import: <b>${esc(i.fileName || "")}</b> del ${fmtDate(i.importedAtIso || i.updatedAt)} · ${state.euroPlayers.length} giocatori in ${new Set(state.euroPlayers.map((p) => p.team)).size} squadre`
-    : state.euroPlayers.length ? `${state.euroPlayers.length} giocatori nel listone Euroleghe.` : "Nessun listone Euroleghe importato: carica il file .xlsx qui sotto.";
+    ? `<b>Listone Euroleghe</b>: caricato il <b>${fmtDT(i.importedAtIso || i.importedAt)}</b> · ${esc(i.fileName || "")} · ${state.euroPlayers.length} giocatori in ${new Set(state.euroPlayers.map((p) => p.team)).size} squadre`
+    : `<b>Listone Euroleghe</b>: ${state.euroPlayers.length ? state.euroPlayers.length + " giocatori presenti" : "nessun listone importato, carica il file .xlsx qui sopra"}.`;
 }
 $("euroIn").addEventListener("change", async (e) => {
   const f = e.target.files[0];
