@@ -41,12 +41,13 @@
   .tcard .lgn { cursor: help; border-bottom: 1px dotted var(--muted); }
   .tsum { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 8px 12px; margin: 0 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
   .tsum b { color: var(--text); }
-  table.compact.tight { width: max-content; max-width: 100%; min-width: 0; }
-  .tablewrap.fit { display: inline-block; max-width: 100%; vertical-align: top; }
-  table.compact.tight td.pn { width: auto; max-width: none; white-space: nowrap; overflow: visible; }
-  table.compact.tight td, table.compact.tight th { padding-right: 18px; }
-  table.compact.tight td.num:last-child, table.compact.tight th.num:last-child { padding-right: 8px; }
-  table.compact.tight .mfull { white-space: nowrap; }
+  .lu { margin: 0 auto; max-width: 100%; }
+  .lu .tablewrap { display: block; }
+  table.compact.tight { table-layout: fixed; width: 100%; }
+  table.compact.tight td.pn { width: auto; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  table.compact.tight td, table.compact.tight th { overflow: hidden; text-overflow: ellipsis; }
+  table.compact.tight .mfull { white-space: nowrap; display: block; overflow: hidden; text-overflow: ellipsis; }
+  .reslist-row { margin-top: 6px; }
   details.info > summary { cursor: pointer; font-weight: 600; color: var(--accent); }
   .tcard .lp .grow { min-width: 0; }
   button.btn.two { padding: 4px 10px; font-size: 12px; line-height: 1.15; text-align: center; flex: 0 0 auto; }
@@ -1558,7 +1559,8 @@ function renderTeams() {
       <div class="row" style="margin:0"><strong class="grow">${hasInfo(t) ? `<span class="lgn" data-tip="${esc(`<b>${esc(t.leagueName)}</b>${infoTip(t)}`)}" tabindex="0">${esc(t.leagueName)}</span>` : esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
       <div class="tres" style="margin-top:4px"><span class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</span><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
         <span class="muted small" title="3 punti a vittoria, 1 a pareggio">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
-        ${sm.last5.length ? `<span class="reslist" title="Ultimi risultati">${sm.last5.map((r) => resChip(r, t)).join("")}</span>` : ""}</div>
+      </div>
+      ${sm.last5.length ? `<div class="reslist-row"><span class="reslist" title="Ultimi risultati">${sm.last5.map((r) => resChip(r, t)).join("")}</span></div>` : ""}
       <div class="lp"><div class="small grow">${lp ? `Ultima formazione proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…` : '<span class="muted">Nessuna formazione proposta</span>'}</div>
         <button class="btn two" data-act="propose" data-id="${esc(t.id)}">Ottimizza<br>formazione</button></div></div>`;
   }).join("");
@@ -1913,7 +1915,7 @@ function rowHtml(p, captainId, type) {
     <td class="num"><span class="prob ${probCls(p.prob)}">${Math.round(p.prob * 100)}%</span></td>
     <td class="num fv"><span class="fvv" data-tip="${esc(fvTip(p))}" tabindex="0">${fmt(p.fv)}</span></td></tr>`;
 }
-const THEAD = `<thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R</th><th>Giocatore</th><th title="Squadra del giocatore - avversaria. C = in casa, T = in trasferta">Partita</th><th class="num" title="Titolarità prevista (probabili formazioni)">Tit.</th><th class="num" title="Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo. Passa il mouse (o tocca) per il dettaglio">FV</th></tr></thead>`;
+const theadFor = (euro) => `<colgroup>${euro ? '<col style="width:12%"><col style="width:30%"><col style="width:38%"><col style="width:10%"><col style="width:10%">' : '<col style="width:14%"><col style="width:38%"><col style="width:22%"><col style="width:13%"><col style="width:13%">'}</colgroup><thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R</th><th>Giocatore</th><th title="Squadra del giocatore - avversaria. C = in casa, T = in trasferta">Partita</th><th class="num" title="Titolarità prevista (probabili formazioni)">Tit.</th><th class="num" title="Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo. Passa il mouse (o tocca) per il dettaglio">FV</th></tr></thead>`;
 
 function renderProposal(team, { result, meta }) {
   const capId = result.captain ? result.captain.id : null;
@@ -1948,16 +1950,18 @@ function renderProposal(team, { result, meta }) {
         : pill("lineups", "Probabili formazioni", meta.counts.lineups) + pill("xg", "xG/xA (FotMob)", meta.counts.xg) + pill("table", "Classifica (FotMob)", meta.counts.table) + pill("matches", "Partite", meta.counts.matches)}</div>
     </div>
     ${result.warnings.length ? `<div class="banner warn"><b>Attenzione:</b><br>${result.warnings.map(esc).join("<br>")}</div>` : ""}
+    <div class="lu" style="width:${meta.euro ? 600 : 480}px">
     <h3>Titolari</h3>
-    <div class="tablewrap fit"><table class="compact tight">${THEAD}<tbody>${result.lineup.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
+    <div class="tablewrap"><table class="compact tight">${theadFor(meta.euro)}<tbody>${result.lineup.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
     <h3>Panchina consigliata (in ordine)</h3>
-    <div class="tablewrap fit"><table class="compact tight">${THEAD}<tbody>${result.bench.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
+    <div class="tablewrap"><table class="compact tight">${theadFor(meta.euro)}<tbody>${result.bench.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
+    </div>
     <h3>Altri moduli valutati</h3>
     <div class="card"><table><thead><tr><th>Modulo</th><th class="num">FV totale</th><th class="num">Δ vs migliore</th></tr></thead><tbody>
       ${result.alternatives.map((a) => `<tr><td>${esc(a.module)}</td><td class="num">${fmt(a.totalEv, 1)}${a.dBonus ? ' <span class="muted" title="Include il bonus D-factor (almeno 4 difensori)">D</span>' : ""}</td><td class="num">${fmt(a.totalEv - result.totalEv, 1)}</td></tr>`).join("")}
     </tbody></table></div>
     <details class="card"><summary>Tutta la rosa ordinata per FV</summary>
-      <div class="tablewrap fit" style="margin-top:10px"><table class="compact tight">${THEAD}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
+      <div class="tablewrap" style="margin-top:10px"><table class="compact tight">${theadFor(meta.euro)}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
     ${meta.euro ? `<p class="note"><b>Come si calcola il FV in una lega Euroleghe.</b> FV = fantamedia (FM) del listone Euroleghe: nessuna correzione xG/xA, difficoltà della partita o fattore campo.
       La titolarità arriva dalle probabili formazioni Euro Leghe (fantacalcio.it) o, per le squadre di Serie A, da quelle di Serie A; serve a escludere indisponibili e squalificati e a dare la precedenza a chi ha almeno ${PP(P.priorityProb)}.
       Moduli e vincoli di formazione sono quelli della tipologia della lega (Classic o Mantra). È un supporto alla decisione, non una garanzia di punteggio.</p>` : `<p class="note"><b>Come si calcola il FV (Fanta Valore).</b> FV = (forma + correzione xG/xA) × difficoltà della partita × campo. Passa il mouse sul FV (o toccalo da mobile) per vedere il dettaglio di ogni giocatore; sul nome per le note.
