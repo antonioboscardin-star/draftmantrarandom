@@ -35,8 +35,22 @@ service cloud.firestore {
         && d.get('roleCheck', false) is bool;
     }
 
+    // Giocatore del listone Euroleghe (id documento = numero della colonna # del file).
+    function validEuroPlayer(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.team is string && d.team.size() > 0 && d.team.size() <= 40
+        && d.role in ['P', 'D', 'C', 'A']
+        && d.roleMantra is list && d.roleMantra.size() >= 1 && d.roleMantra.size() <= 4
+        && numOrNull(d.get('fm', null))
+        && numOrNull(d.get('mv', null))
+        && numOrNull(d.get('pgv', null))
+        && numOrNull(d.get('fvm', null))
+        && numOrNull(d.get('quot', null));
+    }
+
     function validTeam(d) {
-      return d.leagueName is string && d.leagueName.size() > 0 && d.leagueName.size() <= 80
+      return d.get('euroleghe', false) is bool
+        && d.leagueName is string && d.leagueName.size() > 0 && d.leagueName.size() <= 80
         && d.teamName is string && d.teamName.size() > 0 && d.teamName.size() <= 80
         && d.leagueType in ['Classic', 'Mantra']
         && d.players is list && d.players.size() >= 25 && d.players.size() <= 36;
@@ -49,6 +63,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Listone Euroleghe (collezione separata): lettura a tutti gli utenti loggati, scrittura solo admin.
+    match /euroPlayers/{playerId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEuroPlayer(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
     // Info sull'ultimo import del Listone (data del file, chi lo ha caricato): scrive solo l'admin.
     match /meta/{docId} {
       allow read: if signedIn();
@@ -58,8 +79,18 @@ service cloud.firestore {
     // Rose: ogni utente vede e modifica solo le proprie.
     match /users/{uid}/teams/{teamId} {
       allow read, delete: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid
-                            && validTeam(request.resource.data);
+      allow create: if signedIn() && request.auth.uid == uid
+                    && validTeam(request.resource.data);
+      // il flag Euroleghe non si può cambiare dopo il primo salvataggio (assente = No)
+      allow update: if signedIn() && request.auth.uid == uid
+                    && validTeam(request.resource.data)
+                    && request.resource.data.get('euroleghe', false) == resource.data.get('euroleghe', false);
+    }
+
+    // Cache dei segnali online (probabili formazioni, xG/xA, news): scrive solo la Cloud Function.
+    match /signals/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
     }
 
     // Un utente può leggere solo il proprio documento admin (per mostrare il pannello).

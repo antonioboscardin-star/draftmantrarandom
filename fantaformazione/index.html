@@ -24,6 +24,11 @@
   .badge.admin { color: var(--accent2); border-color: var(--accent2); }
   .badge.Classic { color: var(--accent); border-color: var(--accent); }
   .badge.Mantra { color: var(--accent2); border-color: var(--accent2); }
+  .badge.EL { color: var(--draw); border-color: var(--draw); }
+  .filters.one { display: grid; grid-template-columns: minmax(90px,1.5fr) repeat(7, minmax(54px,1fr)); gap: 6px; overflow-x: auto; align-items: end; }
+  .filters.one > div { min-width: 0; }
+  .filters.one label { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 3px; }
+  .filters.one input, .filters.one select { padding: 5px 4px; font-size: 13px; min-width: 0; width: 100%; }
   /* Schermi stretti: intestazione compatta (titolo + utente sulla prima riga, menu scorrevole sulla seconda) */
   @media (max-width: 700px) {
     header { padding: 6px 12px; gap: 4px 8px; flex-wrap: wrap; }
@@ -214,17 +219,19 @@
   <!-- RISULTATI -->
   <section id="v-results" class="hidden">
     <h2>Risultati</h2>
-    <div class="filters">
-      <div><label>Lega o squadra</label><input id="rLeague" placeholder="Cerca per nome…"></div>
-      <div><label>Tipologia lega</label><select id="rType"><option value="">Tutte</option><option>Classic</option><option>Mantra</option></select></div>
+    <div class="filters one">
+      <div><label>Lega o squadra</label><input id="rLeague" placeholder="Cerca…"></div>
+      <div><label>Tipologia</label><select id="rType"><option value="">Tutte</option><option>Classic</option><option>Mantra</option></select></div>
+      <div><label>Euroleghe</label><select id="rEuro"><option value="">Tutte</option><option value="si">Sì</option><option value="no">No</option></select></div>
       <div><label>Posizione</label><select id="rPos"></select></div>
-      <div><label>Dalla posizione</label><input id="rPosFrom" inputmode="numeric" maxlength="2" placeholder="es. 1"></div>
-      <div><label>Alla posizione</label><input id="rPosTo" inputmode="numeric" maxlength="2" placeholder="es. 5"></div>
-      <div><label>Giornata di Serie A</label><select id="rRound"></select></div>
+      <div><label>Da pos.</label><input id="rPosFrom" inputmode="numeric" maxlength="2" placeholder="1"></div>
+      <div><label>A pos.</label><input id="rPosTo" inputmode="numeric" maxlength="2" placeholder="5"></div>
+      <div><label title="Vale solo per le leghe non Euroleghe">Giornata Serie A</label><select id="rRound"></select></div>
+      <div><label title="Vale solo per le leghe Euroleghe (30 giornate)">Giornata Euroleghe</label><select id="rRoundEl"></select></div>
     </div>
     <div class="sumbar" id="resSummary"></div>
     <div class="tablewrap"><table class="compact">
-      <thead><tr><th class="ocol" title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th class="lgh">Lega</th><th class="ctr" title="Posizione in classifica (modificabile)">Pos.</th><th class="ctr" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="ctr" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="c-last ctr" title="Ultimi 5 risultati">Ultimi risultati</th><th class="ctr gcol" id="rRoundHead" title="Risultato della giornata selezionata: gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
+      <thead><tr><th class="ocol" title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th class="lgh">Lega</th><th class="ctr" title="Posizione in classifica (modificabile)">Pos.</th><th class="ctr" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="ctr" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="c-last ctr" title="Ultimi 5 risultati">Ultimi risultati</th><th class="ctr gcol" id="rRoundHead" title="Risultato della giornata selezionata (Serie A per le leghe normali, Euroleghe per le Euroleghe): gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
       <tbody id="resRows"></tbody>
     </table></div>
     <p class="note" id="resNote"></p>
@@ -239,9 +246,12 @@
         <div><label>Nome lega</label><input id="fLeague" maxlength="80" placeholder="es. Lega degli Amici"></div>
         <div><label>Tipologia lega</label>
           <select id="fType"><option>Classic</option><option>Mantra</option></select></div>
+        <div><label>Euroleghe</label>
+          <select id="fEuro"><option>No</option><option>Sì</option></select>
+          <div class="note" style="margin:2px 0 0" id="fEuroNote">Si sceglie ora e non si può più cambiare dopo il primo salvataggio.</div></div>
         <div><label>Nome squadra</label><input id="fTeam" maxlength="80" placeholder="es. FC Esempio"></div>
-        <div><label>Giornata di inizio lega (1–38)</label><input id="fStart" inputmode="numeric" maxlength="2" value="1">
-          <div class="note" style="margin:2px 0 0">Giornata di Serie A che per questa lega è la 1ª giornata. I risultati si inseriscono da qui in poi.</div></div>
+        <div><label id="fStartLbl">Giornata di inizio lega (1–38)</label><input id="fStart" inputmode="numeric" maxlength="2" value="1">
+          <div class="note" style="margin:2px 0 0" id="fStartNote">Giornata di Serie A che per questa lega è la 1ª giornata. I risultati si inseriscono da qui in poi.</div></div>
         <div id="dFactorBox"><label>D-factor (solo leghe Classic)</label>
           <label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:400"><input type="checkbox" id="fDFactor" style="width:auto"> attivo in questa lega</label>
           <div class="note" style="margin:2px 0 0">Se attivo, i moduli con almeno 4 difensori ricevono un bonus sul totale (predefinito 0,5 punti).</div></div>
@@ -319,6 +329,15 @@
         Il ruolo Classic si legge dalla colonna <code>roleClassic</code>; se manca lo ricavo dai ruoli Mantra e segnalo i casi dubbi, che puoi correggere qui sotto.</p>
       <input type="file" id="xlsxIn" accept=".xlsx,.xls">
       <div id="importPreview"></div>
+    </details>
+    <details class="card" id="euroCard">
+      <summary style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-size:15px">Aggiorna Listone Euroleghe (.xlsx)</summary>
+      <div style="margin-top:10px"></div>
+      <p class="note">Carica il file <b>ListoneEuroLeghe.xlsx</b>. Colonne usate: <code>#</code> (id del giocatore), <code>Nome</code>, <code>Sq.</code>, <code>R.</code> (ruolo Classic), <code>R.MANTRA</code>, <code>FM</code> (fantamedia) e, solo per informazione, <code>MV</code>, <code>PGv</code>, <code>FVM/1000</code>, <code>QUOT.</code>.
+        I giocatori sono salvati in una collezione separata (<code>euroPlayers</code>) e <b>non compaiono in Statistiche</b>. Prima di scrivere vedrai un'anteprima.</p>
+      <div id="euroInfo" class="note"></div>
+      <input type="file" id="euroIn" accept=".xlsx,.xls">
+      <div id="euroPreview"></div>
     </details>
     <div id="listoneInfo" class="note" style="margin-bottom:10px"></div>
     <div id="checkBox"></div>
@@ -547,7 +566,63 @@ const Listone = (() => {
     for (const p of existing) if (!incoming.has(p.id)) removed.push(p);
     return { added, updated, unchanged, removed, errors, total: incoming.size };
   }
-  return { num, MANTRA_ROLES, parseMantra, classicRole, roleToCheck, prettyName, rowToPlayer, samePlayer, slug, playerId, REQUIRED_COLUMNS, RECOMMENDED_COLUMNS, missingColumns, latestUpdate, planImport };
+
+  // ---------- Listone Euroleghe (ListoneEuroLeghe.xlsx): colonne #, Nome, Sq., R., R.MANTRA, MV, FM, ... ----------
+  const EURO_REQUIRED = ["Nome", "Sq.", "R.", "R.MANTRA", "FM"];
+  const ekey = (k) => String(k).trim().toLowerCase().replace(/[^a-z0-9#]+/g, "");
+  function rowToEuroPlayer(row) {
+    const r = {};
+    for (const k of Object.keys(row)) r[ekey(k)] = row[k];
+    const name = String(r["nome"] ?? "").replace(/\s+/g, " ").trim();
+    const team = String(r["sq"] ?? "").replace(/\s+/g, " ").trim();
+    if (!name) throw new Error("nome mancante");
+    if (!team) throw new Error(`${name}: squadra mancante`);
+    const role = String(r["r"] ?? "").trim().toUpperCase();
+    if (!["P", "D", "C", "A"].includes(role)) throw new Error(`${name}: ruolo "${r["r"] ?? ""}" non valido (P, D, C o A)`);
+    const roleMantra = parseMantra(r["rmantra"]);
+    if (!roleMantra.length) throw new Error(`${name}: ruolo Mantra mancante`);
+    const unknown = roleMantra.filter((x) => !MANTRA_ROLES.includes(x));
+    if (unknown.length) throw new Error(`${name}: ruolo Mantra sconosciuto (${unknown.join(", ")})`);
+    const fm = numOrNull(r["fm"]);
+    const idRaw = r["#"] === null || r["#"] === undefined ? "" : String(r["#"]).trim();
+    return {
+      id: idRaw ? idRaw.replace(/[^0-9A-Za-z_-]/g, "") : `${slug(name)}__${slug(team)}`,
+      name, team, role, roleMantra,
+      fm,                                   // fantamedia del listone (0 = nessun dato)
+      mv: numOrNull(r["mv"]),
+      pgv: numOrNull(r["pgv"]),
+      fvm: numOrNull(r["fvm1000"]),
+      quot: numOrNull(r["quot"]),
+    };
+  }
+  const EURO_FIELDS = ["name", "team", "role", "fm", "mv", "pgv", "fvm", "quot"];
+  const sameEuro = (a, b) => EURO_FIELDS.every((f) => same(a[f], b[f])) && JSON.stringify(a.roleMantra || []) === JSON.stringify(b.roleMantra || []);
+  function missingEuroColumns(rows) {
+    const h = new Set(rows.flatMap((r) => Object.keys(r || {}).map(ekey)));
+    return EURO_REQUIRED.filter((c) => !h.has(ekey(c)));
+  }
+  /** Anteprima import del listone Euroleghe: stessa forma di planImport. L'id documento è il numero della colonna #. */
+  function planEuroImport(rows, existing) {
+    const byId = new Map(existing.map((p) => [p.id, p]));
+    const incoming = new Map();
+    const errors = [];
+    rows.forEach((row, i) => {
+      if (row == null || Object.values(row).every((v) => v === null || v === "")) return;
+      try {
+        const p = rowToEuroPlayer(row);
+        if (incoming.has(p.id)) throw new Error(`${p.name} (${p.team}): id ${p.id} duplicato nel file`);
+        incoming.set(p.id, p);
+      } catch (e) { errors.push(`riga ${i + 2}: ${e.message}`); }
+    });
+    const added = [], updated = [], unchanged = [], removed = [];
+    for (const [id, p] of incoming) {
+      const old = byId.get(id);
+      if (!old) added.push(p); else if (sameEuro(old, p)) unchanged.push(p); else updated.push(p);
+    }
+    for (const p of existing) if (!incoming.has(p.id)) removed.push(p);
+    return { added, updated, unchanged, removed, errors, total: incoming.size };
+  }
+  return { num, MANTRA_ROLES, parseMantra, classicRole, roleToCheck, prettyName, rowToPlayer, samePlayer, slug, playerId, REQUIRED_COLUMNS, RECOMMENDED_COLUMNS, missingColumns, latestUpdate, planImport, rowToEuroPlayer, planEuroImport, missingEuroColumns };
 })();
 /* ==== LISTONE:END ==== */
 
@@ -732,10 +807,64 @@ const Engine = (() => {
     return teamKey(hit || name).replace(/ /g, '').slice(0, 3).toUpperCase();
   }
 
+  // ---------- Punteggio giocatori: leghe Euroleghe ----------
+  /**
+   * Euroleghe: FV = FM del listone Euroleghe (nessuna difficoltà, nessun campo, nessun xG/xA).
+   * La titolarità (probabili formazioni) serve solo a escludere chi non gioca e alla precedenza >= 60%.
+   * I giocatori delle squadre di Serie A usano le probabili formazioni di Serie A, gli altri quelle Euro Leghe.
+   */
+  function scoreEuroPlayers(roster, sig, o) {
+    const serie = (sig.lineups && sig.lineups.players) || [];
+    const euro = (sig.euroLineups && sig.euroLineups.players) || [];
+    return roster.map((p) => {
+      const notes = [];
+      const fm = pos(p.fm);
+      if (fm == null) notes.push('Nessuna fantamedia nel listone Euroleghe: uso valore neutro');
+      const fv = fm != null ? fm : o.defaultFm;
+
+      const isSerieA = serie.some((e) => teamsMatch(p.team, e.team));
+      const pool = isSerieA ? serie : euro;
+      let prob, status = 'n/d', note = '';
+      if (pool.length) {
+        const byId = p.id != null ? pool.find((e) => e.id != null && String(e.id) === String(p.id)) : null;
+        const e = byId || findBest(pool, 'name', 'team', p.name, p.team);
+        if (e) {
+          status = e.status; note = e.note || '';
+          if (e.status === 'out' || e.status === 'suspended') prob = 0;
+          else if (e.status === 'doubt') prob = isNum(e.pct) ? Math.min(e.pct / 100, 0.4) : 0.4;
+          else prob = isNum(e.pct) ? e.pct / 100 : o.neutralAvailability;
+          if (prob === 0) notes.push(e.status === 'suspended' ? 'Squalificato' : 'Indisponibile' + (note ? `: ${note}` : ''));
+          else if (e.status === 'doubt') notes.push('In dubbio' + (note ? `: ${note}` : ''));
+        } else {
+          prob = o.missingAvailability; status = 'non in lista';
+          notes.push('Non compare nelle probabili formazioni' + (isSerieA ? ' di Serie A' : ' Euro Leghe'));
+        }
+      } else {
+        prob = o.neutralAvailability;
+        notes.push(`Probabili formazioni ${isSerieA ? 'di Serie A' : 'Euro Leghe'} non disponibili: titolarità stimata`);
+      }
+      const available = prob > 0 && prob >= o.minProb;
+      const ev = available ? fv : 0;
+      const pref = available && prob >= o.priorityProb - 1e-9;
+      const sel = ev + (pref ? PRIORITY_BONUS : 0);
+      return {
+        id: p.id, name: p.name, team: p.team, role: p.role, roleMantra: p.roleMantra || [], euro: true,
+        fmExp: null, fmSeason: fm, fmLast5: null, n5: 0, fm,
+        form: round2(fv), trend: null,
+        prob: round2(prob), status, xg: null, goals: null, xa: null, assists: null,
+        xgAdj: 0, xaAdj: 0, xBonus: 0,
+        score: round2(fv), fv: round2(fv), ev: round2(ev), pref, sel, notes,
+        available, opp: null, home: null, diffPts: null, diffFactor: 1, fieldFactor: 1,
+        ownPts: null, oppPts: null, tableRange: null,
+      };
+    });
+  }
+
   // ---------- Punteggio giocatori ----------
   function scorePlayers(roster, signals, opts) {
     const o = { ...DEFAULTS, ...(opts || {}) };
     const sig = signals || {};
+    if (o.euro) return scoreEuroPlayers(roster, sig, o);
     const lineupPlayers = (sig.lineups && sig.lineups.players) || [];
     const round = isNum(sig.round) ? sig.round : null;
     const games = Math.max(1, (round || 12) - 1); // giornate già giocate
@@ -991,11 +1120,14 @@ const Engine = (() => {
 const Results = (() => {
   // Risultati di campionato di una lega (squadra dell'utente): { round (giornata di Serie A 1-38), my, opp }.
   // La giornata di inizio (startRound) è la 1ª giornata della lega: i risultati precedenti si ignorano.
-  const MAX_ROUND = 38;
+  const MAX_ROUND = 38;       // giornate di Serie A (leghe normali)
+  const EURO_ROUNDS = 30;     // giornate Euroleghe (calendario diverso)
   const isInt = (x) => Number.isInteger(x);
+  const isEuro = (team) => !!(team && team.euroleghe === true);
+  const maxOf = (team) => (isEuro(team) ? EURO_ROUNDS : MAX_ROUND);
   const OUT_TXT = { W: 'Vittoria', D: 'Pareggio', L: 'Sconfitta' };
   const outcome = (my, opp) => (my > opp ? 'W' : my < opp ? 'L' : 'D');
-  const startOf = (team) => { const s = Number(team && team.startRound); return isInt(s) && s >= 1 && s <= MAX_ROUND ? s : 1; };
+  const startOf = (team) => { const s = Number(team && team.startRound); return isInt(s) && s >= 1 && s <= maxOf(team) ? s : 1; };
   const leagueRound = (team, round) => round - startOf(team) + 1;
 
   /** Risultati validi, ordinati per giornata, una sola riga per giornata (vale l'ultima), solo da startRound in poi. */
@@ -1003,7 +1135,7 @@ const Results = (() => {
     const st = startOf(team), by = new Map();
     for (const r of Array.isArray(team && team.results) ? team.results : []) {
       if (!r || !isInt(r.round) || !isInt(r.my) || !isInt(r.opp)) continue;
-      if (r.round < st || r.round > MAX_ROUND || r.my < 0 || r.opp < 0) continue;
+      if (r.round < st || r.round > maxOf(team) || r.my < 0 || r.opp < 0) continue;
       by.set(r.round, { round: r.round, my: r.my, opp: r.opp, o: outcome(r.my, r.opp) });
     }
     return [...by.values()].sort((a, b) => a.round - b.round);
@@ -1017,18 +1149,24 @@ const Results = (() => {
     return { list, byRound, W: c.W, D: c.D, L: c.L, played: list.length, points: 3 * c.W + c.D, last5: list.slice(-5) };
   }
 
-  /** Ultima giornata di Serie A con almeno un risultato fra tutte le leghe (null se non ce ne sono). */
-  function latestRound(teams) {
+  /** Ultima giornata con almeno un risultato fra le leghe normali (euro=false) o fra le Euroleghe (euro=true); null se non ce ne sono. */
+  function latestRound(teams, euro) {
     let best = null;
-    for (const t of teams) for (const r of clean(t)) if (best === null || r.round > best) best = r.round;
+    for (const t of teams) {
+      if (isEuro(t) !== !!euro) continue;
+      for (const r of clean(t)) if (best === null || r.round > best) best = r.round;
+    }
     return best;
   }
 
-  /** Vinte/pareggiate/perse in una giornata di Serie A fra le leghe indicate. */
-  function countsForRound(teams, round) {
+  /** Giornata da usare per una lega: rounds = { sa, el } (le Euroleghe usano 'el', le altre 'sa'). */
+  const roundFor = (team, rounds) => (isEuro(team) ? rounds.el : rounds.sa);
+
+  /** Vinte/pareggiate/perse fra le leghe indicate: ogni lega conta nella propria giornata (rounds = { sa, el }). */
+  function countsForRound(teams, rounds) {
     const c = { W: 0, D: 0, L: 0, total: 0 };
     for (const t of teams) {
-      const r = summarize(t).byRound.get(round);
+      const r = summarize(t).byRound.get(roundFor(t, rounds));
       if (r) { c[r.o]++; c.total++; }
     }
     return c;
@@ -1061,16 +1199,17 @@ const Results = (() => {
     arr.splice(dir < 0 ? k : k + 1, 0, id);
     return arr;
   }
-  /** Giornata mostrata di default: l'ultima con risultati; se non ce ne sono, la più avanzata fra le giornate di inizio. */
-  function defaultRound(teams) {
-    const l = latestRound(teams);
+  /** Giornata mostrata di default: l'ultima con risultati (per leghe normali o Euroleghe); se non ce ne sono, la più avanzata fra le giornate di inizio. */
+  function defaultRound(teams, euro) {
+    const l = latestRound(teams, euro);
     if (l !== null) return l;
-    return teams.reduce((m, t) => Math.max(m, startOf(t)), 1);
+    return teams.filter((t) => isEuro(t) === !!euro).reduce((m, t) => Math.max(m, startOf(t)), 1);
   }
-  return { MAX_ROUND, OUT_TXT, outcome, startOf, leagueRound, clean, summarize, latestRound, countsForRound, parseIntIn, sortTeams, moveInOrder, defaultRound };
+  return { MAX_ROUND, EURO_ROUNDS, isEuro, maxOf, roundFor, OUT_TXT, outcome, startOf, leagueRound, clean, summarize, latestRound, countsForRound, parseIntIn, sortTeams, moveInOrder, defaultRound };
 })();
 /* ==== RESULTS:END ==== */
 
+const { planEuroImport, missingEuroColumns } = Listone;
 const { planImport, playerId, parseMantra, missingColumns, latestUpdate, RECOMMENDED_COLUMNS, MANTRA_ROLES } = Listone;
 const { proposeLineup, DEFAULTS, teamAbbr, lookupMatch, lookupXg } = Engine;
 
@@ -1111,6 +1250,9 @@ if (configured) {
 const state = {
   user: null, isAdmin: false,
   players: [],            // database giocatori
+  euroPlayers: [],        // listone Euroleghe (collezione separata)
+  euroInfo: null,         // info sull'ultimo import del listone Euroleghe
+  editEuro: false,        // la squadra in modifica è una Euroleghe
   params: {},             // parametri FV modificati dall'admin (sopra i predefiniti)
   teams: [],              // squadre dell'utente
   editingId: null,        // id squadra in modifica
@@ -1174,13 +1316,24 @@ if (configured) {
 } else show("login");
 
 // ------------------------------- Dati -------------------------------
+const rosterPool = () => (state.editEuro ? state.euroPlayers : state.players);
+function fillNames() {
+  $("playerNames").innerHTML = rosterPool().map((p) => `<option value="${esc(p.name)}">${esc(p.team)} · ${esc(p.role)}</option>`).join("");
+}
 async function loadPlayers() {
   const snap = await getDocs(collection(db, "players"));
   state.players = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   state.players.sort((a, b) => a.name.localeCompare(b.name, "it"));
-  $("playerNames").innerHTML = state.players.map((p) => `<option value="${esc(p.name)}">${esc(p.team)} · ${esc(p.role)}</option>`).join("");
   try { const m = await getDoc(doc(db, "meta", "listone")); state.listone = m.exists() ? m.data() : null; }
   catch { state.listone = null; }
+  try {
+    const es = await getDocs(collection(db, "euroPlayers"));
+    state.euroPlayers = es.docs.map((d) => ({ id: d.id, ...d.data() }));
+    state.euroPlayers.sort((a, b) => a.name.localeCompare(b.name, "it"));
+  } catch { state.euroPlayers = []; } // regole non ancora aggiornate: le leghe normali funzionano comunque
+  try { const m = await getDoc(doc(db, "meta", "euroListone")); state.euroInfo = m.exists() ? m.data() : null; }
+  catch { state.euroInfo = null; }
+  fillNames();
   await loadParams();
 }
 
@@ -1273,8 +1426,8 @@ async function saveParams(reset) {
     msg(reset ? "Parametri ripristinati ai valori predefiniti." : "Parametri salvati: valgono da subito per tutti gli utenti.");
   } catch (err) { msg(err.message, "err"); }
 }
-function listoneAge() {
-  const l = state.listone;
+function listoneAge(euro) {
+  const l = euro ? (state.euroInfo && { updatedAt: state.euroInfo.importedAtIso }) : state.listone;
   if (!l || !l.updatedAt) return null;
   const d = new Date(l.updatedAt);
   return { text: d.toLocaleDateString("it-IT"), days: Math.floor((Date.now() - d.getTime()) / 86400000) };
@@ -1287,13 +1440,13 @@ async function loadTeams() {
 
 // ------------------------------- Squadre -------------------------------
 const ordPos = (n) => (n == null ? "–" : n + "°");
-const resChip = (r, team) => `<span class="res ${r.o}" title="Giornata ${Results.leagueRound(team, r.round)} di lega (Serie A ${r.round}): ${Results.OUT_TXT[r.o]} ${r.my}-${r.opp}">${r.my}-${r.opp}</span>`;
+const resChip = (r, team) => `<span class="res ${r.o}" title="Giornata ${Results.leagueRound(team, r.round)} di lega (${team.euroleghe ? "Euroleghe" : "Serie A"} ${r.round}): ${Results.OUT_TXT[r.o]} ${r.my}-${r.opp}">${r.my}-${r.opp}</span>`;
 function renderTeams() {
   $("teamsEmpty").classList.toggle("hidden", state.teams.length > 0);
   $("teamsList").innerHTML = state.teams.map((t) => {
     const lp = t.lastProposal, sm = Results.summarize(t);
     return `<div class="card">
-      <div class="row"><strong class="grow">${esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
+      <div class="row"><strong class="grow">${esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
       <div class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</div>
       <div class="tres"><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
         <span class="muted small" title="3 punti a vittoria, 1 a pareggio">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
@@ -1325,14 +1478,16 @@ $("teamsList").addEventListener("click", async (e) => {
 function findPlayer(raw) {
   const n = norm(raw);
   if (!n) return null;
-  const exact = state.players.filter((p) => norm(p.name) === n);
+  const exact = rosterPool().filter((p) => norm(p.name) === n);
   if (exact.length) return exact[0];
   const nt = n.split(" ").filter((t) => t.length > 1);
-  const cand = state.players.filter((p) => {
+  const cand = rosterPool().filter((p) => {
     const pt = norm(p.name).split(" ").filter((t) => t.length > 1);
     return nt.length && (nt.every((t) => pt.includes(t)) || pt.every((t) => nt.includes(t)));
   });
-  return cand.length === 1 ? cand[0] : null;
+  if (cand.length === 1) return cand[0];
+  // stesso nome in più squadre (listone Euroleghe): se uno solo è già in rosa non serve altro, altrimenti serve disambiguare
+  return null;
 }
 function addToRoster(raw) {
   raw = raw.trim();
@@ -1348,6 +1503,23 @@ function syncDFactor() {
   if (!classic) $("fDFactor").checked = false;
 }
 $("fType").addEventListener("change", syncDFactor);
+function syncEuro() {
+  const eu = state.editEuro;
+  const max = eu ? Results.EURO_ROUNDS : Results.MAX_ROUND;
+  $("fStartLbl").textContent = `Giornata di inizio lega (1–${max})`;
+  $("fStartNote").textContent = eu
+    ? "Giornata Euroleghe (calendario di 30 giornate) che per questa lega è la 1ª giornata. I risultati si inseriscono da qui in poi."
+    : "Giornata di Serie A che per questa lega è la 1ª giornata. I risultati si inseriscono da qui in poi.";
+  $("fSearch").placeholder = eu ? "Cerca nel listone Euroleghe…" : "Cerca nel database giocatori…";
+  fillNames();
+}
+$("fEuro").addEventListener("change", () => {
+  const eu = $("fEuro").value === "Sì";
+  if (state.roster.length && !confirm("Cambiando Euroleghe la rosa già inserita verrà svuotata (i giocatori sono di due listoni diversi). Continuare?")) {
+    $("fEuro").value = state.editEuro ? "Sì" : "No"; return;
+  }
+  state.editEuro = eu; state.roster = []; syncEuro(); renderRoster();
+});
 function startEdit(team) {
   state.editingId = team ? team.id : null;
   $("editTitle").textContent = team ? "Modifica squadra" : "Nuova squadra";
@@ -1357,9 +1529,14 @@ function startEdit(team) {
   $("fStart").value = team ? Results.startOf(team) : 1;
   $("fDFactor").checked = !!(team && team.dFactor && team.leagueType !== "Mantra");
   syncDFactor();
+  state.editEuro = !!(team && team.euroleghe);
+  $("fEuro").value = state.editEuro ? "Sì" : "No";
+  $("fEuro").disabled = !!team; // non si può più cambiare dopo il primo salvataggio
+  $("fEuroNote").textContent = team ? "Non modificabile dopo il primo salvataggio." : "Si sceglie ora e non si può più cambiare dopo il primo salvataggio.";
+  syncEuro();
   state.roster = [];
   if (team) team.players.forEach((p) => {
-    const found = state.players.find((x) => x.id === p.id);
+    const found = rosterPool().find((x) => x.id === p.id);
     state.roster.push({ raw: p.name, player: found || null });
   });
   $("fSearch").value = ""; $("fBulk").value = "";
@@ -1392,11 +1569,12 @@ $("btnCancelEdit").addEventListener("click", () => show("teams"));
 $("btnSaveTeam").addEventListener("click", async () => {
   const players = state.roster.map((r) => ({ id: r.player.id, name: r.player.name }));
   const data = {
-    leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, teamName: $("fTeam").value.trim(), dFactor: $("fType").value === "Classic" && $("fDFactor").checked,
+    leagueName: $("fLeague").value.trim(), leagueType: $("fType").value, euroleghe: state.editEuro, teamName: $("fTeam").value.trim(), dFactor: $("fType").value === "Classic" && $("fDFactor").checked,
     players, updatedAt: serverTimestamp(),
   };
-  const start = Results.parseIntIn($("fStart").value, 1, 38);
-  if (start === null || Number.isNaN(start)) return msg("La giornata di inizio deve essere un numero da 1 a 38.", "err");
+  const maxStart = state.editEuro ? Results.EURO_ROUNDS : Results.MAX_ROUND;
+  const start = Results.parseIntIn($("fStart").value, 1, maxStart);
+  if (start === null || Number.isNaN(start)) return msg(`La giornata di inizio deve essere un numero da 1 a ${maxStart}.`, "err");
   data.startRound = start;
   try {
     if (state.editingId) {
@@ -1437,14 +1615,15 @@ async function propose(team, refresh) {
   $("proposalBox").innerHTML = `<div class="card"><h2>${esc(team.teamName)}</h2><p class="muted">Carico i dati online e calcolo il modulo migliore…</p></div>`;
   show("proposal");
   try {
-    const byId = new Map(state.players.map((p) => [p.id, p]));
+    const euro = !!team.euroleghe;
+    const byId = new Map((euro ? state.euroPlayers : state.players).map((p) => [p.id, p]));
     const ids = (team.players || []).map((p) => p.id).filter(Boolean);
     const roster = ids.map((id) => byId.get(id)).filter(Boolean);
-    if (roster.length < 25) throw new Error("La rosa deve avere almeno 25 giocatori presenti nel database.");
+    if (roster.length < 25) throw new Error(euro ? "La rosa deve avere almeno 25 giocatori presenti nel listone Euroleghe (l'admin l'ha caricato?)." : "La rosa deve avere almeno 25 giocatori presenti nel database.");
 
     const signals = await getSignals(!!refresh);
 
-    const result = proposeLineup(team.leagueType, roster, signals, { ...fvOpts(), dFactor: team.leagueType === "Classic" && !!team.dFactor });
+    const result = proposeLineup(team.leagueType, roster, signals, { ...fvOpts(), euro, dFactor: team.leagueType === "Classic" && !!team.dFactor });
     if (result.error) throw new Error(result.error);
     const ageH = signals.fetchedAt ? (Date.now() - signals.fetchedAt) / 3600000 : null;
     const meta = {
@@ -1455,7 +1634,9 @@ async function propose(team, refresh) {
         xg: (signals.xg || []).length,
         table: (signals.table || []).length,
         matches: (signals.matches || []).length,
+        euroLineups: (signals.euroLineups && signals.euroLineups.players && signals.euroLineups.players.length) || 0,
       },
+      euro,
       sourceTimes: signals.sourceTimes || {},
       missingPlayers: ids.length - roster.length,
     };
@@ -1516,6 +1697,12 @@ const sg = (x) => (x > 0 ? "+" : "") + fmt(x, 2);
 /** Dettaglio del calcolo del FV (tooltip sul valore). */
 function fvTip(p) {
   const L = [];
+  if (p.euro) {
+    L.push(`<div class="tip-h">FV ${n2(p.fv)} <span class="muted">= FM del listone Euroleghe</span></div>`);
+    L.push(`<div>${p.fm != null ? `Fantamedia ${n2(p.fm)}` : "Nessuna fantamedia: valore neutro"}</div>`);
+    L.push(`<hr><div class="muted">Titolarità ${Math.round(p.prob * 100)}%, non entra nel FV${p.available === false ? " · non schierabile" : ""}. Nessuna difficoltà, campo né xG/xA.</div>`);
+    return L.join("");
+  }
   L.push(`<div class="tip-h">FV ${n2(p.fv)} <span class="muted">= (forma + corr. xG/xA) × difficoltà × campo</span></div>`);
   L.push(`<div>FM attesa ${n2(p.fmExp)} · stagione ${n2(p.fmSeason)} · ult.5 ${n2(p.fmLast5)}</div>`);
   L.push(`<div>Forma <b>${n2(p.form)}</b>${p.trend === "up" ? " ▲ in crescita" : p.trend === "down" ? " ▼ in calo" : ""}</div>`);
@@ -1578,14 +1765,14 @@ function renderProposal(team, { result, meta }) {
     : meta.errors && meta.errors[key]
     ? `<span class="pill errp" title="${esc(meta.errors[key])}">${label}: non disponibile</span>`
     : `<span class="pill okp">${label}: ${count}</span>`;
-  const degraded = meta.errors && (meta.errors.lineups || meta.errors.xg || meta.errors.table || meta.errors.matches);
-  const age = listoneAge();
+  const degraded = meta.errors && (meta.euro ? (meta.errors.lineups || meta.errors.euro) : (meta.errors.lineups || meta.errors.xg || meta.errors.table || meta.errors.matches));
+  const age = listoneAge(meta.euro);
   $("proposalBox").innerHTML = `
-    <div class="row"><h2 class="grow" style="margin:0">${esc(team.teamName)} <span class="badge ${esc(team.leagueType)}">${esc(team.leagueType)}</span></h2>
+    <div class="row"><h2 class="grow" style="margin:0">${esc(team.teamName)} <span class="badge ${esc(team.leagueType)}">${esc(team.leagueType)}</span>${meta.euro ? ' <span class="badge EL">Euroleghe</span>' : ""}</h2>
       <button class="btn secondary" id="btnRefresh">Ricarica dati online</button>
       <button class="btn secondary" id="btnBack">Squadre</button></div>
     <p class="muted small">${esc(team.leagueName)}${meta.round ? " · giornata " + meta.round : ""} · dati online del ${esc(upd)}${age ? " · Listone del " + esc(age.text) : ""}</p>
-    ${!age ? `<div class="banner warn">Nessun Listone importato: fantamedie e titolarità non sono disponibili, il consiglio si basa solo sui dati online.</div>` : age.days > 10 ? `<div class="banner warn">Il Listone è del ${esc(age.text)} (${age.days} giorni fa): fantamedie, titolarità e infortuni potrebbero essere indietro. L'admin può caricare il file aggiornato.</div>` : ""}
+    ${!age ? (meta.euro ? "" : `<div class="banner warn">Nessun Listone importato: fantamedie e titolarità non sono disponibili, il consiglio si basa solo sui dati online.</div>`) : age.days > 10 ? `<div class="banner warn">Il Listone${meta.euro ? " Euroleghe" : ""} è del ${esc(age.text)} (${age.days} giorni fa): fantamedie, titolarità e infortuni potrebbero essere indietro. L'admin può caricare il file aggiornato.</div>` : ""}
     ${meta.staleHours ? `<div class="banner warn">I dati online hanno ${meta.staleHours} ore: il job di GitHub Actions potrebbe essere fermo (controlla la scheda Actions del repository).</div>` : ""}
     ${degraded ? `<div class="banner warn">Alcune fonti online non erano leggibili: per quelle uso valori neutri, quindi il consiglio è meno affidabile. Passa il mouse sulle etichette qui sotto per il dettaglio.</div>` : ""}
     ${meta.missingPlayers ? `<div class="banner warn">${meta.missingPlayers} giocatori della rosa non sono più nel database e sono stati ignorati.</div>` : ""}
@@ -1595,7 +1782,9 @@ function renderProposal(team, { result, meta }) {
         <div><span>FV totale titolari${result.dBonus ? ` <span class="muted" title="Include il bonus D-factor">(+${fmt(result.dBonus, 1)} D-factor)</span>` : ""}</span><div class="big">${fmt(result.totalEv, 1)}</div></div>
         <div><span>Capitano</span><div class="big" style="font-size:20px">${esc(result.captain ? result.captain.name : "–")}</div></div>
       </div>
-      <div class="src">${pill("lineups", "Probabili formazioni", meta.counts.lineups)}${pill("xg", "xG/xA (FotMob)", meta.counts.xg)}${pill("table", "Classifica (FotMob)", meta.counts.table)}${pill("matches", "Partite", meta.counts.matches)}</div>
+      <div class="src">${meta.euro
+        ? pill("lineups", "Probabili formazioni Serie A", meta.counts.lineups) + pill("euro", "Probabili formazioni Euro Leghe", meta.counts.euroLineups)
+        : pill("lineups", "Probabili formazioni", meta.counts.lineups) + pill("xg", "xG/xA (FotMob)", meta.counts.xg) + pill("table", "Classifica (FotMob)", meta.counts.table) + pill("matches", "Partite", meta.counts.matches)}</div>
     </div>
     ${result.warnings.length ? `<div class="banner warn"><b>Attenzione:</b><br>${result.warnings.map(esc).join("<br>")}</div>` : ""}
     <h3>Titolari</h3>
@@ -1608,25 +1797,33 @@ function renderProposal(team, { result, meta }) {
     </tbody></table></div>
     <details class="card"><summary>Tutta la rosa ordinata per FV</summary>
       <div class="tablewrap" style="margin-top:10px"><table class="compact">${THEAD}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
-    <p class="note"><b>Come si calcola il FV (Fanta Valore).</b> FV = (forma + correzione xG/xA) × difficoltà della partita × campo. Passa il mouse sul FV (o toccalo da mobile) per vedere il dettaglio di ogni giocatore; sul nome per le note.
+    ${meta.euro ? `<p class="note"><b>Come si calcola il FV in una lega Euroleghe.</b> FV = fantamedia (FM) del listone Euroleghe: nessuna correzione xG/xA, difficoltà della partita o fattore campo.
+      La titolarità arriva dalle probabili formazioni Euro Leghe (fantacalcio.it) o, per le squadre di Serie A, da quelle di Serie A; serve a escludere indisponibili e squalificati e a dare la precedenza a chi ha almeno ${PP(P.priorityProb)}.
+      Moduli e vincoli di formazione sono quelli della tipologia della lega (Classic o Mantra). È un supporto alla decisione, non una garanzia di punteggio.</p>` : `<p class="note"><b>Come si calcola il FV (Fanta Valore).</b> FV = (forma + correzione xG/xA) × difficoltà della partita × campo. Passa il mouse sul FV (o toccalo da mobile) per vedere il dettaglio di ogni giocatore; sul nome per le note.
       Forma = media pesata di FM attesa (${PP(P.wExp)}), FM stagione (${PP(P.wSeason)}) e FM ultime 5 (${PP(P.wLast5)}) del Listone: uno 0 vale "nessun dato" e le medie costruite su poche presenze vengono avvicinate alla precedente.
       Correzione xG/xA: positiva se un giocatore ha segnato meno dei gol attesi (xG), negativa se ha segnato di più; stesso ragionamento, con peso ancora minore, per gli assist (xA).
       Difficoltà: da ${fx(P.diffMin)} a ${fx(P.diffMax)} in base alla differenza di punti in classifica FotMob rispetto all'ampiezza della classifica (prima contro ultima = ${fx(P.diffMax)}; ultima contro prima = ${fx(P.diffMin)}; pari punti = 1,00). Campo: ${fx(P.homeFactor)} in casa, ${fx(P.awayFactor)} in trasferta.
       Nella scelta della formazione hanno la precedenza i giocatori con titolarità prevista di almeno ${PP(P.priorityProb)}.
       La titolarità non entra nel FV: serve a escludere indisponibili e squalificati dalla formazione e a segnalare i rischi.
-      È un supporto alla decisione, non una garanzia di punteggio.</p>`;
+      È un supporto alla decisione, non una garanzia di punteggio.</p>`}`;
   $("btnRefresh").addEventListener("click", () => propose(team, true));
   $("btnBack").addEventListener("click", () => show("teams"));
 }
 
 // ------------------------------- Risultati -------------------------------
-const rs = { league: "", type: "", pos: "", posFrom: null, posTo: null, round: null, outcome: null, editing: null, vis: [] };
-const resRound = () => (rs.round != null ? rs.round : Results.defaultRound(state.teams)); // di default l'ultima giornata valorizzata
+const rs = { league: "", type: "", euro: "", pos: "", posFrom: null, posTo: null, round: null, roundEl: null, outcome: null, editing: null, vis: [] };
+// di default l'ultima giornata valorizzata, separatamente per le leghe normali (Serie A) e per le Euroleghe
+const resRound = () => (rs.round != null ? rs.round : Results.defaultRound(state.teams, false));
+const resRoundEl = () => (rs.roundEl != null ? rs.roundEl : Results.defaultRound(state.teams, true));
+const resRounds = () => ({ sa: resRound(), el: resRoundEl() });
+const teamRound = (t) => Results.roundFor(t, resRounds());
 function resFiltered() {
   const q = norm(rs.league);
   return state.teams.filter((t) => {
     if (q && !norm(`${t.leagueName} ${t.teamName}`).includes(q)) return false;
     if (rs.type && t.leagueType !== rs.type) return false;
+    if (rs.euro === "si" && !t.euroleghe) return false;
+    if (rs.euro === "no" && t.euroleghe) return false;
     if (rs.posFrom != null && !(t.position != null && t.position >= rs.posFrom)) return false;
     if (rs.posTo != null && !(t.position != null && t.position <= rs.posTo)) return false;
     if (rs.pos === "podio") return t.position != null && t.position <= 3;
@@ -1637,12 +1834,13 @@ function resFiltered() {
 function resEditorHtml(t) {
   const st = Results.startOf(t), sm = Results.summarize(t);
   const cells = [];
-  for (let n = st; n <= Results.MAX_ROUND; n++) {
+  const mx = Results.maxOf(t), cal = t.euroleghe ? "EL" : "SA";
+  for (let n = st; n <= mx; n++) {
     const r = sm.byRound.get(n);
-    cells.push(`<div class="rc ${r ? r.o : ""}" data-rc="${n}"><span class="muted small">G${Results.leagueRound(t, n)} · SA ${n}</span>
+    cells.push(`<div class="rc ${r ? r.o : ""}" data-rc="${n}"><span class="muted small">G${Results.leagueRound(t, n)} · ${cal} ${n}</span>
       <div class="sr"><input class="sc" data-r="${n}" data-k="my" inputmode="numeric" maxlength="2" value="${r ? r.my : ""}" aria-label="Miei gol giornata ${n}"><span>-</span><input class="sc" data-r="${n}" data-k="opp" inputmode="numeric" maxlength="2" value="${r ? r.opp : ""}" aria-label="Gol avversario giornata ${n}"></div></div>`);
   }
-  return `<div class="note">Tutte le giornate di <b>${esc(t.leagueName)}</b>: gol miei - gol dell'avversario (vuoto = non giocata). Prima giornata di lega: Serie A ${st} (si cambia da Modifica squadra). Punti calcolati: <b>${sm.points}</b> (${sm.W}V ${sm.D}P ${sm.L}S).</div>
+  return `<div class="note">Tutte le giornate di <b>${esc(t.leagueName)}</b>: gol miei - gol dell'avversario (vuoto = non giocata). Prima giornata di lega: ${t.euroleghe ? "Euroleghe" : "Serie A"} ${st} (si cambia da Modifica squadra). Punti calcolati: <b>${sm.points}</b> (${sm.W}V ${sm.D}P ${sm.L}S).</div>
     <div class="rgrid">${cells.join("")}</div>
     <div class="row"><button class="btn" data-ee="save">Salva</button><button class="btn secondary" data-ee="cancel">Annulla</button></div>`;
 }
@@ -1652,39 +1850,44 @@ function fillPosOptions() {
   $("rPos").value = rs.pos;
   if ($("rPos").value !== rs.pos) { rs.pos = ""; $("rPos").value = ""; }
 }
-function resSummaryHtml(round) {
+function resSummaryHtml() {
   const base = resFiltered();
-  const c = Results.countsForRound(base, round);
+  const rounds = resRounds();
+  const c = Results.countsForRound(base, rounds);
+  const hasEl = base.some((t) => t.euroleghe), hasSa = base.some((t) => !t.euroleghe);
+  const parts = [];
+  if (hasSa || !hasEl) parts.push(`Serie A <b>${rounds.sa}</b>${rounds.sa === Results.latestRound(state.teams, false) ? " (ultima valorizzata)" : ""}`);
+  if (hasEl) parts.push(`Euroleghe <b>${rounds.el}</b>${rounds.el === Results.latestRound(state.teams, true) ? " (ultima valorizzata)" : ""}`);
   const chip = (o, label) => `<button class="sumchip ${o} ${rs.outcome === o ? "on" : ""}" data-o="${o}" title="Mostra solo le leghe con ${label.toLowerCase()} in questa giornata">${label}<b>${c[o]}</b></button>`;
-  const latest = Results.latestRound(state.teams);
-  return `<span class="muted">Giornata Serie A <b>${round}</b>${round === latest ? " (ultima valorizzata)" : ""} · ${c.total} ${c.total === 1 ? "risultato" : "risultati"}:</span>${chip("W", "Vinte")}${chip("D", "Pareggiate")}${chip("L", "Perse")}${rs.outcome ? '<button class="btn secondary sm" data-o="">Mostra tutte</button>' : ""}`;
+  return `<span class="muted">Giornata ${parts.join(" · ")} · ${c.total} ${c.total === 1 ? "risultato" : "risultati"}:</span>${chip("W", "Vinte")}${chip("D", "Pareggiate")}${chip("L", "Perse")}${rs.outcome ? '<button class="btn secondary sm" data-o="">Mostra tutte</button>' : ""}`;
 }
 function scoreInputs(t, round, r) {
-  if (round < Results.startOf(t)) return `<span class="muted" title="Giornata precedente all'inizio della lega (SA ${Results.startOf(t)})">n.d.</span>`;
+  if (round < Results.startOf(t)) return `<span class="muted" title="Giornata precedente all'inizio della lega (${t.euroleghe ? "EL" : "SA"} ${Results.startOf(t)})">n.d.</span>`;
   return `<span class="sc2 ${r ? r.o : ""}" title="Gol miei - gol avversario"><input data-id="${esc(t.id)}" data-f="my" inputmode="numeric" maxlength="2" value="${r ? r.my : ""}" aria-label="Miei gol"><span>-</span><input data-id="${esc(t.id)}" data-f="opp" inputmode="numeric" maxlength="2" value="${r ? r.opp : ""}" aria-label="Gol avversario"></span>`;
 }
 function renderResults() {
   const all = state.teams;
-  const round = resRound();
   fillPosOptions();
-  let ro = "";
-  for (let n = 1; n <= Results.MAX_ROUND; n++) ro += `<option value="${n}">Giornata ${n}</option>`;
-  $("rRound").innerHTML = ro; $("rRound").value = String(round);
-  $("resSummary").innerHTML = resSummaryHtml(round);
-  $("rRoundHead").textContent = "Giornata " + round;
+  const opts = (max) => { let o = ""; for (let n = 1; n <= max; n++) o += `<option value="${n}">${n}°G</option>`; return o; };
+  $("rRound").innerHTML = opts(Results.MAX_ROUND); $("rRound").value = String(resRound());
+  $("rRoundEl").innerHTML = opts(Results.EURO_ROUNDS); $("rRoundEl").value = String(resRoundEl());
+  $("rRound").disabled = rs.euro === "si"; $("rRoundEl").disabled = rs.euro === "no"; // ogni filtro vale solo per il suo calendario
+  $("resSummary").innerHTML = resSummaryHtml();
+  $("rRoundHead").textContent = rs.euro === "si" ? "Giornata EL" : rs.euro === "no" ? "Giornata SA" : "Giornata";
 
   const rows = resFiltered().filter((t) => {
     if (!rs.outcome) return true;
-    const r = Results.summarize(t).byRound.get(round);
+    const r = Results.summarize(t).byRound.get(teamRound(t));
     return r && r.o === rs.outcome;
   });
   rs.vis = rows.map((t) => t.id);
   $("resRows").innerHTML = rows.map((t, i) => {
+    const round = teamRound(t);
     const sm = Results.summarize(t), r = sm.byRound.get(round);
     const editing = rs.editing === t.id;
     return `<tr data-id="${esc(t.id)}">
       <td><button class="mv" data-mv="-1" data-id="${esc(t.id)}" title="Sposta su" aria-label="Sposta su" ${i === 0 ? "disabled" : ""}>▲</button><button class="mv" data-mv="1" data-id="${esc(t.id)}" title="Sposta giù" aria-label="Sposta giù" ${i === rows.length - 1 ? "disabled" : ""}>▼</button></td>
-      <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span><div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da SA " + Results.startOf(t) : ""}</div></td>
+      <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}${t.euroleghe ? " · Euroleghe" : ""}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}<div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da " + (t.euroleghe ? "EL " : "SA ") + Results.startOf(t) : ""}</div></td>
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
       <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
       <td class="ctr pts"><b>${sm.played ? sm.points : "–"}</b></td>
@@ -1701,6 +1904,8 @@ $("rLeague").addEventListener("input", (e) => { rs.league = e.target.value; resR
 $("rType").addEventListener("change", (e) => { rs.type = e.target.value; resRefresh(); });
 $("rPos").addEventListener("change", (e) => { rs.pos = e.target.value; resRefresh(); });
 $("rRound").addEventListener("change", (e) => { rs.round = Number(e.target.value); resRefresh(); });
+$("rRoundEl").addEventListener("change", (e) => { rs.roundEl = Number(e.target.value); resRefresh(); });
+$("rEuro").addEventListener("change", (e) => { rs.euro = e.target.value; resRefresh(); });
 for (const [id, key] of [["rPosFrom", "posFrom"], ["rPosTo", "posTo"]]) {
   $(id).addEventListener("input", (e) => {
     const v = Results.parseIntIn(e.target.value, 1, 99);
@@ -1721,13 +1926,13 @@ const hhmm = () => new Date().toLocaleTimeString("it-IT", { hour: "2-digit", min
 function refreshResRow(t) {
   const tr = document.querySelector(`#resRows tr[data-id="${CSS.escape(t.id)}"]`);
   if (tr) {
-    const sm = Results.summarize(t), r = sm.byRound.get(resRound());
+    const sm = Results.summarize(t), r = sm.byRound.get(teamRound(t));
     tr.querySelector(".pts").innerHTML = `<b>${sm.played ? sm.points : "–"}</b>`;
     tr.querySelector(".lastc").innerHTML = sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>';
     const w = tr.querySelector(".sc2");
     if (w) w.className = "sc2" + (r ? " " + r.o : "");
   }
-  $("resSummary").innerHTML = resSummaryHtml(resRound());
+  $("resSummary").innerHTML = resSummaryHtml();
   const keep = $("rPos").value; fillPosOptions(); if (keep && $("rPos").value !== keep) rs.pos = $("rPos").value;
 }
 async function persistTeam(t, patch) {
@@ -1759,7 +1964,7 @@ $("resRows").addEventListener("change", async (e) => {
     return;
   }
   // risultato della giornata selezionata: servono entrambi i gol
-  const tr = inp.closest("tr"), round = resRound();
+  const tr = inp.closest("tr"), round = teamRound(t);
   const my = Results.parseIntIn(tr.querySelector('[data-f="my"]').value, 0, 99), opp = Results.parseIntIn(tr.querySelector('[data-f="opp"]').value, 0, 99);
   if (Number.isNaN(my) || Number.isNaN(opp)) { msg("I gol devono essere numeri da 0 a 99.", "err"); return; }
   if ((my === null) !== (opp === null)) { $("resSaved").textContent = "Inserisci sia i tuoi gol sia quelli dell'avversario per salvare il risultato."; return; }
@@ -1792,13 +1997,13 @@ $("resRows").addEventListener("click", async (e) => {
   const t = state.teams.find((x) => x.id === rs.editing);
   if (!t) return;
   try {
-    const st = Results.startOf(t), fresh = [];
-    for (let n = st; n <= Results.MAX_ROUND; n++) {
+    const st = Results.startOf(t), fresh = [], cal = t.euroleghe ? "EL" : "SA";
+    for (let n = st; n <= Results.maxOf(t); n++) {
       const my = Results.parseIntIn(document.querySelector(`input.sc[data-r="${n}"][data-k="my"]`).value, 0, 99);
       const opp = Results.parseIntIn(document.querySelector(`input.sc[data-r="${n}"][data-k="opp"]`).value, 0, 99);
-      if (Number.isNaN(my) || Number.isNaN(opp)) throw new Error(`Giornata SA ${n}: i gol devono essere numeri da 0 a 99.`);
+      if (Number.isNaN(my) || Number.isNaN(opp)) throw new Error(`Giornata ${cal} ${n}: i gol devono essere numeri da 0 a 99.`);
       if (my === null && opp === null) continue;
-      if (my === null || opp === null) throw new Error(`Giornata SA ${n}: inserisci sia i tuoi gol sia quelli dell'avversario.`);
+      if (my === null || opp === null) throw new Error(`Giornata ${cal} ${n}: inserisci sia i tuoi gol sia quelli dell'avversario.`);
       fresh.push({ round: n, my, opp });
     }
     const kept = (t.results || []).filter((r) => r && r.round < st); // risultati prima della giornata di inizio: restano salvati
@@ -1823,7 +2028,7 @@ const pct = (x) => (x == null || Number.isNaN(x) ? "–" : Math.round(x) + "%");
 // leghe/squadre (dell'utente) in cui ogni giocatore è in rosa
 function leaguesByPlayer() {
   const m = new Map();
-  for (const t of state.teams) for (const p of t.players || []) {
+  for (const t of state.teams) if (!t.euroleghe) for (const p of t.players || []) {
     if (!m.has(p.id)) m.set(p.id, []);
     m.get(p.id).push({ id: t.id, leagueName: t.leagueName, teamName: t.teamName, leagueType: t.leagueType });
   }
@@ -1978,6 +2183,7 @@ const needsCheck = (p) => p.roleCheck && !p.roleManual;
 
 function renderAdmin() {
   renderParams();
+  renderEuroInfo();
   const toCheck = state.players.filter(needsCheck);
   $("adminCount").textContent = `(${state.players.length} giocatori)`;
   const l = state.listone;
@@ -2132,6 +2338,84 @@ async function applyImport() {
   } catch (err) {
     msg("Importazione non riuscita: " + err.message, "err", 0);
     renderPreview();
+  }
+}
+
+// ---- Listone Euroleghe (collezione separata "euroPlayers") ----
+let euroPending = null;
+function renderEuroInfo() {
+  const i = state.euroInfo;
+  $("euroInfo").innerHTML = i
+    ? `Ultimo import: <b>${esc(i.fileName || "")}</b> del ${fmtDate(i.importedAtIso || i.updatedAt)} · ${state.euroPlayers.length} giocatori in ${new Set(state.euroPlayers.map((p) => p.team)).size} squadre`
+    : state.euroPlayers.length ? `${state.euroPlayers.length} giocatori nel listone Euroleghe.` : "Nessun listone Euroleghe importato: carica il file .xlsx qui sotto.";
+}
+$("euroIn").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  euroPending = null;
+  if (!f) return renderEuroPreview();
+  try {
+    if (!window.XLSX) throw new Error("libreria Excel non caricata: controlla la connessione e ricarica la pagina");
+    const wb = XLSX.read(await f.arrayBuffer(), { type: "array" });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+    if (!rows.length) throw new Error("il primo foglio è vuoto");
+    const missing = missingEuroColumns(rows);
+    if (missing.length) throw new Error(`mancano le colonne: ${missing.join(", ")}`);
+    euroPending = { plan: planEuroImport(rows, state.euroPlayers), fileName: f.name };
+    renderEuroPreview();
+  } catch (err) {
+    $("euroPreview").innerHTML = `<div class="banner err" style="margin-top:12px">Impossibile leggere il file: ${esc(err.message)}</div>`;
+  }
+});
+function renderEuroPreview() {
+  if (!euroPending) { $("euroPreview").innerHTML = ""; return; }
+  const { plan } = euroPending;
+  const changes = plan.added.length + plan.updated.length;
+  $("euroPreview").innerHTML = `
+    <div class="kv" style="margin-top:12px">
+      <div><span>Righe valide</span><b>${plan.total}</b></div>
+      <div><span>Nuovi</span><b>${plan.added.length}</b></div>
+      <div><span>Aggiornati</span><b>${plan.updated.length}</b></div>
+      <div><span>Invariati</span><b>${plan.unchanged.length}</b></div>
+      <div><span>Non più nel file</span><b>${plan.removed.length}</b></div>
+    </div>
+    ${plan.errors.length ? `<div class="banner warn">${plan.errors.length} righe scartate:<br>${plan.errors.slice(0, 8).map(esc).join("<br>")}${plan.errors.length > 8 ? "<br>…" : ""}</div>` : ""}
+    ${plan.removed.length ? `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="chkEuroDelete" style="width:auto"> Elimina i ${plan.removed.length} giocatori non più nel file (es. ${esc(plan.removed.slice(0, 3).map((p) => p.name).join(", "))}). Le rose Euroleghe che li contengono li segnaleranno come mancanti.</label>` : ""}
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="btnEuroApply" ${changes === 0 && !plan.removed.length ? "disabled" : ""}>Applica importazione</button>
+      <button class="btn secondary" id="btnEuroCancel">Annulla</button>
+    </div>`;
+}
+$("euroPreview").addEventListener("click", (e) => {
+  if (e.target.id === "btnEuroCancel") { euroPending = null; $("euroIn").value = ""; renderEuroPreview(); }
+  if (e.target.id === "btnEuroApply") applyEuroImport();
+});
+async function applyEuroImport() {
+  const { plan, fileName } = euroPending;
+  const del = !!($("chkEuroDelete") && $("chkEuroDelete").checked);
+  if (state.euroPlayers.length > 50 && plan.total < state.euroPlayers.length * 0.5
+      && !confirm(`Il file contiene ${plan.total} giocatori ma il listone Euroleghe ne ha ${state.euroPlayers.length}. Procedere comunque?`)) return;
+  const btn = $("btnEuroApply"); btn.disabled = true; btn.textContent = "Importo…";
+  try {
+    const ops = [...plan.added, ...plan.updated].map((p) => ({ del: false, p }));
+    if (del) plan.removed.forEach((p) => ops.push({ del: true, p }));
+    for (let i = 0; i < ops.length; i += 400) {
+      const batch = writeBatch(db);
+      ops.slice(i, i + 400).forEach(({ del: isDel, p }) => {
+        const ref = doc(db, "euroPlayers", p.id);
+        if (isDel) { batch.delete(ref); return; }
+        const { id, ...data } = p;
+        batch.set(ref, { ...data, updatedAt: serverTimestamp() });
+      });
+      await batch.commit();
+    }
+    await setDoc(doc(db, "meta", "euroListone"), { importedAt: serverTimestamp(), importedAtIso: new Date().toISOString(), importedBy: state.user.email || state.user.uid, fileName, count: plan.total });
+    const summary = `Listone Euroleghe importato: ${plan.added.length} nuovi, ${plan.updated.length} aggiornati${del ? `, ${plan.removed.length} eliminati` : ""}.`;
+    euroPending = null; $("euroIn").value = ""; renderEuroPreview();
+    await loadPlayers(); renderAdmin();
+    msg(summary, "ok", 0);
+  } catch (err) {
+    msg("Importazione non riuscita: " + err.message, "err", 0);
+    renderEuroPreview();
   }
 }
 </script>

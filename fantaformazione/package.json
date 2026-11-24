@@ -4,7 +4,7 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test test/engine.test.mjs test/listone.test.mjs",
+    "test": "node --test test/engine.test.mjs test/listone.test.mjs test/euro.test.mjs",
     "fetch-signals": "node scraper/fetch-signals.js"
   },
   "dependencies": {
