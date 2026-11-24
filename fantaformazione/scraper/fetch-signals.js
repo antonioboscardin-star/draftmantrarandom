@@ -19,15 +19,16 @@ if (failedAll && prev) {
 } else {
   // Se una sola fonte fallisce, tengo la versione precedente di quella fonte
   // (e la sua data, così l'app può mostrare quanto è vecchia).
-  fresh.sourceTimes = { lineups: fresh.fetchedAt, xg: fresh.fetchedAt, table: fresh.fetchedAt };
+  fresh.sourceTimes = { lineups: fresh.fetchedAt, xg: fresh.fetchedAt, table: fresh.fetchedAt, euro: fresh.fetchedAt };
   if (prev) {
     const pt = prev.sourceTimes || {};
     if (err.lineups && prev.lineups) { fresh.lineups = prev.lineups; fresh.round = prev.round; fresh.matches = prev.matches || []; fresh.sourceTimes.lineups = pt.lineups || prev.fetchedAt; }
     if (err.xg && prev.xg) { fresh.xg = prev.xg; fresh.sourceTimes.xg = pt.xg || prev.fetchedAt; }
+    if (err.euro && prev.euroLineups) { fresh.euroLineups = prev.euroLineups; fresh.euroMatches = prev.euroMatches || []; fresh.sourceTimes.euro = pt.euro || prev.fetchedAt; }
     if (err.table && prev.table) { fresh.table = prev.table; fresh.sourceTimes.table = pt.table || prev.fetchedAt; }
   }
   fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
   fs.writeFileSync(out, JSON.stringify(fresh));
-  console.log(`signals.json scritto: formazioni ${fresh.lineups?.players?.length || 0}, xG/xA ${fresh.xg?.length || 0}, partite ${fresh.matches?.length || 0}, classifica ${fresh.table?.length || 0}`, Object.keys(err).length ? { errori: err } : '');
+  console.log(`signals.json scritto: formazioni ${fresh.lineups?.players?.length || 0}, xG/xA ${fresh.xg?.length || 0}, partite ${fresh.matches?.length || 0}, classifica ${fresh.table?.length || 0}, Euro Leghe ${fresh.euroLineups?.players?.length || 0}`, Object.keys(err).length ? { errori: err } : '');
   if (failedAll) process.exitCode = 1; // nessun dato: il job risulta rosso
 }

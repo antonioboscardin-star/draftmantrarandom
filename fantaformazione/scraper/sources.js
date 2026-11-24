@@ -25,7 +25,10 @@ async function getText(url) {
 // fantacalcio.it — probabili formazioni
 // ---------------------------------------------------------------------------
 const FC_URL = 'https://www.fantacalcio.it/probabili-formazioni-serie-a';
-const PLAYER_HREF = /\/serie-a\/squadre\/([^/]+)\/([^/]+)\/(\d+)\/?$/;
+const EURO_URL = process.env.FF_EURO_URL || 'https://www.fantacalcio.it/probabili-formazioni-euro-leghe';
+// Serie A: /serie-a/squadre/<squadra>/<giocatore>/<id>   Euro Leghe: /euroleghe/squadre/<squadra>/<giocatore>/<id>
+const PLAYER_HREF = /\/(?:serie-a|euroleghe)\/squadre\/([^/]+)\/([^/]+)\/(\d+)\/?$/;
+const TEAM_HREF = /\/(?:serie-a|euroleghe)\/squadre\/[^/]+\/?$/;
 const MODULE_RE = /^\d-\d(-\d){1,2}$/;
 
 function parseLineups(html) {
@@ -41,7 +44,7 @@ function parseLineups(html) {
   const starters = new Map(); // titolari già contati per squadra
 
   // Titoletti di sezione (testo semplice, in qualunque tag: anche <li>, <b>, <th>, o testo accanto a una lista)
-  const SECTION_HEADS = [[/^panchina$/i, 'bench'], [/^ballottaggi$/i, 'ballot'], [/^squalificati$/i, 'suspended'], [/^diffidati$/i, 'diffidati'], [/^in dubbio$/i, 'doubt']];
+  const SECTION_HEADS = [[/^panchina$/i, 'bench'], [/^ballottaggi$/i, 'ballot'], [/^squalificati$/i, 'suspended'], [/^diffidati$/i, 'diffidati'], [/^in dubbio$/i, 'doubt'], [/^infortunati$/i, 'injured']];
   const headSection = (t) => { const h = SECTION_HEADS.find(([re]) => re.test(t)); return h ? h[1] : null; };
 
   $('body *').each((_, el) => {
@@ -99,6 +102,7 @@ function parseLineups(html) {
         else if (/^squalificati$/i.test(t)) section = 'suspended';
         else if (/^diffidati$/i.test(t)) section = 'diffidati';
         else if (/^in dubbio$/i.test(t)) section = 'doubt';
+        else if (/^infortunati$/i.test(t)) section = 'injured';
         else if (MODULE_RE.test(t) && lastTeam) modules[lastTeam] = t;
         else if (tag === 'h3' && !/^(presentazione|dettaglio)/i.test(t)) { lastTeam = t; section = 'lineup'; }
         else if (tag === 'h3') section = 'lineup';
@@ -113,7 +117,7 @@ function parseLineups(html) {
     const teams = [];
     $(el).find('a').each((__, a) => {
       const href = $(a).attr('href') || '';
-      if (/\/serie-a\/squadre\/[^/]+\/?$/.test(href)) {
+      if (TEAM_HREF.test(href)) {
         const name = $(a).text().replace(/\s+/g, ' ').trim();
         if (name) teams.push(name);
       }
@@ -131,6 +135,12 @@ function parseLineups(html) {
 
 async function fetchLineups() {
   const html = await getText(FC_URL);
+  return parseLineups(html);
+}
+
+// Euro Leghe (Premier League, Liga, Bundesliga, Ligue 1): stessa struttura della pagina di Serie A
+async function fetchEuroLineups() {
+  const html = await getText(EURO_URL);
   return parseLineups(html);
 }
 
@@ -358,9 +368,13 @@ async function fetchTable() {
 // ---------------------------------------------------------------------------
 async function fetchAll() {
   const errors = {};
-  const out = { fetchedAt: Date.now(), round: null, lineups: { modules: {}, players: [] }, matches: [], xg: [], table: [], errors };
+  const out = { fetchedAt: Date.now(), round: null, lineups: { modules: {}, players: [] }, matches: [], xg: [], table: [], euroLineups: { round: null, modules: {}, players: [] }, euroMatches: [], errors };
 
-  const [l, x, t] = await Promise.allSettled([fetchLineups(), fetchXg(), fetchTable()]);
+  const [l, x, t, eu] = await Promise.allSettled([fetchLineups(), fetchXg(), fetchTable(), fetchEuroLineups()]);
+  if (eu.status === 'fulfilled') {
+    out.euroLineups = { round: eu.value.round, modules: eu.value.modules, players: eu.value.players };
+    out.euroMatches = eu.value.matches || [];
+  } else errors.euro = String((eu.reason && eu.reason.message) || eu.reason);
   if (l.status === 'fulfilled') {
     out.round = l.value.round;
     out.lineups = { modules: l.value.modules, players: l.value.players };
@@ -377,6 +391,6 @@ async function fetchAll() {
 }
 
 export {
-  fetchAll, parseLineups, parseFotmobRows, parseFotmobJson, parseFotmobEmbedded, mergeFotmob,
+  fetchAll, parseLineups, fetchEuroLineups, parseFotmobRows, parseFotmobJson, parseFotmobEmbedded, mergeFotmob,
   parseFotmobTableJson, parseFotmobTableEmbedded, parseFotmobTableRows,
 };
