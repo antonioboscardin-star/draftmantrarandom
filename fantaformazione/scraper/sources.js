@@ -122,6 +122,12 @@ function parseLineups(html) {
         if (name) teams.push(name);
       }
     });
+    if (teams.length !== 2) {
+      // senza link alle squadre: testo del titolo, es. "10 Arsenal vs Chelsea"
+      const t = $(el).text().replace(/\s+/g, ' ').trim();
+      const mm = t.match(/^(?:\d{1,2}\s+)?(.+?)\s+(?:vs\.?|-|–)\s+(.+)$/i);
+      if (mm) { teams.length = 0; teams.push(mm[1].trim(), mm[2].trim()); }
+    }
     if (teams.length === 2 && !seenM.has(teams.join('|'))) {
       seenM.add(teams.join('|'));
       matches.push({ home: teams[0], away: teams[1] });
@@ -374,6 +380,7 @@ async function fetchAll() {
   if (eu.status === 'fulfilled') {
     out.euroLineups = { round: eu.value.round, modules: eu.value.modules, players: eu.value.players };
     out.euroMatches = eu.value.matches || [];
+    if (!out.euroMatches.length) errors.euroMatches = 'partite non riconosciute nella pagina Euro Leghe';
   } else errors.euro = String((eu.reason && eu.reason.message) || eu.reason);
   if (l.status === 'fulfilled') {
     out.round = l.value.round;
