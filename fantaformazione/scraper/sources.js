@@ -130,7 +130,8 @@ function parseLineups(html) {
     }
     if (teams.length === 2 && !seenM.has(teams.join('|'))) {
       seenM.add(teams.join('|'));
-      matches.push({ home: teams[0], away: teams[1] });
+      const clean = (n) => n.replace(/^\s*\d{1,2}\s+/, '').replace(/(?:[\s\-–:\/]+\d{1,2}(?:[\/:.\-–]\d{1,2})*)*[\s\-–:\/]*$/, '').trim();
+      matches.push({ home: clean(teams[0]), away: clean(teams[1]) });
     }
   });
 
