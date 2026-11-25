@@ -120,3 +120,7 @@ test('Euroleghe: nomi partita puliti da numeri e squadra del giocatore riconosci
   assert.deepEqual(p.match, { home: 'Bayern Monaco', away: 'Lipsia' });
   assert.equal(p.matchTeam, 'Bayern Monaco'); assert.equal(p.league, 'Bundesliga');
 });
+
+test('Euroleghe: numeri in testa/in mezzo al nome partita (es. 01) rimossi', () => {
+  for (const [raw, ok] of [['01 Lipsia', 'Lipsia'], ['01Lipsia', 'Lipsia'], ['Lipsia 01', 'Lipsia'], ['01 Paris Saint-Germain', 'Paris Saint-Germain'], ['Bayern 01/01 01:00 Monaco', 'Bayern Monaco'], ['Racing Strasburgo', 'Racing Strasburgo'], ['Lipsia -', 'Lipsia']]) assert.equal(E.cleanTeamName(raw), ok, raw);
+});
