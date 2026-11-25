@@ -38,7 +38,7 @@
   .tcard { padding: 12px 14px; display: flex; flex-direction: column; }
   .tcard .lp { display: flex; align-items: flex-end; gap: 10px; margin-top: auto; padding-top: 8px; }
   .tcard .lp .grow { flex: 1 1 auto; }
-  .tcard .lgn { cursor: help; border-bottom: 1px dotted var(--muted); }
+  .tcard .lgn { display: block; overflow: hidden; text-overflow: ellipsis; cursor: help; border-bottom: 1px dotted var(--muted); }
   .tsum { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 8px 12px; margin: 0 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
   .tsum b { color: var(--text); }
   .lu { margin: 0 auto; max-width: 100%; }
@@ -48,6 +48,9 @@
   table.compact.tight td, table.compact.tight th { overflow: hidden; text-overflow: ellipsis; }
   table.compact.tight .mfull { white-space: nowrap; display: block; overflow: hidden; text-overflow: ellipsis; }
   .reslist-row { margin-top: 6px; }
+  .tcard > .row { flex-wrap: nowrap; }
+  .tcard > .row > strong { min-width: 70px; flex: 1 1 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tcard > .row > .badge { flex: 0 0 auto; white-space: nowrap; }
   details.info > summary { cursor: pointer; font-weight: 600; color: var(--accent); }
   .tcard .lp .grow { min-width: 0; }
   button.btn.two { padding: 4px 10px; font-size: 12px; line-height: 1.15; text-align: center; flex: 0 0 auto; }
@@ -1915,7 +1918,7 @@ function rowHtml(p, captainId, type) {
     <td class="num"><span class="prob ${probCls(p.prob)}">${Math.round(p.prob * 100)}%</span></td>
     <td class="num fv"><span class="fvv" data-tip="${esc(fvTip(p))}" tabindex="0">${fmt(p.fv)}</span></td></tr>`;
 }
-const theadFor = (euro) => `<colgroup>${euro ? '<col style="width:12%"><col style="width:30%"><col style="width:38%"><col style="width:10%"><col style="width:10%">' : '<col style="width:14%"><col style="width:38%"><col style="width:22%"><col style="width:13%"><col style="width:13%">'}</colgroup><thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R</th><th>Giocatore</th><th title="Squadra del giocatore - avversaria. C = in casa, T = in trasferta">Partita</th><th class="num" title="Titolarità prevista (probabili formazioni)">Tit.</th><th class="num" title="Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo. Passa il mouse (o tocca) per il dettaglio">FV</th></tr></thead>`;
+const theadFor = (euro) => `<colgroup>${euro ? '<col style="width:62px"><col style="width:38%"><col><col style="width:54px"><col style="width:54px">' : '<col style="width:62px"><col style="width:38%"><col><col style="width:54px"><col style="width:54px">'}</colgroup><thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R</th><th>Giocatore</th><th title="Squadra del giocatore - avversaria. C = in casa, T = in trasferta">Partita</th><th class="num" title="Titolarità prevista (probabili formazioni)">Tit.</th><th class="num" title="Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo. Passa il mouse (o tocca) per il dettaglio">FV</th></tr></thead>`;
 
 function renderProposal(team, { result, meta }) {
   const capId = result.captain ? result.captain.id : null;
