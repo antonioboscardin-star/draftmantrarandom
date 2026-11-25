@@ -130,7 +130,7 @@ function parseLineups(html) {
     }
     if (teams.length === 2 && !seenM.has(teams.join('|'))) {
       seenM.add(teams.join('|'));
-      const clean = (n) => n.replace(/^\s*\d{1,2}\s+/, '').replace(/(?:[\s\-–:\/]+\d{1,2}(?:[\/:.\-–]\d{1,2})*)*[\s\-–:\/]*$/, '').trim();
+      const clean = (n) => n.replace(/[ \s]+/g, ' ').trim().split(' ').filter((w) => !/^\d{1,2}(?:[\/:.\-–]\d{1,2})*$/.test(w) && !/^[-–:\/]+$/.test(w)).join(' ').replace(/^\d{1,2}(?=[^\d\s])/, '').replace(/[\s\-–:\/]+$/, '').trim();
       matches.push({ home: clean(teams[0]), away: clean(teams[1]) });
     }
   });
