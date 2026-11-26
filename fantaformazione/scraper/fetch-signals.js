@@ -22,9 +22,9 @@ if (failedAll && prev) {
   fresh.sourceTimes = { lineups: fresh.fetchedAt, xg: fresh.fetchedAt, table: fresh.fetchedAt, euro: fresh.fetchedAt };
   if (prev) {
     const pt = prev.sourceTimes || {};
-    if (err.lineups && prev.lineups) { fresh.lineups = prev.lineups; fresh.round = prev.round; fresh.matches = prev.matches || []; fresh.sourceTimes.lineups = pt.lineups || prev.fetchedAt; }
+    if (err.lineups && prev.lineups) { fresh.lineups = prev.lineups; fresh.round = prev.round; fresh.matches = prev.matches || []; fresh.kickoffs = prev.kickoffs || []; fresh.sourceTimes.lineups = pt.lineups || prev.fetchedAt; }
     if (err.xg && prev.xg) { fresh.xg = prev.xg; fresh.sourceTimes.xg = pt.xg || prev.fetchedAt; }
-    if (err.euro && prev.euroLineups) { fresh.euroLineups = prev.euroLineups; fresh.euroMatches = prev.euroMatches || []; fresh.sourceTimes.euro = pt.euro || prev.fetchedAt; }
+    if (err.euro && prev.euroLineups) { fresh.euroLineups = prev.euroLineups; fresh.euroMatches = prev.euroMatches || []; fresh.euroKickoffs = prev.euroKickoffs || []; fresh.sourceTimes.euro = pt.euro || prev.fetchedAt; }
     if (err.table && prev.table) { fresh.table = prev.table; fresh.sourceTimes.table = pt.table || prev.fetchedAt; }
   }
   fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });

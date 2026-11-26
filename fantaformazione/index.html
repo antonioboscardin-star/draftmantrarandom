@@ -48,6 +48,8 @@
   table.compact.tight td, table.compact.tight th { overflow: hidden; text-overflow: ellipsis; }
   table.compact.tight .mfull { white-space: nowrap; display: block; overflow: hidden; text-overflow: ellipsis; }
   .reslist-row { margin-top: 6px; }
+  .banner.yel { border-color: var(--draw); background: rgba(250,204,21,.14); color: #fff3b0; }
+  .lu > .card { margin-left: 0; margin-right: 0; }
   @media (max-width: 440px) {
     table.compact.tight col:nth-child(3), table.compact.tight th:nth-child(3), table.compact.tight td:nth-child(3) { display: none; }
   }
@@ -861,7 +863,8 @@ const Engine = (() => {
   /** Prime 3 lettere del nome squadra; se la squadra è nel database ("known") usa il nome del database. */
   function teamAbbr(name, known) {
     if (!name) return '';
-    const hit = (known || []).find((k) => teamsMatch(k, name));
+    const key = teamKey(name);
+    const hit = (known || []).find((k) => teamKey(k) === key) || (known || []).find((k) => teamsMatch(k, name));
     return teamKey(hit || name).replace(/ /g, '').slice(0, 3).toUpperCase();
   }
 
@@ -891,8 +894,23 @@ const Engine = (() => {
     .replace(/[ \s]+/g, ' ').trim()
     .split(' ').filter((t) => !/^\d{1,2}(?:[\/:.\-–]\d{1,2})*$/.test(t) && !/^[-–:\/]+$/.test(t)).join(' ')
     .replace(/^\d{1,2}(?=[^\d\s])/, '').replace(/[\s\-–:\/]+$/, '').trim();
+  /** Riconosce le due squadre del listone nel testo della partita, nell'ordine in cui compaiono (casa, trasferta), qualunque sia il separatore o il campo in cui sono finite. */
+  function orderTeams(m, team) {
+    const names = [...new Set([...Object.values(EURO_LEAGUES).flat(), team].filter(Boolean))].sort((a, b) => norm(b).length - norm(a).length);
+    let text = ' ' + norm(`${m.home} ${m.away}`) + ' ';
+    const found = [];
+    for (const n of names) {
+      const key = ' ' + norm(n) + ' ';
+      const i = text.indexOf(key);
+      if (i < 0) continue;
+      found.push({ n, i });
+      text = text.slice(0, i) + ' '.repeat(key.length) + text.slice(i + key.length);
+    }
+    found.sort((a, b) => a.i - b.i);
+    return found.length === 2 ? { home: found[0].n, away: found[1].n } : null;
+  }
   function findTeamMatch(team, rawMatches) {
-    const matches = rawMatches.map((m) => ({ home: cleanTeamName(m.home), away: cleanTeamName(m.away) }));
+    const matches = rawMatches.map((m) => orderTeams(m, team) || { home: cleanTeamName(m.home), away: cleanTeamName(m.away) });
     const k = teamKey(team);
     for (const m of matches) if (teamKey(m.home) === k || teamKey(m.away) === k) return m;
     for (const m of matches) if (teamsMatch(team, m.home) || teamsMatch(team, m.away)) return m;
@@ -941,7 +959,8 @@ const Engine = (() => {
         prob: round2(prob), status, xg: null, goals: null, xa: null, assists: null,
         xgAdj: 0, xaAdj: 0, xBonus: 0,
         score: round2(fv), fv: round2(fv), ev: round2(ev), pref, sel, notes,
-        available, opp: null, home: null, diffPts: null, diffFactor: 1, fieldFactor: 1,
+        available, opp: match ? (matchTeam === match.home ? match.away : match.home) : null, home: match ? matchTeam === match.home : null,
+        diffPts: null, diffFactor: 1, fieldFactor: 1,
         ownPts: null, oppPts: null, tableRange: null,
         league: euroLeague(p.team), match: match ? { home: match.home, away: match.away } : null, matchTeam,
       };
@@ -1058,7 +1077,7 @@ const Engine = (() => {
   function bySel(a, b) { return b.sel - a.sel || b.score - a.score; }
 
   function proposeClassic(scored, opts) {
-    const o = { ...DEFAULTS, benchD: 2, benchC: 2, benchA: 2, ...(opts || {}) };
+    const o = { ...DEFAULTS, benchD: 2, benchC: 2, benchA: 2, benchTotal: 12, ...(opts || {}) };
     const roles = { P: [], D: [], C: [], A: [] };
     scored.forEach((p) => roles[p.role] && roles[p.role].push(p));
     Object.values(roles).forEach((l) => l.sort(bySel));
@@ -1077,9 +1096,20 @@ const Engine = (() => {
     results.sort((x, y) => y.totalSel - x.totalSel || y.totalEv - x.totalEv);
     const best = results[0];
     const used = new Set(best.lineup.map((p) => p.id));
-    const rest = (r, n) => roles[r].filter((p) => !used.has(p.id)).slice(0, n);
+    const rest = (r, n) => roles[r].filter((p) => !used.has(p.id) && p.available !== false).slice(0, n);
     const bench = [...rest('P', 1), ...rest('D', o.benchD), ...rest('C', o.benchC), ...rest('A', o.benchA)];
+    fillBench(bench, scored, used, o.benchTotal);
     return finish('Classic', best, bench, results);
+  }
+
+  /** Completa la panchina fino a `total` giocatori (12) con i migliori rimasti disponibili; se sono meno, li mette tutti. */
+  function fillBench(bench, scored, used, total) {
+    const inBench = new Set(bench.map((p) => p.id));
+    for (const p of scored.filter((x) => !used.has(x.id) && !inBench.has(x.id) && x.available !== false).sort(bySel)) {
+      if (bench.length >= total) break;
+      bench.push(p);
+    }
+    return bench;
   }
 
   // ---------- Mantra ----------
@@ -1142,7 +1172,7 @@ const Engine = (() => {
   }
 
   function proposeMantra(scored, opts) {
-    const o = { ...DEFAULTS, benchSize: 7, ...(opts || {}) };
+    const o = { ...DEFAULTS, benchTotal: 12, ...(opts || {}) };
     const BIG = 1e6;
     const results = [];
     for (const [module, slots] of Object.entries(MANTRA_MODULES)) {
@@ -1161,15 +1191,19 @@ const Engine = (() => {
     results.sort((x, y) => y.totalSel - x.totalSel || y.totalEv - x.totalEv);
     const best = results[0];
     const used = new Set(best.lineup.map((p) => p.id));
-    const rest = scored.filter((p) => !used.has(p.id)).sort(bySel);
+    const rest = scored.filter((p) => !used.has(p.id) && p.available !== false).sort(bySel);
     const gk = rest.find((p) => p.role === 'P');
     const bench = [];
     if (gk) bench.push(gk);
-    for (const p of rest) {
-      if (bench.length >= o.benchSize + 1) break;
-      if (!bench.includes(p)) bench.push(p);
-    }
+    fillBench(bench, scored, used, o.benchTotal);
     return finish('Mantra', best, bench, results);
+  }
+
+  /** Primo calcio d'inizio non ancora passato (ms) fra quelli letti dalla pagina, o null. */
+  function nextKickoff(list, now) {
+    const t = now == null ? Date.now() : now;
+    const c = (Array.isArray(list) ? list : []).filter((x) => isNum(x) && x >= t).sort((a, b) => a - b);
+    return c.length ? c[0] : null;
   }
 
   // ---------- Esito ----------
@@ -1200,7 +1234,7 @@ const Engine = (() => {
     res.all = scored.slice().sort(bySel);
     return res;
   }
-  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, euroLeague, EURO_LEAGUES, cleanTeamName, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
+  return { norm, teamKey, teamsMatch, matchScore, findBest, findBestLenient, shrink, difficultyFactor, lookupMatch, lookupXg, teamAbbr, euroLeague, EURO_LEAGUES, cleanTeamName, nextKickoff, scorePlayers, proposeClassic, proposeMantra, proposeLineup, hungarian, CLASSIC_MODULES, MANTRA_MODULES, DEFAULTS };
 })();
 /* ==== ENGINE:END ==== */
 
@@ -1791,10 +1825,13 @@ async function propose(team, refresh) {
 
     const result = proposeLineup(team.leagueType, roster, signals, { ...fvOpts(), euro, dFactor: team.leagueType === "Classic" && !!team.dFactor });
     if (result.error) throw new Error(result.error);
-    const ageH = signals.fetchedAt ? (Date.now() - signals.fetchedAt) / 3600000 : null;
+    const srcT = (signals.sourceTimes && (euro ? signals.sourceTimes.euro : signals.sourceTimes.lineups)) || signals.fetchedAt;
+    const ageH = srcT ? (Date.now() - srcT) / 3600000 : null;
     const meta = {
       fetchedAt: signals.fetchedAt || null, round: signals.round || null, errors: signals.errors,
-      staleHours: ageH != null && ageH > SIGNALS_STALE_HOURS ? Math.round(ageH) : null,
+      staleHours: ageH != null && ageH > SIGNALS_STALE_HOURS ? Math.floor(ageH) : null,
+      deadline: Engine.nextKickoff(euro ? signals.euroKickoffs : signals.kickoffs),
+      deadlineKnown: Array.isArray(euro ? signals.euroKickoffs : signals.kickoffs),
       counts: {
         lineups: (signals.lineups && signals.lineups.players && signals.lineups.players.length) || 0,
         xg: (signals.xg || []).length,
@@ -1907,12 +1944,8 @@ function roleBox(p, type) {
 }
 
 /** Partita: squadra del giocatore - avversaria (3 lettere) e C/T = casa/trasferta. */
-function matchHtml(p, kt) {
-  if (p.euro) {
-    if (!p.match) return '<span class="muted" title="Partita non trovata nelle probabili formazioni">–</span>';
-    const m = p.match, mine = (n) => (n === p.matchTeam ? `<b>${esc(n)}</b>` : esc(n));
-    return `<span class="mfull" title="Prossima partita">${mine(m.home)} – ${mine(m.away)}</span>`;
-  }
+function matchHtml(p, kt0) {
+  const kt = p.euro ? [...new Set(state.euroPlayers.map((x) => x.team))] : kt0;
   if (!p.opp) return '<span class="muted">–</span>';
   return `<span class="mt-l">${esc(teamAbbr(p.team, kt))}-${esc(teamAbbr(p.opp, kt))}</span><span class="ha" title="${p.home ? "In casa" : "In trasferta"}">${p.home ? "C" : "T"}</span>`;
 }
@@ -1928,6 +1961,21 @@ function rowHtml(p, captainId, type) {
 }
 const theadFor = (euro) => `<colgroup>${euro ? '<col style="width:62px"><col style="width:38%"><col><col style="width:54px"><col style="width:54px">' : '<col style="width:62px"><col style="width:38%"><col><col style="width:54px"><col style="width:54px">'}</colgroup><thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R</th><th>Giocatore</th><th title="Squadra del giocatore - avversaria. C = in casa, T = in trasferta">Partita</th><th class="num" title="Titolarità prevista (probabili formazioni)">Tit.</th><th class="num" title="Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo. Passa il mouse (o tocca) per il dettaglio">FV</th></tr></thead>`;
 
+// ---- Scadenza consegna formazione: inizio della prima partita ancora da giocare (dalla pagina delle probabili formazioni) ----
+function deadlineHtml(meta) {
+  if (!meta.deadline) return meta.deadlineKnown
+    ? '<span class="muted">Scadenza consegna formazione: nessuna partita futura trovata nella pagina delle probabili formazioni</span>'
+    : '<span class="muted">Scadenza consegna formazione: non disponibile (ricarica i dati online dopo il prossimo aggiornamento del job)</span>';
+  const d = new Date(meta.deadline).toLocaleString("it-IT", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
+  return `Scadenza consegna formazione <b>${esc(d)}</b>`;
+}
+let deadlineTimer = null;
+function tickDeadline() {
+  const el = $("deadline");
+  if (!el) { clearInterval(deadlineTimer); deadlineTimer = null; return; }
+  const ts = Number(el.dataset.ts);
+  el.classList.toggle("yel", !!ts && ts - Date.now() < 6 * 3600 * 1000 && ts - Date.now() > 0);
+}
 function renderProposal(team, { result, meta }) {
   const capId = result.captain ? result.captain.id : null;
   const P = effParams();
@@ -1942,12 +1990,13 @@ function renderProposal(team, { result, meta }) {
   const degraded = meta.errors && (meta.euro ? (meta.errors.lineups || meta.errors.euro || meta.errors.euroMatches) : (meta.errors.lineups || meta.errors.xg || meta.errors.table || meta.errors.matches));
   const age = listoneAge(meta.euro);
   $("proposalBox").innerHTML = `
+    <div id="deadline" class="banner" data-ts="${meta.deadline || ""}">${deadlineHtml(meta)}</div>
     <div class="row"><h2 class="grow" style="margin:0">${esc(team.teamName)} <span class="badge ${esc(team.leagueType)}">${esc(team.leagueType)}</span>${meta.euro ? ' <span class="badge EL">Euroleghe</span>' : ""}</h2>
       <button class="btn secondary" id="btnRefresh">Ricarica dati online</button>
       <button class="btn secondary" id="btnBack">Squadre</button></div>
     <p class="muted small">${esc(team.leagueName)}${meta.round ? " · giornata " + meta.round : ""} · dati online del ${esc(upd)}${age ? " · Listone del " + esc(age.text) : ""}</p>
     ${!age ? (meta.euro ? "" : `<div class="banner warn">Nessun Listone importato: fantamedie e titolarità non sono disponibili, il consiglio si basa solo sui dati online.</div>`) : age.days > 10 ? `<div class="banner warn">Il Listone${meta.euro ? " Euroleghe" : ""} è del ${esc(age.text)} (${age.days} giorni fa): fantamedie, titolarità e infortuni potrebbero essere indietro. L'admin può caricare il file aggiornato.</div>` : ""}
-    ${meta.staleHours ? `<div class="banner warn">I dati online hanno ${meta.staleHours} ore: il job di GitHub Actions potrebbe essere fermo (controlla la scheda Actions del repository).</div>` : ""}
+    ${meta.staleHours ? `<div class="banner warn">I dati delle probabili formazioni non sono aggiornati da ${meta.staleHours} ore</div>` : ""}
     ${degraded ? `<div class="banner warn">Alcune fonti online non erano leggibili: per quelle uso valori neutri, quindi il consiglio è meno affidabile. Passa il mouse sulle etichette qui sotto per il dettaglio.</div>` : ""}
     ${meta.missingPlayers ? `<div class="banner warn">${meta.missingPlayers} giocatori della rosa non sono più nel database e sono stati ignorati.</div>` : ""}
     <div class="card">
@@ -1966,13 +2015,13 @@ function renderProposal(team, { result, meta }) {
     <div class="tablewrap"><table class="compact tight">${theadFor(meta.euro)}<tbody>${result.lineup.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
     <h3>Panchina consigliata (in ordine)</h3>
     <div class="tablewrap"><table class="compact tight">${theadFor(meta.euro)}<tbody>${result.bench.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div>
-    </div>
     <h3>Altri moduli valutati</h3>
     <div class="card"><table><thead><tr><th>Modulo</th><th class="num">FV totale</th><th class="num">Δ vs migliore</th></tr></thead><tbody>
       ${result.alternatives.map((a) => `<tr><td>${esc(a.module)}</td><td class="num">${fmt(a.totalEv, 1)}${a.dBonus ? ' <span class="muted" title="Include il bonus D-factor (almeno 4 difensori)">D</span>' : ""}</td><td class="num">${fmt(a.totalEv - result.totalEv, 1)}</td></tr>`).join("")}
     </tbody></table></div>
     <details class="card"><summary>Tutta la rosa ordinata per FV</summary>
       <div class="tablewrap" style="margin-top:10px"><table class="compact tight">${theadFor(meta.euro)}<tbody>${result.all.map((p) => rowHtml(p, capId, team.leagueType)).join("")}</tbody></table></div></details>
+    </div>
     ${meta.euro ? `<p class="note"><b>Come si calcola il FV in una lega Euroleghe.</b> FV = fantamedia (FM) del listone Euroleghe: nessuna correzione xG/xA, difficoltà della partita o fattore campo.
       La titolarità arriva dalle probabili formazioni Euro Leghe (fantacalcio.it) o, per le squadre di Serie A, da quelle di Serie A; serve a escludere indisponibili e squalificati e a dare la precedenza a chi ha almeno ${PP(P.priorityProb)}.
       Moduli e vincoli di formazione sono quelli della tipologia della lega (Classic o Mantra). È un supporto alla decisione, non una garanzia di punteggio.</p>` : `<p class="note"><b>Come si calcola il FV (Fanta Valore).</b> FV = (forma + correzione xG/xA) × difficoltà della partita × campo. Passa il mouse sul FV (o toccalo da mobile) per vedere il dettaglio di ogni giocatore; sul nome per le note.
@@ -1982,6 +2031,7 @@ function renderProposal(team, { result, meta }) {
       Nella scelta della formazione hanno la precedenza i giocatori con titolarità prevista di almeno ${PP(P.priorityProb)}.
       La titolarità non entra nel FV: serve a escludere indisponibili e squalificati dalla formazione e a segnalare i rischi.
       È un supporto alla decisione, non una garanzia di punteggio.</p>`}`;
+  tickDeadline(); clearInterval(deadlineTimer); deadlineTimer = setInterval(tickDeadline, 60000);
   $("btnRefresh").addEventListener("click", () => propose(team, true));
   $("btnBack").addEventListener("click", () => show("teams"));
 }

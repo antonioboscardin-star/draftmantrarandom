@@ -142,13 +142,63 @@ function parseLineups(html) {
 
 async function fetchLineups() {
   const html = await getText(FC_URL);
-  return parseLineups(html);
+  return { ...parseLineups(html), kickoffs: parseKickoffs(html) };
 }
 
 // Euro Leghe (Premier League, Liga, Bundesliga, Ligue 1): stessa struttura della pagina di Serie A
 async function fetchEuroLineups() {
   const html = await getText(EURO_URL);
-  return parseLineups(html);
+  return { ...parseLineups(html), kickoffs: parseKickoffs(html) };
+}
+
+
+// ---------------------------------------------------------------------------
+// Orari di inizio delle partite (per la "scadenza consegna formazione")
+// ---------------------------------------------------------------------------
+const MONTHS = { gennaio: 1, gen: 1, febbraio: 2, feb: 2, marzo: 3, mar: 3, aprile: 4, apr: 4, maggio: 5, mag: 5, giugno: 6, giu: 6, luglio: 7, lug: 7, agosto: 8, ago: 8, settembre: 9, set: 9, ottobre: 10, ott: 10, novembre: 11, nov: 11, dicembre: 12, dic: 12 };
+
+/** Millisecondi UTC di un orario "da orologio" italiano (Europe/Rome, con ora legale). */
+function romeTs(y, mo, d, h, mi) {
+  const guess = Date.UTC(y, mo - 1, d, h, mi);
+  const off = (t) => {
+    const p = {};
+    for (const x of new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Rome', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date(t))) p[x.type] = Number(x.value);
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute) - t;
+  };
+  return guess - off(guess - off(guess));
+}
+
+/** Date di inizio partita trovate nella pagina (ms, ordinate, senza doppioni). Ignora il segnaposto "01/01 01:00". */
+function parseKickoffs(html, now = Date.now()) {
+  const text = cheerio.load(html)('body').text().replace(/[ \s]+/g, ' ');
+  const out = new Set();
+  const add = (y, mo, d, h, mi) => {
+    if (!(mo >= 1 && mo <= 12 && d >= 1 && d <= 31 && h >= 0 && h <= 23 && mi >= 0 && mi <= 59)) return;
+    if (d === 1 && mo === 1 && h === 1 && mi === 0) return; // segnaposto della pagina
+    let year = y;
+    if (year == null) {
+      const cy = new Date(now).getUTCFullYear();
+      year = cy;
+      const t = romeTs(cy, mo, d, h, mi);
+      if (t < now - 200 * 86400000) year = cy + 1; else if (t > now + 200 * 86400000) year = cy - 1;
+    } else if (year < 100) year += 2000;
+    const ts = romeTs(year, mo, d, h, mi);
+    if (ts >= now - 3 * 86400000 && ts <= now + 45 * 86400000) out.add(ts);
+  };
+  let m;
+  // "24 novembre 2026 ore 18:00", "sabato 29 nov, 15.00"
+  const R1 = /(\d{1,2})\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre|gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic)(?![a-zà-ù])\.?(?:\s+(\d{4}))?[^\d]{0,25}?(\d{1,2})[:.](\d{2})/gi;
+  while ((m = R1.exec(text))) add(m[3] ? Number(m[3]) : null, MONTHS[m[2].toLowerCase()], Number(m[1]), Number(m[4]), Number(m[5]));
+  // "24/11 18:00", "24/11/2026 ore 18:00"
+  const R2 = /(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?[^\d]{0,12}?(\d{1,2}):(\d{2})/g;
+  while ((m = R2.exec(text))) add(m[3] ? Number(m[3]) : null, Number(m[2]), Number(m[1]), Number(m[4]), Number(m[5]));
+  // ISO: attributi datetime / startDate
+  const R3 = /(?:datetime=["']|"startDate"\s*:\s*")(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?/g;
+  while ((m = R3.exec(html))) {
+    if (m[6]) { const ts = Date.parse(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00${m[6] === 'Z' ? 'Z' : m[6].replace(/^([+-]\d{2})(\d{2})$/, '$1:$2')}`); if (ts >= now - 3 * 86400000 && ts <= now + 45 * 86400000) out.add(ts); }
+    else add(Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4]), Number(m[5]));
+  }
+  return [...out].sort((a, b) => a - b);
 }
 
 // ---------------------------------------------------------------------------
@@ -375,18 +425,22 @@ async function fetchTable() {
 // ---------------------------------------------------------------------------
 async function fetchAll() {
   const errors = {};
-  const out = { fetchedAt: Date.now(), round: null, lineups: { modules: {}, players: [] }, matches: [], xg: [], table: [], euroLineups: { round: null, modules: {}, players: [] }, euroMatches: [], errors };
+  const out = { fetchedAt: Date.now(), round: null, lineups: { modules: {}, players: [] }, matches: [], xg: [], table: [], euroLineups: { round: null, modules: {}, players: [] }, euroMatches: [], kickoffs: [], euroKickoffs: [], errors };
 
   const [l, x, t, eu] = await Promise.allSettled([fetchLineups(), fetchXg(), fetchTable(), fetchEuroLineups()]);
   if (eu.status === 'fulfilled') {
     out.euroLineups = { round: eu.value.round, modules: eu.value.modules, players: eu.value.players };
     out.euroMatches = eu.value.matches || [];
+    out.euroKickoffs = eu.value.kickoffs || [];
+    if (!out.euroKickoffs.length) errors.euroKickoffs = 'orari delle partite non riconosciuti nella pagina Euro Leghe';
     if (!out.euroMatches.length) errors.euroMatches = 'partite non riconosciute nella pagina Euro Leghe';
   } else errors.euro = String((eu.reason && eu.reason.message) || eu.reason);
   if (l.status === 'fulfilled') {
     out.round = l.value.round;
     out.lineups = { modules: l.value.modules, players: l.value.players };
     out.matches = l.value.matches || [];
+    out.kickoffs = l.value.kickoffs || [];
+    if (!out.kickoffs.length) errors.kickoffs = 'orari delle partite non riconosciuti nella pagina delle probabili formazioni';
     if (!out.matches.length) errors.matches = 'partite non riconosciute nella pagina delle probabili formazioni';
   } else errors.lineups = String((l.reason && l.reason.message) || l.reason);
   if (x.status === 'fulfilled') {
@@ -399,6 +453,6 @@ async function fetchAll() {
 }
 
 export {
-  fetchAll, parseLineups, fetchEuroLineups, parseFotmobRows, parseFotmobJson, parseFotmobEmbedded, mergeFotmob,
+  fetchAll, parseLineups, fetchEuroLineups, parseKickoffs, romeTs, parseFotmobRows, parseFotmobJson, parseFotmobEmbedded, mergeFotmob,
   parseFotmobTableJson, parseFotmobTableEmbedded, parseFotmobTableRows,
 };
