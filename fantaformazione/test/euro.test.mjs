@@ -173,3 +173,11 @@ test('Abbreviazioni squadre: nome identico prima del nome contenuto (Bayern Mona
   assert.equal(E.teamAbbr('Monaco', known), 'MON');
   assert.equal(E.teamAbbr('Lipsia', known), 'LIP');
 });
+
+test("listone Serie A: campo Id letto dalla colonna ID", () => {
+  const base = { Name: "ROSSI M.", Team: "Milan", roleMantra: "A", expectedFantamedia: 6, currentSeasonFantamedia: 6, lastFiveMatchesFantamedia: 6 };
+  assert.equal(L.rowToPlayer({ ...base, ID: 1234 }).code, "1234");
+  assert.equal(L.rowToPlayer(base).code, null);
+  const old = [{ id: L.playerId({ name: "Rossi M.", team: "Milan" }), ...L.rowToPlayer(base) }];
+  assert.equal(L.planImport([{ ...base, ID: 99 }], old).updated.length, 1);
+});

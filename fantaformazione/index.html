@@ -524,9 +524,11 @@ const Listone = (() => {
       const n = num(v);
       return n === null ? null : Math.max(0, Math.min(100, n));
     };
+    const codeRaw = r["id"] === null || r["id"] === undefined ? "" : String(r["id"]).trim();
     return {
       name,
       team,
+      code: codeRaw || null, // campo "Id" del listone (colonna ID del file): codice univoco del giocatore
       role,
       roleFromFile, // non viene salvato nel DB: serve solo a planImport
       roleMantra,
@@ -547,7 +549,7 @@ const Listone = (() => {
     };
   }
 
-  const FIELDS = ["team", "role", "roleManual", "roleCheck", "fmExp", "fmSeason", "fmLast5", "titExp", "titSeason", "titLast5", "unavailableUntilRound", "penProb", "pma", "pfc", "status"];
+  const FIELDS = ["team", "code", "role", "roleManual", "roleCheck", "fmExp", "fmSeason", "fmLast5", "titExp", "titSeason", "titLast5", "unavailableUntilRound", "penProb", "pma", "pfc", "status"];
   const same = (a, b) => (a == null && b == null) || (typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < 1e-9 : a === b);
 
   function samePlayer(a, b) {
@@ -563,7 +565,7 @@ const Listone = (() => {
   /** Colonne senza le quali l'import non ha senso. */
   const REQUIRED_COLUMNS = ["name", "team", "roleMantra", "expectedFantamedia", "currentSeasonFantamedia", "lastFiveMatchesFantamedia"];
   /** Colonne che migliorano il calcolo (affidabilità delle medie, disponibilità): se mancano avviso ma importo. */
-  const RECOMMENDED_COLUMNS = ["roleClassic", "expectedTitolarita", "currentSeasonTitolarity", "lastFiveMatchesTitolarity", "unavailableUntilRound"];
+  const RECOMMENDED_COLUMNS = ["ID", "roleClassic", "expectedTitolarita", "currentSeasonTitolarity", "lastFiveMatchesTitolarity", "unavailableUntilRound"];
 
   const headerSet = (rows) => new Set(rows.flatMap((r) => Object.keys(r || {}).map(key)));
   const missingColumns = (rows, cols = REQUIRED_COLUMNS) => {
@@ -2268,6 +2270,7 @@ const leaguesTip = (r) => r.lg.length
 const ST_COLS = [
   { k: "name", l: "Giocatore", t: "str", get: (r) => r.p.name, show: (r) => `<span class="nmw"><span class="role ${esc(r.p.role)}">${esc(r.p.role)}</span> ${r.s.available ? `<b>${esc(r.p.name)}</b>` : `<b class="pname" data-tip="${esc(nameTip(r.s))}" tabindex="0">${esc(r.p.name)}</b>`}</span>`, cls: "name" },
   { k: "team", l: "Sq.", t: "str", get: (r) => r.p.team, show: (r) => esc(teamAbbr(r.p.team, knownTeams())), title: "Squadra (prime 3 lettere)" },
+  { k: "code", l: "Id", t: "str", get: (r) => r.p.code, show: (r) => (r.p.code ? esc(r.p.code) : "–"), title: "Id: codice univoco del giocatore (Listone)" },
   { k: "role", l: "R", t: "str", get: (r) => r.p.role, show: (r) => esc(r.p.role), title: "Ruolo Classic" },
   { k: "leagues", l: "Leghe", t: "num", get: (r) => r.lg.length, show: (r) => `<span class="fvv" data-tip="${esc(leaguesTip(r))}" tabindex="0">${r.lg.length ? `<b>${r.lg.length}</b>` : "–"}</span>`, title: "In quante delle tue leghe il giocatore è in rosa (passa sul numero per vedere quali)" },
   { k: "mantra", l: "Mantra", t: "str", get: (r) => (r.p.roleMantra || []).join(", "), show: (r) => esc((r.p.roleMantra || []).join(", ")) },
