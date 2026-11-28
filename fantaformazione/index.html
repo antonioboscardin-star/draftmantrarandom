@@ -99,6 +99,12 @@
   table.stt td.n { text-align: right; }
   table.stt tr.me td { color: var(--accent); font-weight: 700; }
   .stedit { display: grid; grid-template-columns: 56px 1fr 64px 32px; gap: 6px; align-items: center; margin: 4px 0; max-width: 480px; }
+  .ls { display: none; }
+  @media (max-width: 520px) { .lf { display: none; } .ls { display: inline; } }
+  .stp { display: inline-flex; align-items: center; gap: 2px; }
+  .stp input { width: 2.6em; text-align: center; padding: 6px 2px; }
+  .stp button { padding: 5px 9px; border: 1px solid var(--line, #444); background: var(--panel2); color: inherit; border-radius: 6px; cursor: pointer; font-size: 15px; line-height: 1; }
+  .stp button:disabled { opacity: .4; cursor: default; }
   .rc input.pn { width: 100%; margin-top: 4px; padding: 3px 6px; text-align: center; }
   .stedit input { width: 100%; padding: 4px 6px; }
   .pos { font-weight: 700; font-size: 13px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); }
@@ -145,6 +151,12 @@
     #v-results input.ip { width: 2.5em; padding: 4px 2px; }
     #v-results .sc2 input { width: 2em; }
     #v-results button.icon { padding: 4px 7px; }
+  }
+  @media (max-width: 520px) {
+    #v-results table.compact th:nth-child(4), #v-results table.compact td:nth-child(4),
+    #v-results table.compact th:nth-child(6), #v-results table.compact td:nth-child(6) { display: none; }
+    #v-results .ncol { width: 40px; min-width: 0; }
+    #v-results td:nth-child(2) { max-width: none; }
   }
   tr.edrow > td { background: var(--panel2); }
   main { max-width: 1100px; margin: 0 auto; padding: 20px; }
@@ -278,8 +290,8 @@
       <div class="opt"><label>Posizione</label><select id="rPos"></select></div>
       <div class="opt"><label>Da pos.</label><input id="rPosFrom" inputmode="numeric" maxlength="2" placeholder="1"></div>
       <div class="opt"><label>A pos.</label><input id="rPosTo" inputmode="numeric" maxlength="2" placeholder="5"></div>
-      <div><label title="Vale solo per le leghe non Euroleghe">Giornata Serie A</label><select id="rRound"></select></div>
-      <div><label title="Vale solo per le leghe Euroleghe (30 giornate)">Giornata Euroleghe</label><select id="rRoundEl"></select></div>
+      <div><label title="Vale solo per le leghe non Euroleghe"><span class="lf">Giornata Serie A</span><span class="ls">G. Serie A</span></label><span class="stp"><button type="button" data-step="rRound" data-d="-1" aria-label="Giornata precedente">‹</button><input id="rRound" inputmode="numeric" maxlength="2" aria-label="Numero giornata"><button type="button" data-step="rRound" data-d="1" aria-label="Giornata successiva">›</button></span></div>
+      <div><label title="Vale solo per le leghe Euroleghe (30 giornate)"><span class="lf">Giornata Euroleghe</span><span class="ls">G. Euroleghe</span></label><span class="stp"><button type="button" data-step="rRoundEl" data-d="-1" aria-label="Giornata precedente">‹</button><input id="rRoundEl" inputmode="numeric" maxlength="2" aria-label="Numero giornata"><button type="button" data-step="rRoundEl" data-d="1" aria-label="Giornata successiva">›</button></span></div>
     </div>
     <div class="sumbar" id="resSummary"></div>
     <div class="tablewrap"><table class="compact">
@@ -1619,8 +1631,8 @@ function renderTeams() {
     const lp = t.lastProposal, sm = Results.summarize(t);
     return `<div class="card tcard">
       <div class="row" style="margin:0"><strong class="grow">${hasInfo(t) ? `<span class="lgn" data-tip="${esc(`<b>${esc(t.leagueName)}</b>${infoTip(t)}`)}" tabindex="0">${esc(t.leagueName)}</span>` : esc(t.leagueName)}</strong><span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}${t.dFactor && t.leagueType === "Classic" ? ' <span class="badge" title="D-factor attivo">D</span>' : ""}</div>
-      <div class="tres" style="margin-top:4px"><span class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</span><span class="pos" title="Posizione in classifica">${ordPos(t.position)}</span>
-        <span class="muted small" title="3 punti a vittoria, 1 a pareggio">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
+      <div class="tres" style="margin-top:4px"><span class="muted small">${esc(t.teamName)} · ${t.players.length} giocatori</span><span class="pos ro" data-tip="${esc(standingsTip(t))}" tabindex="0">${ordPos(t.position)}</span>
+        <span class="muted small ro" data-tip="${esc(standingsTip(t))}" tabindex="0">${sm.played ? sm.points + " pt" : "nessun risultato"}</span>
       </div>
       ${sm.last5.length ? `<div class="reslist-row"><span class="reslist" title="Ultimi risultati">${sm.last5.map((r) => resChip(r, t)).join("")}</span></div>` : ""}
       <div class="lp"><div class="small grow">${lp ? `Ultima formazione proposta: <b>${esc(lp.module)}</b> — ${esc(lp.lineup.slice(0, 3).join(", "))}…` : '<span class="muted">Nessuna formazione proposta</span>'}</div>
@@ -2125,9 +2137,10 @@ function renderResults() {
   const all = state.teams;
   fillPosOptions();
   const opts = (max) => { let o = ""; for (let n = 1; n <= max; n++) o += `<option value="${n}">${n}°G</option>`; return o; };
-  $("rRound").innerHTML = opts(Results.MAX_ROUND); $("rRound").value = String(resRound());
-  $("rRoundEl").innerHTML = opts(Results.EURO_ROUNDS); $("rRoundEl").value = String(resRoundEl());
-  $("rRound").disabled = rs.euro === "si"; $("rRoundEl").disabled = rs.euro === "no"; // ogni filtro vale solo per il suo calendario
+  $("rRound").value = String(resRound());
+  $("rRoundEl").value = String(resRoundEl());
+  const dis = { rRound: rs.euro === "si", rRoundEl: rs.euro === "no" }; // ogni filtro vale solo per il suo calendario
+  for (const id of ["rRound", "rRoundEl"]) document.querySelectorAll(`#${id}, button[data-step="${id}"]`).forEach((el) => { el.disabled = dis[id]; });
   $("resSummary").innerHTML = resSummaryHtml();
   $("rRoundHead").textContent = rs.euro === "si" ? "Giornata EL" : rs.euro === "no" ? "Giornata SA" : "Giornata";
 
@@ -2160,8 +2173,17 @@ $("navResults").addEventListener("click", () => { rs.editing = null; renderResul
 $("rLeague").addEventListener("input", (e) => { rs.league = e.target.value; resRefresh(); });
 $("rType").addEventListener("change", (e) => { rs.type = e.target.value; resRefresh(); });
 $("rPos").addEventListener("change", (e) => { rs.pos = e.target.value; resRefresh(); });
-$("rRound").addEventListener("change", (e) => { rs.round = Number(e.target.value); resRefresh(); });
-$("rRoundEl").addEventListener("change", (e) => { rs.roundEl = Number(e.target.value); resRefresh(); });
+function setRound(id, v) {
+  const max = id === "rRound" ? Results.MAX_ROUND : Results.EURO_ROUNDS, n = Number(v);
+  if (!Number.isInteger(n) || n < 1 || n > max) { $(id).value = String(id === "rRound" ? resRound() : resRoundEl()); return; }
+  if (id === "rRound") rs.round = n; else rs.roundEl = n;
+  resRefresh();
+}
+for (const id of ["rRound", "rRoundEl"]) {
+  $(id).addEventListener("change", (e) => setRound(id, e.target.value));
+  $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") e.target.blur(); else if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); setRound(id, Number(e.target.value) + (e.key === "ArrowUp" ? 1 : -1)); } });
+}
+document.querySelectorAll("button[data-step]").forEach((b) => b.addEventListener("click", () => { const id = b.dataset.step; setRound(id, Number($(id).value) + Number(b.dataset.d)); }));
 $("rEuro").addEventListener("change", (e) => { rs.euro = e.target.value; resRefresh(); });
 for (const [id, key] of [["rPosFrom", "posFrom"], ["rPosTo", "posTo"]]) {
   $(id).addEventListener("input", (e) => {
