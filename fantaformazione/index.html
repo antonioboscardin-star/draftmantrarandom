@@ -92,6 +92,15 @@
   .res.L { background: rgba(248,113,113,.15); border-color: var(--loss); color: var(--loss); }
   .reslist { display: inline-flex; gap: 4px; flex-wrap: wrap; align-items: center; }
   .tres { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  #v-results .ncol { width: 76px; min-width: 76px; }
+  .ro[data-tip] { cursor: help; }
+  table.stt { border-collapse: collapse; margin-top: 4px; }
+  table.stt td { padding: 1px 8px 1px 0; font-size: 12px; border: 0; text-align: left; }
+  table.stt td.n { text-align: right; }
+  table.stt tr.me td { color: var(--accent); font-weight: 700; }
+  .stedit { display: grid; grid-template-columns: 56px 1fr 64px 32px; gap: 6px; align-items: center; margin: 4px 0; max-width: 480px; }
+  .rc input.pn { width: 100%; margin-top: 4px; padding: 3px 6px; text-align: center; }
+  .stedit input { width: 100%; padding: 4px 6px; }
   .pos { font-weight: 700; font-size: 13px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); }
   .tbar { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   button.btn.sm { padding: 6px 12px; font-size: 14px; }
@@ -274,7 +283,7 @@
     </div>
     <div class="sumbar" id="resSummary"></div>
     <div class="tablewrap"><table class="compact">
-      <thead><tr><th class="ocol" title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th class="lgh">Lega</th><th class="ctr" title="Posizione in classifica (modificabile)">Pos.</th><th class="ctr" title="Punti di distanza dal podio (modificabile)">Dist. podio</th><th class="ctr" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="ctr" title="Partite giocate: numero di giornate con il risultato salvato">PG</th><th class="c-last ctr" title="Ultimi 5 risultati">Ultimi risultati</th><th class="ctr gcol" id="rRoundHead" title="Risultato della giornata selezionata (Serie A per le leghe normali, Euroleghe per le Euroleghe): gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
+      <thead><tr><th class="ocol" title="Ordine delle leghe: usa le frecce (viene ricordato)"></th><th class="lgh">Lega</th><th class="ctr ncol" title="Posizione in classifica (si modifica con la matita)">Pos.</th><th class="ctr ncol" title="Punti di distanza dal podio (si modifica con la matita)">Dist. podio</th><th class="ctr ncol" title="3 punti a vittoria, 1 a pareggio (calcolati dai risultati inseriti)">Punti</th><th class="ctr ncol" title="Partite giocate: numero di giornate con il risultato salvato">PG</th><th class="c-last ctr" title="Ultimi 5 risultati">Ultimi risultati</th><th class="ctr gcol" id="rRoundHead" title="Risultato della giornata selezionata (Serie A per le leghe normali, Euroleghe per le Euroleghe): gol miei - gol avversario (modificabile)">Giornata</th><th></th></tr></thead>
       <tbody id="resRows"></tbody>
     </table></div>
     <p class="note" id="resNote"></p>
@@ -1260,7 +1269,7 @@ const Results = (() => {
     for (const r of Array.isArray(team && team.results) ? team.results : []) {
       if (!r || !isInt(r.round) || !isInt(r.my) || !isInt(r.opp)) continue;
       if (r.round < st || r.round > maxOf(team) || r.my < 0 || r.opp < 0) continue;
-      by.set(r.round, { round: r.round, my: r.my, opp: r.opp, o: outcome(r.my, r.opp) });
+      by.set(r.round, { round: r.round, my: r.my, opp: r.opp, o: outcome(r.my, r.opp), punteggio: typeof r.punteggio === 'number' && Number.isFinite(r.punteggio) ? r.punteggio : null });
     }
     return [...by.values()].sort((a, b) => a.round - b.round);
   }
@@ -1564,7 +1573,15 @@ async function loadTeams() {
 
 // ------------------------------- Squadre -------------------------------
 const ordPos = (n) => (n == null ? "–" : n + "°");
-const resChip = (r, team) => `<span class="res ${r.o}" title="Giornata ${Results.leagueRound(team, r.round)} di lega (${team.euroleghe ? "Euroleghe" : "Serie A"} ${r.round}): ${Results.OUT_TXT[r.o]} ${r.my}-${r.opp}">${r.my}-${r.opp}</span>`;
+const resChip = (r, team) => `<span class="res ${r.o}" data-tip="${esc(`<div class="tip-h">Punteggio <b>${r.punteggio != null ? String(r.punteggio).replace(".", ",") : "n.d."}</b></div><div>Risultato <b>${r.my}-${r.opp}</b> · ${Results.OUT_TXT[r.o]}</div><div class="muted">Giornata ${Results.leagueRound(team, r.round)} di lega (${team.euroleghe ? "Euroleghe" : "Serie A"} ${r.round})</div>`)}" tabindex="0">${r.my}-${r.opp}</span>`;
+// Classifica della lega (campo "classifica": [{pos, squadra, Pt}], scritto anche dall'app fantahub), mostrata in tooltip ordinata per posizione
+const standingsOf = (t) => (Array.isArray(t.classifica) ? t.classifica : []).filter((x) => x && Number.isFinite(x.pos)).slice().sort((a, b) => a.pos - b.pos);
+function standingsTip(t) {
+  const st = standingsOf(t);
+  if (!st.length) return `<div class="tip-h">${esc(t.leagueName)}</div><div class="muted">Classifica non inserita: aggiungila con la matita ✎</div>`;
+  const mine = String(t.teamName || "").trim().toLowerCase();
+  return `<div class="tip-h">Classifica · ${esc(t.leagueName)}</div><table class="stt">${st.map((x) => `<tr class="${String(x.squadra || "").trim().toLowerCase() === mine ? "me" : ""}"><td class="n">${x.pos}°</td><td>${esc(x.squadra || "")}</td><td class="n"><b>${x.Pt == null ? "–" : x.Pt}</b></td></tr>`).join("")}</table>`;
+}
 // ---- Dati facoltativi della lega (asta, quote, premi) ----
 const eur = (n) => "€ " + Number(n).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const INFO_KEYS = ["date", "part", "type", "mode", "cred", "fee", "p1", "p2", "p3", "admin", "notes"];
@@ -1782,7 +1799,7 @@ $("btnSaveTeam").addEventListener("click", async () => {
     if (state.editingId) {
       const old = state.teams.find((t) => t.id === state.editingId);
       // classifica e risultati restano quelli già salvati
-      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, position: old.position ?? null, podiumGap: old.podiumGap ?? null, results: old.results || [], sortOrder: old.sortOrder ?? null, lastProposal: old.lastProposal ?? null, createdAt: old.createdAt || serverTimestamp() });
+      await setDoc(doc(db, "users", state.user.uid, "teams", state.editingId), { ...data, position: old.position ?? null, podiumGap: old.podiumGap ?? null, classifica: old.classifica || [], results: old.results || [], sortOrder: old.sortOrder ?? null, lastProposal: old.lastProposal ?? null, createdAt: old.createdAt || serverTimestamp() });
     } else {
       await addDoc(collection(db, "users", state.user.uid, "teams"), { ...data, position: null, podiumGap: null, results: [], sortOrder: state.teams.length, createdAt: serverTimestamp() });
     }
@@ -1832,7 +1849,7 @@ async function propose(team, refresh) {
     const meta = {
       fetchedAt: signals.fetchedAt || null, round: signals.round || null, errors: signals.errors,
       staleHours: ageH != null && ageH > SIGNALS_STALE_HOURS ? Math.floor(ageH) : null,
-      deadline: Engine.nextKickoff(euro ? signals.euroKickoffs : signals.kickoffs),
+      deadline: firstKickoff(euro ? signals.euroKickoffs : signals.kickoffs),
       deadlineKnown: Array.isArray(euro ? signals.euroKickoffs : signals.kickoffs),
       counts: {
         lineups: (signals.lineups && signals.lineups.players && signals.lineups.players.length) || 0,
@@ -1964,7 +1981,9 @@ function rowHtml(p, captainId, type) {
 const theadFor = (euro) => `<colgroup>${euro ? '<col style="width:62px"><col style="width:38%"><col><col style="width:54px"><col style="width:54px">' : '<col style="width:62px"><col style="width:38%"><col><col style="width:54px"><col style="width:54px">'}</colgroup><thead><tr><th title="Ruolo Classic o Mantra (secondo la lega)">R</th><th>Giocatore</th><th title="Squadra del giocatore - avversaria. C = in casa, T = in trasferta">Partita</th><th class="num" title="Titolarità prevista (probabili formazioni)">Tit.</th><th class="num" title="Fanta Valore: (forma + correzione xG/xA) × difficoltà × campo. Passa il mouse (o tocca) per il dettaglio">FV</th></tr></thead>`;
 
 // ---- Scadenza consegna formazione: inizio della prima partita ancora da giocare (dalla pagina delle probabili formazioni) ----
+const firstKickoff = (list) => { const a = (Array.isArray(list) ? list : []).filter((x) => Number.isFinite(x)); return a.length ? Math.min(...a) : null; };
 function deadlineHtml(meta) {
+  if (meta.deadline && meta.deadline <= Date.now()) return "<b>Giornata in corso</b>";
   if (!meta.deadline) return meta.deadlineKnown
     ? '<span class="muted">Scadenza consegna formazione: nessuna partita futura trovata nella pagina delle probabili formazioni</span>'
     : '<span class="muted">Scadenza consegna formazione: non disponibile (ricarica i dati online dopo il prossimo aggiornamento del job)</span>';
@@ -1977,6 +1996,7 @@ function tickDeadline() {
   if (!el) { clearInterval(deadlineTimer); deadlineTimer = null; return; }
   const ts = Number(el.dataset.ts);
   el.classList.toggle("yel", !!ts && ts - Date.now() < 6 * 3600 * 1000 && ts - Date.now() > 0);
+  if (ts && ts <= Date.now() && !el.dataset.live) { el.dataset.live = "1"; el.innerHTML = "<b>Giornata in corso</b>"; }
 }
 function renderProposal(team, { result, meta }) {
   const capId = result.captain ? result.captain.id : null;
@@ -2066,10 +2086,18 @@ function resEditorHtml(t) {
   for (let n = st; n <= mx; n++) {
     const r = sm.byRound.get(n);
     cells.push(`<div class="rc ${r ? r.o : ""}" data-rc="${n}"><span class="muted small">G${Results.leagueRound(t, n)} · ${cal} ${n}</span>
-      <div class="sr"><input class="sc" data-r="${n}" data-k="my" inputmode="numeric" maxlength="2" value="${r ? r.my : ""}" aria-label="Miei gol giornata ${n}"><span>-</span><input class="sc" data-r="${n}" data-k="opp" inputmode="numeric" maxlength="2" value="${r ? r.opp : ""}" aria-label="Gol avversario giornata ${n}"></div></div>`);
+      <div class="sr"><input class="sc" data-r="${n}" data-k="my" inputmode="numeric" maxlength="2" value="${r ? r.my : ""}" aria-label="Miei gol giornata ${n}"><span>-</span><input class="sc" data-r="${n}" data-k="opp" inputmode="numeric" maxlength="2" value="${r ? r.opp : ""}" aria-label="Gol avversario giornata ${n}"></div>
+      <input class="pn" data-r="${n}" inputmode="decimal" maxlength="7" placeholder="Punteggio" value="${r && r.punteggio != null ? String(r.punteggio).replace(".", ",") : ""}" aria-label="Punteggio giornata ${n}"></div>`);
   }
+  const stRows = standingsOf(t);
+  const stRow = (x) => `<div class="stedit"><input data-st="pos" inputmode="numeric" maxlength="2" placeholder="Pos." value="${x.pos ?? ""}" aria-label="Posizione"><input data-st="name" maxlength="60" placeholder="Squadra" value="${esc(x.squadra || "")}" aria-label="Squadra"><input data-st="pts" inputmode="numeric" maxlength="4" placeholder="Punti" value="${x.Pt ?? ""}" aria-label="Punti"><button class="btn secondary icon" data-ee="strm" title="Rimuovi riga" aria-label="Rimuovi riga">×</button></div>`;
+  const classif = `<div class="note"><b>Classifica della lega</b> <span class="muted small">(posizione, squadra, punti; il tooltip su Pos. e Dist. podio la mostra ordinata per posizione)</span></div>
+    <div class="row" style="gap:12px;margin:6px 0"><label>Posizione <input class="ip" id="edPos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></label><label>Distanza dal podio <input class="ip" id="edGap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></label></div>
+    <div id="edStand">${stRows.map(stRow).join("")}</div>
+    <div class="row"><button class="btn secondary sm" data-ee="stadd">+ Aggiungi squadra</button></div>`;
   return `<div class="note">Tutte le giornate di <b>${esc(t.leagueName)}</b>: gol miei - gol dell'avversario (vuoto = non giocata). Prima giornata di lega: ${t.euroleghe ? "Euroleghe" : "Serie A"} ${st} (si cambia da Modifica squadra). Punti calcolati: <b>${sm.points}</b> (${sm.W}V ${sm.D}P ${sm.L}S).</div>
     <div class="rgrid">${cells.join("")}</div>
+    ${classif}
     <div class="row"><button class="btn" data-ee="save">Salva</button><button class="btn secondary" data-ee="cancel">Annulla</button></div>`;
 }
 function fillPosOptions() {
@@ -2116,16 +2144,16 @@ function renderResults() {
     return `<tr data-id="${esc(t.id)}">
       <td><button class="mv" data-mv="-1" data-id="${esc(t.id)}" title="Sposta su" aria-label="Sposta su" ${i === 0 ? "disabled" : ""}>▲</button><button class="mv" data-mv="1" data-id="${esc(t.id)}" title="Sposta giù" aria-label="Sposta giù" ${i === rows.length - 1 ? "disabled" : ""}>▼</button></td>
       <td class="lg"><span class="lgn" data-tip="${esc(`<b>${esc(t.teamName)}</b> · ${esc(t.leagueType)}${t.euroleghe ? " · Euroleghe" : ""}${infoTip(t)}`)}" tabindex="0"><b>${esc(t.leagueName)}</b></span> <span class="badge ${esc(t.leagueType)}">${esc(t.leagueType)}</span>${t.euroleghe ? ' <span class="badge EL" title="Lega Euroleghe">EL</span>' : ""}<div class="muted small teamsub">${esc(t.teamName)}${Results.startOf(t) > 1 ? " · da " + (t.euroleghe ? "EL " : "SA ") + Results.startOf(t) : ""}</div></td>
-      <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="pos" inputmode="numeric" maxlength="2" value="${t.position ?? ""}" placeholder="–" aria-label="Posizione in classifica"></td>
-      <td class="ctr"><input class="ip" data-id="${esc(t.id)}" data-f="gap" inputmode="numeric" maxlength="3" value="${t.podiumGap ?? ""}" placeholder="–" aria-label="Distanza dal podio in punti"></td>
-      <td class="ctr pts"><b>${sm.played ? sm.points : "–"}</b></td>
-      <td class="ctr pg">${sm.played}</td>
+      <td class="ctr ncol pos-c"><span class="ro" data-tip="${esc(standingsTip(t))}" tabindex="0">${t.position != null ? t.position + "°" : "–"}</span></td>
+      <td class="ctr ncol gap-c"><span class="ro" data-tip="${esc(standingsTip(t))}" tabindex="0">${t.podiumGap != null ? t.podiumGap : "–"}</span></td>
+      <td class="ctr ncol pts"><b>${sm.played ? sm.points : "–"}</b></td>
+      <td class="ctr ncol pg">${sm.played}</td>
       <td class="c-last lastc ctr">${sm.last5.length ? `<span class="reslist">${sm.last5.map((x) => resChip(x, t)).join("")}</span>` : '<span class="muted">–</span>'}</td>
       <td class="ctr">${scoreInputs(t, round, r)}</td>
       <td class="ctr"><button class="btn secondary icon" data-edit="${esc(t.id)}" title="${editing ? "Chiudi" : "Modifica tutte le giornate"}" aria-label="Modifica tutte le giornate">${editing ? "×" : "✎"}</button></td></tr>
       ${editing ? `<tr class="edrow"><td colspan="9">${resEditorHtml(t)}</td></tr>` : ""}`;
   }).join("") || `<tr><td colspan="9" class="muted">${all.length ? "Nessuna lega con questi filtri." : "Nessuna squadra: aggiungila da Le mie squadre."}</td></tr>`;
-  $("resNote").textContent = "Posizione, distanza dal podio e risultato della giornata si modificano direttamente nella tabella (si salvano da soli). Punti = 3 per vittoria, 1 per pareggio, dalla giornata di inizio della lega. Le frecce ▲▼ cambiano l'ordine delle leghe, che viene ricordato.";
+  $("resNote").textContent = "Il risultato della giornata si modifica direttamente nella tabella (si salva da solo); posizione, distanza dal podio e classifica con la matita ✎. Passa sopra Pos. o Dist. podio per vedere la classifica completa. Punti = 3 per vittoria, 1 per pareggio, dalla giornata di inizio della lega. Le frecce ▲▼ cambiano l'ordine delle leghe, che viene ricordato.";
 }
 function resRefresh() { rs.editing = null; renderResults(); }
 $("navResults").addEventListener("click", () => { rs.editing = null; renderResults(); });
@@ -2181,25 +2209,14 @@ $("resRows").addEventListener("change", async (e) => {
   const t = state.teams.find((x) => x.id === inp.dataset.id);
   if (!t) return;
   const f = inp.dataset.f;
-  if (f === "pos" || f === "gap") {
-    const v = Results.parseIntIn(inp.value, f === "pos" ? 1 : 0, f === "pos" ? 99 : 999);
-    if (Number.isNaN(v)) {
-      msg(f === "pos" ? "La posizione deve essere un numero da 1 a 99." : "La distanza dal podio deve essere un numero intero di punti (0 o più).", "err");
-      inp.value = (f === "pos" ? t.position : t.podiumGap) ?? "";
-      return;
-    }
-    if (f === "pos") t.position = v; else t.podiumGap = v;
-    refreshResRow(t);
-    await persistTeam(t, f === "pos" ? { position: v } : { podiumGap: v });
-    return;
-  }
   // risultato della giornata selezionata: servono entrambi i gol
   const tr = inp.closest("tr"), round = teamRound(t);
   const my = Results.parseIntIn(tr.querySelector('[data-f="my"]').value, 0, 99), opp = Results.parseIntIn(tr.querySelector('[data-f="opp"]').value, 0, 99);
   if (Number.isNaN(my) || Number.isNaN(opp)) { msg("I gol devono essere numeri da 0 a 99.", "err"); return; }
   if ((my === null) !== (opp === null)) { $("resSaved").textContent = "Inserisci sia i tuoi gol sia quelli dell'avversario per salvare il risultato."; return; }
   const rest = (t.results || []).filter((r) => r && r.round !== round);
-  t.results = my === null ? rest : [...rest, { round, my, opp }];
+  const prev = (t.results || []).find((x) => x && x.round === round);
+  t.results = my === null ? rest : [...rest, { round, my, opp, ...(prev && prev.punteggio != null ? { punteggio: prev.punteggio } : {}) }];
   refreshResRow(t);
   await persistTeam(t, { results: t.results });
 });
@@ -2224,6 +2241,12 @@ $("resRows").addEventListener("click", async (e) => {
   if (ed) { rs.editing = rs.editing === ed.dataset.edit ? null : ed.dataset.edit; renderResults(); return; }
   if (!act) return;
   if (act.dataset.ee === "cancel") { rs.editing = null; renderResults(); return; }
+  if (act.dataset.ee === "stadd") {
+    const box = $("edStand"), n = box.querySelectorAll(".stedit").length + 1;
+    box.insertAdjacentHTML("beforeend", `<div class="stedit"><input data-st="pos" inputmode="numeric" maxlength="2" placeholder="Pos." value="${n}" aria-label="Posizione"><input data-st="name" maxlength="60" placeholder="Squadra" aria-label="Squadra"><input data-st="pts" inputmode="numeric" maxlength="4" placeholder="Punti" aria-label="Punti"><button class="btn secondary icon" data-ee="strm" title="Rimuovi riga" aria-label="Rimuovi riga">×</button></div>`);
+    return;
+  }
+  if (act.dataset.ee === "strm") { act.closest(".stedit").remove(); return; }
   const t = state.teams.find((x) => x.id === rs.editing);
   if (!t) return;
   try {
@@ -2234,10 +2257,26 @@ $("resRows").addEventListener("click", async (e) => {
       if (Number.isNaN(my) || Number.isNaN(opp)) throw new Error(`Giornata ${cal} ${n}: i gol devono essere numeri da 0 a 99.`);
       if (my === null && opp === null) continue;
       if (my === null || opp === null) throw new Error(`Giornata ${cal} ${n}: inserisci sia i tuoi gol sia quelli dell'avversario.`);
-      fresh.push({ round: n, my, opp });
+      const raw = document.querySelector(`input.pn[data-r="${n}"]`).value.trim().replace(",", ".");
+      const punteggio = raw === "" ? null : Number(raw);
+      if (punteggio !== null && !Number.isFinite(punteggio)) throw new Error(`Giornata ${cal} ${n}: il punteggio deve essere un numero (es. 61,5).`);
+      fresh.push(punteggio === null ? { round: n, my, opp } : { round: n, my, opp, punteggio });
     }
     const kept = (t.results || []).filter((r) => r && r.round < st); // risultati prima della giornata di inizio: restano salvati
-    await updateDoc(doc(db, "users", state.user.uid, "teams", t.id), { results: [...kept, ...fresh], updatedAt: serverTimestamp() });
+    const position = Results.parseIntIn($("edPos").value, 1, 99), podiumGap = Results.parseIntIn($("edGap").value, 0, 999);
+    if (Number.isNaN(position)) throw new Error("La posizione deve essere un numero da 1 a 99.");
+    if (Number.isNaN(podiumGap)) throw new Error("La distanza dal podio deve essere un numero intero di punti (0 o più).");
+    const classifica = [];
+    for (const row of document.querySelectorAll("#edStand .stedit")) {
+      const g = (k) => row.querySelector(`[data-st="${k}"]`).value.trim();
+      if (!g("pos") && !g("name") && !g("pts")) continue;
+      const pos = Results.parseIntIn(g("pos"), 1, 99), pts = Results.parseIntIn(g("pts"), 0, 9999);
+      if (pos === null || Number.isNaN(pos) || Number.isNaN(pts)) throw new Error("Classifica: posizione (1-99) e punti (numero intero) devono essere numeri validi.");
+      if (!g("name")) throw new Error("Classifica: manca il nome di una squadra.");
+      classifica.push({ pos, squadra: g("name").slice(0, 60), Pt: pts });
+    }
+    classifica.sort((a, b) => a.pos - b.pos);
+    await updateDoc(doc(db, "users", state.user.uid, "teams", t.id), { results: [...kept, ...fresh], position, podiumGap, classifica, updatedAt: serverTimestamp() });
     await loadTeams(); rs.editing = null; renderResults(); renderTeams();
     msg("Risultati salvati.");
   } catch (err) { msg(err.message, "err"); }
